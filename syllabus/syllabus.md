@@ -51,11 +51,11 @@ The prerequisite for this course is linear algebra (Biostat 200A, 200B and linea
 
 ### Course Webpage
 
-<https://ucla-biostat-200c.github.io/2025spring/>
+<https://ucla-biostat-274.github.io/2026winter/>
 
 ### Burinlearn
 
-<https://bruinlearn.ucla.edu/courses/205219>
+<https://bruinlearn.ucla.edu/courses/220564>
 
 ### Course Materials
 
@@ -77,7 +77,8 @@ You will be required to work on 5 homework assignments throughout the quarter.
 
 ### Exam
 
-There is a midterm exam (time TBD) and a final exam.
+There is no exam for this course. There will be a midterm project and a final project.
+
 
 ### Final Grade
 
