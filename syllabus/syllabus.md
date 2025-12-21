@@ -18,7 +18,7 @@ School of Public Health, Room 61269
 
 [Dr. Jin Zhou](https://ph.ucla.edu/about/faculty-staff-directory/jin-zhou)  
 
-Email: <xiangchen@g.ucla.edu > 
+Email: <jinjinzhou@ucla.edu> 
 
 Office hours: Moon 11am - Noon or by appointment
 
@@ -28,7 +28,7 @@ Location: CHS 21-254C
 
 Xiang Chen 
 
-Email: <xiangchen@g.ucla.edu >
+Email: <xiangchen@ucla.edu>
 
 Office hours: See Xiang's email. 
 
