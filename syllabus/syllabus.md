@@ -32,33 +32,26 @@ Email: <xiangchen@ucla.edu>
 
 Office hours: See Xiang's email. 
 
-### Course Topics
-
-This is a tentative list of topics:  
-
-
 
 ### Prerequisite
 
-The prerequisite for this course is linear algebra (Biostat 200A, 200B and linear algebra). Those wishing to enroll without these prerequisites will need to obtain consent from the instructor.  Homework will use the statistical programming computing language [R](https://www.r-project.org).  
+The prerequisite for this course is linear algebra (Biostat 200A, 200B, 200C and linear algebra). Those wishing to enroll without these prerequisites will need to obtain consent from the instructor.  Homework will use the statistical programming computing language [R](https://www.r-project.org).  
 
 ### Course Webpage
 
-<https://ucla-biostat-274.github.io/2026winter/>
+- Github: <https://ucla-biostat-274.github.io/2026winter/>
 
-### Burinlearn
+- Burinlearn: <https://bruinlearn.ucla.edu/courses/220564>
 
-<https://bruinlearn.ucla.edu/courses/220564>
+- Course announcements will be sent via BruinLearn. 
+
 
 ### Course Materials
 
-Required book (freely available via UCLA library):  
+* Gareth James, Daniela Witten, Trevor Hastie, Robert Tibshirani, _An Introduction to Statistical Learning: with Applications in R_, 2nd Edition, Springer (2021), \[[UCLA library link](https://search.library.ucla.edu/permalink/01UCS_LAL/17p22dp/alma9917455728606531)\], \[[Book website](https://www.statlearning.com/)\]
 
-* Julian Faraway, _Extending the Linear Model with R_, 2nd Edition, CRC Press (2016), [UCLA library link](https://search.library.ucla.edu/permalink/01UCS_LAL/17p22dp/alma9980140713606533) 
+* Trevor Hastie, Robert Tibshirani, Jerome Friedman, _Elements of Statistical Learning: Data Mining, Inference, and Prediction_, 2nd Edition, Springer (2009), \[[UCLA library link](https://search.library.ucla.edu/permalink/01UCS_LAL/17p22dp/alma9914833914706531)\], \[[Book website](https://hastie.su.domains/ElemStatLearn/)\]
 
-Following book is recommended but not required: 
-
-* Annette Dobson and Adrian Barnett, _An Introducton to Generalized Linear Models_, 4th Edition, CRC Press (2018), [Amazon](https://www.amazon.com/Introduction-Generalized-Chapman-Statistical-Science/dp/1138741515/ref=sr_1_1?dchild=1&keywords=an+INTROduction+TO+GENERALIZED+LINEAR+MODELS&qid=1585366195&sr=8-1)  
 
 ### Attendance
 
@@ -70,7 +63,7 @@ You will be required to work on 5 homework assignments throughout the quarter.
 
 ### Exam
 
-There is no exam for this course. There will be a midterm project and a final project.
+There is no exam for this course. There will be a midterm project proposal and a final project.
 
 
 ### Final Grade
@@ -78,8 +71,6 @@ There is no exam for this course. There will be a midterm project and a final pr
 Grades will be based on homework (30%), midterm (30%), final exam (30%), and class participation (lecture/office hour attendance and questions) (10%). 
 
 ### [Course Schedule](../schedule/schedule.html)
-
-
 
 
 <br>
