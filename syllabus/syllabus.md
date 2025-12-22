@@ -36,14 +36,7 @@ Office hours: See Xiang's email.
 
 This is a tentative list of topics:  
 
-* Linear regression (review) (5%)  
-* Logistic regression (15%)  
-* Count data and poisson regression (15%)  
-* Multinomial data (10%)   
-* Generalized linear models (15%)   
-* GAM (10%)  
-* Regression trees (15%)  
-* Mixed effects model (15%)  
+
 
 ### Prerequisite
 
