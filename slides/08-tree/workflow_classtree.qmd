@@ -1,6 +1,6 @@
 ---
 title: "Machine Learning Workflow: Classification Trees"
-subtitle: "Biostat 212A"
+subtitle: "Biostat 274"
 author: "Dr. Jin Zhou @ UCLA"
 date: today
 format:
@@ -499,7 +499,9 @@ plot_tree(
   );
 plt.show()
 ```
+
 Feature importances:
+
 ```{python}
 vi_df = pd.DataFrame({
   "feature": features,

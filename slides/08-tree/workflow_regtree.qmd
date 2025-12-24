@@ -1,6 +1,6 @@
 ---
 title: "Machine Learning Workflow: Regression Trees"
-subtitle: "Biostat 212A"
+subtitle: "Biostat 274"
 author: "Dr. Jin Zhou @ UCLA"
 date: today
 format:
@@ -95,7 +95,7 @@ sns.set(font_scale = 1.2)
 # Display all columns
 pd.set_option('display.max_columns', None)
 
-Hitters = pd.read_csv("../data/Hitters.csv")
+Hitters = pd.read_csv("./slides/data/Hitters.csv")
 Hitters
 ```
 

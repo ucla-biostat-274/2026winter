@@ -1,0 +1,1 @@
+project:  type: default  execute-dir: projectexecute:  echo: true  warning: false  message: falseformat:  html:    toc: true    theme: cosmo

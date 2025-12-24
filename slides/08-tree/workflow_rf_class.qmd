@@ -1,6 +1,6 @@
 ---
 title: "Machine Learning Workflow: Random Forest for Classification"
-subtitle: "Biostat 212A"
+subtitle: "Biostat 274"
 author: "Dr. Jin Zhou @ UCLA"
 date: today
 format:
@@ -70,7 +70,7 @@ library(tidymodels)
 library(ISLR2)
 
 # Load the `Heart.csv` data.
-Heart <- read_csv("../data/Heart.csv") %>% 
+Heart <- read_csv("./slides/data/Heart.csv") %>% 
   # first column is patient ID, which we don't need
   select(-1) %>%
   # RestECG is categorical with value 0, 1, 2
@@ -100,7 +100,7 @@ sns.set(font_scale = 1.2)
 # Display all columns
 pd.set_option('display.max_columns', None)
 
-Heart = pd.read_csv("../data/Heart.csv")
+Heart = pd.read_csv("./slides/data/Heart.csv")
 Heart
 ```
 

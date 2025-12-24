@@ -1,6 +1,6 @@
 ---
 title: "Machine Learning Workflow: Random Forests for Prediction"
-subtitle: "Biostat 212A"
+subtitle: "Biostat 274"
 author: "Dr. Jin Zhou @ UCLA"
 date: today
 format:
