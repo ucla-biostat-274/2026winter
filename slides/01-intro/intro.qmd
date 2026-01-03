@@ -1,6 +1,6 @@
 ---
 title: "Introduction (ISL 1)"
-subtitle: "Biostat 212A, Statistical Learning A"
+subtitle: "Biostat 274, Statistical Learning A"
 author: "Dr. Jin Zhou @ UCLA"
 date: today
 format:
