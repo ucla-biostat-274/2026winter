@@ -1,6 +1,6 @@
 ---
 title: "Statistical Learning (ISL 2)"
-subtitle: "Biostat 212A"
+subtitle: "Biostat 274"
 author: "Dr. Jin Zhou @ UCLA"
 date: today
 format:
@@ -60,7 +60,7 @@ print(IPython.sys_info())
 library(tidyverse)
 
 # Import Income2 data
-income <- read_csv("../data/Income2.csv", col_select = Education:Income) %>% 
+income <- read_csv("./slides/data/Income2.csv", col_select = Education:Income) %>% 
   print(width = Inf)
 
 # Plot income ~ Education
@@ -100,7 +100,7 @@ pd.set_option('display.max_columns', None)
 
 # Import income2 data
 income = pd.read_csv(
-  "../data/Income2.csv",
+  "./slides/data/Income2.csv",
   index_col = 0
   )
 income
