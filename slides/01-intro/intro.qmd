@@ -160,7 +160,7 @@ pd.set_option('display.max_columns', None)
 
 # Import Wage data
 Wage = pd.read_csv(
-  "../data/Wage.csv",
+  "./slides/data/Wage.csv",
   dtype =  {
     'maritl':'category', 
     'race':'category',
@@ -318,7 +318,7 @@ Smarket %>%
 
 ```{python}
 # Import S&P500 data
-Smarket = pd.read_csv("../data/Smarket.csv")
+Smarket = pd.read_csv("./slides/data/Smarket.csv")
 Smarket
 Smarket.info()
 ```
@@ -509,8 +509,8 @@ prcomp(NCI60$data, scale = TRUE, center = TRUE, retx = T)$x %>%
 
 ```{python}
 # Import NCI60 data
-nci60_data = pd.read_csv('../data/NCI60_data.csv')
-nci60_labs = pd.read_csv('../data/NCI60_labs.csv')
+nci60_data = pd.read_csv('./slides/data/NCI60_data.csv')
+nci60_labs = pd.read_csv('./slides/data/NCI60_labs.csv')
 nci60_data.info()
 ```
 

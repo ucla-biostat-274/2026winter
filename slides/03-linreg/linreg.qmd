@@ -75,7 +75,7 @@ library(GGally) # ggpairs function
 library(tidyverse)
 
 # Advertising
-Advertising <- read_csv("../data/Advertising.csv",  col_select = TV:sales) %>% 
+Advertising <- read_csv("./slides/data/Advertising.csv",  col_select = TV:sales) %>% 
   print(width = Inf)
 
 # Visualization by pair plot
@@ -104,7 +104,7 @@ sns.set(font_scale = 2)
 pd.set_option('display.max_columns', None)
 
 # Import Advertising data
-Advertising = pd.read_csv("../data/Advertising.csv", index_col = 0)
+Advertising = pd.read_csv("./slides/data/Advertising.csv", index_col = 0)
 Advertising
 ```
 
@@ -602,7 +602,7 @@ ggpairs(
 
 ```{python}
 # Import Credit data
-Credit = pd.read_csv("../data/Credit.csv")
+Credit = pd.read_csv("./slides/data/Credit.csv")
 Credit
 ```
 
@@ -874,7 +874,7 @@ lm(mpg ~ poly(horsepower, 5), data = Auto) %>% summary()
 
 ```{python}
 # Import Auto data (missing data represented by '?')
-Auto = pd.read_csv("../data/Auto.csv", na_values = '?').dropna()
+Auto = pd.read_csv("./slides/data/Auto.csv", na_values = '?').dropna()
 Auto
 ```
 
