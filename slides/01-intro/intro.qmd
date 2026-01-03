@@ -599,7 +599,7 @@ The Netflix challenge.
 
 Modern large language models, such as [ChatGPT](https://chat.openai.com), combine both supervised learning and reinforcement learning 
 
-![](./gpt_params_timeline.png){fig-align="center"}
+![](./two_panel_cnn_efficiency_vs_transformer_scale.png){fig-align="center"}
 
 ## Statistical learning vs machine learning
 
