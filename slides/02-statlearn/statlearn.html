@@ -2914,7 +2914,14 @@ Figure 12: Bias-variance trade-off.
 <h2 data-number="1.9" class="anchored" data-anchor-id="classical-regime-vs-modern-regime"><span class="header-section-number">1.9</span> Classical regime vs modern regime</h2>
 <ul>
 <li><p>Above U-shaped test MSE curves are in the so-called <strong>classical regime</strong> where the number of features (or the degree of freedom) is less than the training samples.</p>
-<p>In the <strong>modern regime</strong>, where the number of features (or the degree of freedom) can be order of magnitude larger than the training samples (recall that ChatGPT3 model has 175 billion parameters!), the <strong>double descent</strong> phenomenon is observed and being actively studied. See the recent <a href="https://epubs.siam.org/doi/pdf/10.1137/20M1336072">paper</a> and references therein.</p></li>
+<p>In the <strong>modern regime</strong>, where the number of features (or the degree of freedom) can be order of magnitude larger than the training samples (recall that ChatGPT3 model has 175 billion parameters!), the <strong>double descent</strong> phenomenon is observed and being actively studied. See</p>
+<ul>
+<li><a href="https://epubs.siam.org/doi/pdf/10.1137/20M1336072">paper</a><br>
+</li>
+<li><a href="https://hastie.su.domains/Papers/21-AOS2133.pdf">Linear regression with minimum-norm interpolators</a></li>
+<li><a href="https://www.pnas.org/doi/10.1073/pnas.1907378117">Benign overfitting in linear regression</a></li>
+<li><a href="https://openreview.net/forum?id=B1g5sA4twr">Double descent: Where bigger models and more data hurt</a></li>
+</ul></li>
 </ul>
 <div id="fig-double-descent" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -2926,6 +2933,7 @@ Figure 13: Double descent phenomenon (<a href="https://openai.com/blog/deep-dou
 </figcaption>
 </figure>
 </div>
+<p>Double descent is a well-established empirical phenomenon with rigorous explanations in linear and kernelized models. In deep learning, it reflects the interaction between overparameterization, optimization bias, and data geometry, but no single unified theory yet explains all observed regimes.</p>
 </section>
 <section id="classification-problems" class="level2" data-number="1.10">
 <h2 data-number="1.10" class="anchored" data-anchor-id="classification-problems"><span class="header-section-number">1.10</span> Classification problems</h2>
