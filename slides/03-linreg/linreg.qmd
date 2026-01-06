@@ -927,6 +927,7 @@ $$
 lm.fit <- lm(mpg ~ horsepower, data = Auto) 
 plot(lm.fit, which = c(1))
 ```
+
 Ideally, the residual plot will show no discernible pattern. The presence of a pattern may indicate a problem with some aspect of the linear model.
 
 ```{r}
