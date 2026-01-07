@@ -295,6 +295,7 @@ anova(lmod_null, lmod)
 R = [[0, 1, 0 , 0], [0, 0, 1, 0], [0, 0, 0, 1]]
 lmod.f_test(R)
 ```
+
 the p-value associated with the F -statistic is essentially zero, so we have extremely strong evidence that at least one of the media is associated with increased sales.
 
 :::
@@ -861,7 +862,6 @@ may provide a better fit.  But it is still a linear model! So we can use standar
 
 ```{r}
 Auto <- as_tibble(Auto) %>% print(width = Inf)
-
 # Linear fit
 lm(mpg ~ horsepower, data = Auto) %>% summary()
 # Degree 2
@@ -922,6 +922,7 @@ $$
 \hat{y}_i = \mathbf{X}\hat{\beta}
 $$
 - We plot the residuals versus the predicted (or fitted) values
+
 ```{r}
 # Linear fit
 lm.fit <- lm(mpg ~ horsepower, data = Auto) 
@@ -935,6 +936,7 @@ Ideally, the residual plot will show no discernible pattern. The presence of a p
 lm.df2.fit <- lm(mpg ~ poly(horsepower, 2), data = Auto) 
 plot(lm.df2.fit, which = c(1))
 ```
+
 If the residual plot indicates that there are non-linear associations in the data, then a simple approach is to use non-linear transformations of the predictors, such as $\text{log}X$, $\sqrt{X}$, and $X^2$, in the regression model.
 
 ### Correlation of error terms.
