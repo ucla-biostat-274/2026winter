@@ -30,7 +30,7 @@ Xiang Chen
 
 Email: <xiangchen@ucla.edu>
 
-Office hours: See Xiang's email. 
+Office hours: Monday from 3–4 pm via Zoom: https://ucla.zoom.us/my/xiangchen. 
 
 
 ### Prerequisite
