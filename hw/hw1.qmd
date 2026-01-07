@@ -1,0 +1,183 @@
+---
+title: "Biostat 274 Homework 1"
+subtitle: "Due Jan 16, 2026 @ 11:59PM"
+author: "YOUR NAME and UID"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    number-sections: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    code-fold: false
+engine: knitr
+knitr:
+  opts_chunk: 
+    fig.align: 'center'
+    # fig.width: 6
+    # fig.height: 4
+    message: FALSE
+    cache: false
+---
+
+## Filling gaps in lecture notes (10% pts)
+
+Consider the regression model
+$$
+Y = f(X) + \epsilon,
+$$
+where $\operatorname{E}(\epsilon) = 0$. 
+
+### Optimal regression function
+
+Show that the choice
+$$
+f_{\text{opt}}(X) = \operatorname{E}(Y | X)
+$$
+minimizes the mean squared prediction error
+$$
+\operatorname{E}\{[Y - f(X)]^2\},
+$$
+where the expectations averages over variations in both $X$ and $Y$. (Hint: condition on $X$.)
+
+
+
+
+### Bias-variance trade-off
+
+Given an estimate $\hat f$ of $f$, show that the test error at a $x_0$ can be decomposed as
+$$
+\operatorname{E}\{[y_0 - \hat f(x_0)]^2\} = \underbrace{\operatorname{Var}(\hat f(x_0)) + [\operatorname{Bias}(\hat f(x_0))]^2}_{\text{MSE of } \hat f(x_0) \text{ for estimating } f(x_0)} + \underbrace{\operatorname{Var}(\epsilon)}_{\text{irreducible}},
+$$
+where the expectation averages over the variability in $y_0$ and $\hat f$.
+
+## ISL Exercise 2.4.3 (10% pts)
+
+```{r, eval = F}
+library(tidyverse)
+fit <- lm(sales ~ TV, data = )
+```
+
+## ISL Exercise 2.4.4 (10% pts)
+
+
+
+## Train and test errors (30% pts)
+
+Consider a linear regression, fit by least squares to a set of training data $(x_1, y_1), \ldots, (x_N,  y_N)$ drawn at random from a population. Let $\hat \beta$ be the least squares estimate. Suppose we have some test data $(\tilde{x}_1, \tilde{y}_1), \ldots, (\tilde{x}_M, \tilde{y}_M)$ drawn at random from the same population as the training data. If $R_{\text{train}}(\beta) = \frac{1}{N} \sum_{i=1}^N (y_i - \beta^T x_i)^2$ and $R_{\text{test}}(\beta) = \frac{1}{M} \sum_{i=1}^M (\tilde{y}_i - \beta^T \tilde{x}_i)^2$. Show that
+$$
+\operatorname{E}[R_{\text{train}}(\hat{\beta})] < \operatorname{E}[R_{\text{test}}(\hat{\beta})].
+$$
+
+## Quantify the optimism in the classical linear model
+
+Assume the **fixed-design** linear model
+$$
+y = X\beta^\star + \varepsilon,
+\qquad 
+\mathbb{E}[\varepsilon\mid X]=0,
+\qquad
+\mathrm{Var}(\varepsilon\mid X)=\sigma^2 I_N,
+$$
+where $X\in\mathbb{R}^{N\times p}$ has full column rank.
+
+Let $\hat\beta$ be the ordinary least squares (OLS) estimator and $\hat y = X\hat\beta$.
+
+1. **Hat matrix.** Show that $\hat y = Hy$, where
+   $$
+   H = X(X^\top X)^{-1}X^\top.
+   $$
+
+
+2. **Projection properties.** Prove that $H$ is symmetric and idempotent:
+   $$
+   H^\top = H
+   \quad\text{and}\quad
+   H^2 = H.
+   $$
+   Conclude that $\mathrm{tr}(H)=p$.
+
+3. **Expected training error.** Define the training mean squared error (MSE)
+   $$
+   \mathrm{MSE}_{\mathrm{train}} = \frac{1}{N}\|y-\hat y\|^2.
+   $$
+   Show that
+   $$
+   \mathbb{E}\!\left[\mathrm{MSE}_{\mathrm{train}} \mid X\right]
+   = \sigma^2\left(1-\frac{p}{N}\right).
+   $$
+
+4. **Expected test error (same inputs, new noise).** Let
+   $$
+   y^{\mathrm{new}} = X\beta^\star + \varepsilon^{\mathrm{new}},
+   $$
+   where $\varepsilon^{\mathrm{new}}$ is independent of $\varepsilon$ and satisfies
+   $\mathbb{E}[\varepsilon^{\mathrm{new}}\mid X]=0$ and 
+   $\mathrm{Var}(\varepsilon^{\mathrm{new}}\mid X)=\sigma^2 I_N$.
+   Define the test MSE on the same inputs $X$ as
+   $$
+   \mathrm{MSE}_{\mathrm{test}} = \frac{1}{N}\|y^{\mathrm{new}}-X\hat\beta\|^2.
+   $$
+   Show that
+   $$
+   \mathbb{E}\!\left[\mathrm{MSE}_{\mathrm{test}} \mid X\right]
+   = \sigma^2\left(1+\frac{p}{N}\right).
+   $$
+
+5. **Optimism gap.** Conclude that the expected optimism (test minus train) equals
+   $$
+   \mathbb{E}\!\left[\mathrm{MSE}_{\mathrm{test}}-\mathrm{MSE}_{\mathrm{train}}\mid X\right]
+   = \frac{2\sigma^2 p}{N}.
+   $$
+   In 2–4 sentences, interpret how this gap depends on $p$, $N$, and $\sigma^2$.
+
+
+
+## Verify optimism by simulation
+
+In this problem you will empirically verify that training error is optimistically biased and that the optimism grows with model complexity.
+
+Fix $\sigma^2 = 1$. For each repetition:
+
+- Choose $N=100$ and consider $p\in\{5, 20, 50\}$.
+- Draw training features $x_i \sim \mathcal{N}(0, I_p)$ independently for $i=1,\dots,N$.
+- Let $\beta^\star = (1,1,\dots,1)^\top/\sqrt{p}$.
+- Generate responses
+  $$
+  y_i = x_i^\top\beta^\star + \varepsilon_i,
+  \qquad \varepsilon_i \sim \mathcal{N}(0,\sigma^2),
+  $$
+  independently.
+- Independently generate a **test set** of size \(M=5000\) from the same model.
+
+1. For each $p\in\{5,20,50\}$, repeat the above experiment $R=200$ times:
+   - fit OLS on the training set,
+   - record training MSE and test MSE.
+
+2. For each $p$, report the **average** training MSE, the **average** test MSE, and their difference.
+
+3. Compare the empirical average gap to the theoretical prediction
+   $$
+   \frac{2\sigma^2 p}{N}.
+   $$
+   Present your comparison as a table.
+
+Therefore, we conclude that the gap increases with $p$ and decreases with $N$.
+
+### Optional extension (extra credit)
+Repeat the experiment with a misspecified model:
+$$
+y_i = x_i^\top\beta^\star + 0.5\sin(x_{i1}) + \varepsilon_i.
+$$
+Does the **difference** between test and train errors still scale roughly like $p/N$? Briefly discuss.
+
+
+## Bonus question (20% pts)
+
+For multiple linear regression, show that $R^2$ is equal to the correlation between the response vector $\mathbf{y} = (y_1, \ldots, y_n)^T$ and the fitted values $\hat{\mathbf{y}} = (\hat y_1, \ldots, \hat y_n)^T$. That is
+$$
+R^2 = 1 - \frac{\text{RSS}}{\text{TSS}} = [\operatorname{Cor}(\mathbf{y}, \hat{\mathbf{y}})]^2.
+$$
+

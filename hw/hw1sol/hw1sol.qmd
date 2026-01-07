@@ -1,0 +1,744 @@
+---
+title: "Biostat 212a Homework 1"
+subtitle: "Due Jan 23, 2024 @ 11:59PM"
+author: "YOUR NAME and UID"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    number-sections: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    code-fold: false
+engine: knitr
+knitr:
+  opts_chunk: 
+    fig.align: 'center'
+    # fig.width: 6
+    # fig.height: 4
+    message: FALSE
+    cache: false
+---
+
+```{r}
+library(ISLR2)
+library(GGally) # ggpairs function
+library(tidyverse)
+library(pROC)
+```
+
+## Filling gaps in lecture notes (10pts)
+
+Consider the regression model
+$$
+Y = f(X) + \epsilon,
+$$
+where $\operatorname{E}(\epsilon) = 0$. 
+
+### Optimal regression function
+
+Show that the choice
+$$
+f_{\text{opt}}(X) = \operatorname{E}(Y | X)
+$$
+minimizes the mean squared prediction error
+$$
+\operatorname{E}[Y - f(X)]^2,
+$$
+where the expectations averages over variations in both $X$ and $Y$. (Hint: condition on $X$.)
+
+**Solution**
+
+Conditioning on $X$
+\begin{eqnarray*}
+\operatorname{E}[Y - f(X)]^2 &=& \operatorname{E}_X \operatorname{E}_{Y \mid X} \{ [Y - f(X)]^2 \mid X \}.
+\end{eqnarray*}
+Now at $X=x$,
+\begin{eqnarray*}
+\operatorname{E}_{Y \mid X} [ (Y - c)^2 \mid X = x ] &=& \int (y - c)^2 \, dF_{Y\mid X=x}(y)
+\end{eqnarray*}
+is minimized by $c(x) = \operatorname{E}_{Y \mid X = x}(Y \mid X = x)$. Therefore $f_{\text{opt}}$ minimizes the mean squared prediction error.
+
+### Bias-variance trade-off
+
+Given an estimate $\hat f$ of $f$, show that the test error at a $x_0$ can be decomposed as
+$$
+\operatorname{E}[y_0 - \hat f(x_0)]^2 = \underbrace{\operatorname{Var}(\hat f(x_0)) + [\operatorname{Bias}(\hat f(x_0))]^2}_{\text{MSE of } \hat f(x_0) \text{ for estimating } f(x_0)} + \underbrace{\operatorname{Var}(\epsilon)}_{\text{irreducible}},
+$$
+where the expectation averages over the variability in $y_0$ and $\hat f$.
+
+**Solution** 
+
+\begin{eqnarray*}
+& & \operatorname{E}_{y_0,\hat f}(y_0 - \hat f(x_0))^2 \\
+&=& \operatorname{E}_{y_0,\hat f} (y_0 - f(x_0) + f(x_0) - \hat f(x_0))^2 \\
+&=& \operatorname{E}_{y_0,\hat f} (y_0 - f(x_0))^2 + 2 \operatorname{E}_{y_0,\hat f} (y_0 - f(x_0))(f(x_0) - \hat f(x_0)) + \operatorname{E}_{y_0,\hat f} (f(x_0) - \hat f(x_0))^2 \\
+&=& \operatorname{Var}(\epsilon) + 0 + \operatorname{E}_{\hat f} (f(x_0) - \hat f(x_0))^2 \\
+&=& \operatorname{Var}(\epsilon) + \operatorname{E}_{\hat f} (f(x_0) - \operatorname{E}_{\hat f} \hat f(x_0) + \operatorname{E}_{\hat f} \hat f(x_0) - \hat f(x_0))^2 \\
+&=& \operatorname{Var}(\epsilon) + \operatorname{E}_{\hat f} (f(x_0) - \operatorname{E}_{\hat f} \hat f(x_0))^2 + 2 \operatorname{E}_{\hat f} [(f(x_0) - \operatorname{E}_{\hat f} \hat f(x_0))(\operatorname{E}_{\hat f} \hat f(x_0) - \hat f(x_0))] + \operatorname{E}_{\hat f} (\operatorname{E}_{\hat f} \hat f(x_0) - \hat f(x_0))^2 \\
+&=& \operatorname{Var}(\epsilon) + (f(x_0) - \operatorname{E}_{\hat f} \hat f(x_0))^2 + 0 + \operatorname{Var}(\hat f(x_0)) \\
+&=& \operatorname{Var}(\epsilon) + [\operatorname{Bias}(\hat f(x_0))]^2 + \operatorname{Var}(\hat f(x_0)).
+\end{eqnarray*}
+
+## ISL Exercise 2.4.3 (10pts)
+We now revisit the bias-variance decomposition.
+
+(a) Provide a sketch of typical (squared) bias, variance, training error, 
+test error, and Bayes (or irreducible) error curves, on a single plot, 
+as we go from less flexible statistical learning methods
+towards more flexible approaches. The x-axis should represent
+the amount of flexibility in the method, and the y-axis should
+represent the values for each curve. There should be five curves.
+Make sure to label each one.
+
+**Solution**
+
+
+(b) Explain why each of the five curves has the shape displayed in
+part (a).
+
+## ISL Exercise 2.4.4 (10pts)
+
+You will now think of some real-life applications for statistical learning.
+
+(a) Describe three real-life applications in which classification might
+be useful. Describe the response, as well as the predictors. Is the
+goal of each application inference or prediction? Explain your
+answer.
+
+**Solution** 
+
+1. Among lung transplant patients, acute rejection is deadly. 
+The goal of the study is to use each patients gene expression data from
+blood to classify who will develop acute rejection who will not. The predictors
+are gene expression, the outcome is the acute rejection. The primary goal is
+prediction. 
+
+2. Same problem as above, the goal is to identify genes that 
+are differential expressed between reject and not reject. The primay goal is 
+inference. 
+
+(b) Describe three real-life applications in which regression might
+be useful. Describe the response, as well as the predictors. Is the
+goal of each application inference or prediction? Explain your
+answer.
+
+**Solution**
+
+1. Identify the factors that are associated with kids' exam scores.
+These factors include, class size, number of TAs, 
+experiences of the teachers (years), kids' entrance exam score. Inference.
+
+2. Patient Length of Stay (LOS) in hospital or ER.Prediction
+
+(c) Describe three real-life applications in which cluster analysis
+might be useful.
+
+**Solution**
+
+1. Identify subtypes of a complex diseases, e.g., diabetes. Features include
+biomarkers, vital signs, medical history, etc. 
+
+2. Identify ethnicity groups based on genetic data. 
+
+3. Identify diseased areas in diagnostic images like X-rays that are abnormal. 
+
+## ISL Exercise 2.4.10 (30pts)
+
+Your can read in the `boston` data set directly from url <https://raw.githubusercontent.com/ucla-econ-425t/2023winter/master/slides/data/Boston.csv>. A documentation of the `boston` data set is [here](https://www.rdocumentation.org/packages/ISLR2/versions/1.3-2/topics/Boston).
+
+::: {.panel-tabset}
+
+#### Python
+
+```{python}
+import pandas as pd
+import io
+import requests
+
+# Display all columns
+pd.set_option('display.max_columns', None)
+
+url = "https://raw.githubusercontent.com/ucla-econ-425t/2023winter/master/slides/data/Boston.csv"
+s = requests.get(url).content
+Boston = pd.read_csv(
+  io.StringIO(s.decode('utf-8')), 
+  index_col = 0, 
+  # dtype = {'chas': 'category'}
+  )
+Boston
+```
+
+#### R
+
+```{r}
+library(tidyverse)
+
+Boston <- read_csv("https://raw.githubusercontent.com/ucla-econ-425t/2023winter/master/slides/data/Boston.csv", col_select = -1) %>% 
+  print(width = Inf)
+```
+
+:::
+
+This exercise involves the Boston housing data set.
+
+
+### (a) 
+
+How many rows are in this data set? How many columns? What
+do the rows and columns represent?
+
+**Solution**
+
+There are `r dim(Boston)[1]` rows and `r dim(Boston)[2]` columns in the `boston` data set. Each row is a suburb of Boston. Each column is a variable being measured on suburbs.
+
+::: {.panel-tabset}
+
+#### R
+
+```{r}
+library(gtsummary)
+
+dim(Boston)
+Boston %>% tbl_summary()
+```
+
+#### Python
+
+```{python}
+Boston.shape
+```
+
+:::
+
+
+### (b) 
+
+Make some pairwise scatterplots of the predictors (columns) in
+this data set. Describe your findings.
+
+**Solution**
+
+We can use `pairplot` in Seaborn package for the pairwise scatter plots. It seems that `zn` is correlated with `rm` and `dis`. `indus` is correlated with `nox`.  
+
+::: {.panel-tabset}
+
+
+#### R
+
+```{r}
+library(GGally)
+
+# Graphical summary
+ggpairs(
+  data = Boston,
+  mapping = aes(alpha = 0.25),
+  lower = list(continuous = "smooth")
+  ) +
+  labs(title = "Boston Data")
+```
+
+```{r}
+# Numerical summary
+summary(Boston)
+```
+
+
+#### Python
+
+```{python}
+import seaborn as sns
+import matplotlib.pyplot as plt
+# Set font sizes in plots
+sns.set(font_scale = 2)
+
+# Graphical summary
+sns.pairplot(data = Boston)
+```
+
+```{python}
+# Numerical summary
+Boston.describe()
+```
+
+:::
+
+### (c) 
+
+Are any of the predictors associated with per capita crime rate?
+If so, explain the relationship.
+
+**Solution**
+
+- `crim` seems to be highly correlated with `indus`, `nox`, `rad`, `tax`, and `lstat`, all with Pearson correlation larger than 0.4.
+
+::: {.panel-tabset}
+
+
+
+#### R
+
+```{r}
+cor(Boston, method = "pearson") %>% round(digits = 2)
+```
+
+#### Python
+
+```{python}
+round(Boston.corr(), 2)
+```
+
+:::
+
+### (d) 
+
+Do any of the census tracts of Boston appear to have particularly
+high crime rates? Tax rates? Pupil-teacher ratios? Comment on
+the range of each predictor.
+
+**Solution**
+
+- There seem to be some outliers in `crim` (>20). 
+
+::: {.panel-tabset}
+
+#### R
+
+```{r}
+# Numerical summary
+Boston %>%
+  select(crim, tax, ptratio) %>%
+  summary()
+```
+
+#### Python
+
+```{python}
+cols = ['crim', 'tax', 'ptratio']
+# Numerical summaries
+Boston[cols].describe()
+```
+
+```{python}
+plt.clf()
+# Graphical summaries
+for i, col in enumerate(cols):
+    sns.histplot(data = Boston, x = col)
+    plt.show()
+    sns.boxplot(data = Boston, x = col)
+    plt.show()
+```
+
+
+
+:::
+
+### (e)
+
+How many of the census tracts in this data set bound the Charles
+river?
+
+**Solution**
+
+`r sum(Boston["chas"])` census tracts bound the Charles river.
+
+::: {.panel-tabset}
+
+#### R
+
+```{r}
+# Frequency table
+table(Boston["chas"])
+```
+
+
+#### Python
+
+```{python}
+# Count the value 1
+Boston['chas'].sum()
+```
+
+:::
+
+### (f) 
+
+What is the median pupil-teacher ratio among the towns in this
+data set?
+
+**Solution**
+
+The median pupil-teacher ratio is `r median(Boston$ptratio)`.
+
+::: {.panel-tabset}
+
+#### R
+
+```{r}
+median(Boston$ptratio)
+```
+
+#### Python
+
+```{python}
+Boston['ptratio'].describe()
+Boston['ptratio'].median()
+```
+
+
+
+:::
+
+### (g)
+
+Which census tract of Boston has lowest median value of owner-occupied homes? 
+What are the values of the other predictors
+for that census tract, and how do those values compare to the
+overall ranges for those predictors? Comment on your findings.
+
+**Solution**
+
+There are two census tracts with the minimum `medv` `r min(Boston$medv)`. 
+They both have relative high `ptratio`
+
+::: {.panel-tabset}
+
+#### R
+
+```{r}
+Boston %>%
+  slice_min(medv) %>%
+  print(width = Inf)
+```
+
+#### Python
+
+```{python}
+Boston[Boston['medv'] == Boston['medv'].min()]
+```
+
+:::
+
+
+### (h) 
+
+In this data set, how many of the census tracts average more than
+seven rooms per dwelling? More than eight rooms per dwelling?
+Comment on the census tracts that average more than eight rooms per dwelling.
+
+**Solution**
+
+There are `r Boston %>% filter(rm > 8) %>% count()` census tracts with more than 8 rooms per dwelling. 
+
+::: {.panel-tabset}
+
+#### R
+
+```{r}
+Boston %>%
+  filter(rm > 8) %>%
+  print(width = Inf)
+```
+
+#### Python
+
+```{python}
+Boston[Boston['rm'] > 7].shape[0]
+Boston[Boston['rm'] > 8].shape[0]
+```
+
+```{python}
+plt.clf()
+sns.histplot(data = Boston, x = 'rm')
+plt.show()
+```
+
+```{python}
+Boston[Boston['rm'] > 8]
+```
+
+:::
+
+## ISL Exercise 3.7.3 (12pts)
+
+Suppose we have a data set with five predictors, 
+$X_1 = \text{GPA}$, 
+$X_2 = \text{IQ}$, 
+$X_3 = \text{Level (1 for College and 0 for High School)}$, 
+$X_4 = \text{Interaction between GPA and IQ}$, and 
+$X_5 = \text{Interaction between GPA and Level}$. 
+The response is starting salary after graduation (in thousands of dollars). 
+Suppose we use least squares to fit the model, and get 
+$\hat\beta_0 = 50$, 
+$\hat\beta_1 = 20$,
+$\hat\beta_2 = 0.07$, 
+$\hat\beta_3 = 35$,
+$\hat\beta_4 = 0.01$, 
+$\hat\beta_5 = −10$.
+
+The model is
+$$
+\text{salary} \approx \beta_0 + \beta_1 \times \text{GPA} + \beta_2 \times \text{IQ} + \beta_3 \times \text{Level} + \beta_4 \times (\text{GPA} \times \text{IQ}) + \beta_5 \times (\text{GPA} \times \text{Level})
+$$
+
+
+
+
+For a fixed value of IQ and GPA, collage students earn
+$$
+\beta_3 + \beta_5 * (\text{GPA}) = 35 - 10 \times \text{GPA}
+$$
+more than high school graduates. Depending on \text{GPA}, colleges graduates can earn more or less than high school graduates. If GPA is high enough, then high school graduates earn more.
+
+
+### (a) 
+
+Which answer is correct, and why?
+
+- For a fixed value of IQ and GPA, high school graduates earn
+more, on average, than college graduates. 
+
+- For a fixed value of IQ and GPA, college graduates earn
+more, on average, than high school graduates.
+
+- For a fixed value of IQ and GPA, high school graduates earn
+more, on average, than college graduates provided that the
+GPA is high enough.
+
+- For a fixed value of IQ and GPA, college graduates earn
+more, on average, than high school graduates provided that
+the GPA is high enough.
+
+### (b)
+
+Predict the salary of a college graduate with IQ of 110 and a GPA of 4.0.
+
+**Solution**
+
+For a college student with IA of 110 and a GPA of 4.0, 
+$$
+\hat y = \hat \beta_0 + \hat \beta_1 \times 4 + \hat \beta_2 \times 110 + \hat \beta_3 + \hat \beta_4 \times (4 \times 110) + \hat \beta_5 \times (4) = ???
+$$
+
+### (c) 
+
+True or false: Since the coeﬀicient for the GPA/IQ interaction
+term is very small, there is very little evidence of an interaction
+effect. Justify your answer.
+
+**Solution**
+
+Depending on the standard error, the p-value of interaction term can be very small thus significant.
+
+
+## ISL Exercise 3.7.15 (20pts)
+
+
+This problem involves the `Boston` data set, which we saw in the lab
+for this chapter. We will now try to predict per capita crime rate
+using the other variables in this data set. In other words, per capita
+crime rate is the response, and the other variables are the predictors.
+
+
+### (a)
+
+For each predictor, fit a simple linear regression model to predict
+the response. Describe your results. In which of the models is
+there a statistically significant association between the predictor
+and the response? Create some plots to back up your assertions.
+
+**Solution**
+
+- Retrieve simple linear regression (SLR) coefficients by loop
+
+::: {.panel-tabset}
+
+#### R
+
+
+```{r}
+library(gtsummary)
+crim.fit <- lm(crim ~ . , data = Boston)
+summary(crim.fit)
+```
+
+
+#### Python
+
+```{python}
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+
+# Fit separate simple linear regressions
+cols = Boston.columns.difference(['crim']) # all cols except crim
+cols
+slr_coefs = [
+  smf.ols(formula = 'crim ~ ' + col, data = Boston).fit().params[1]
+  for col in cols
+  ]
+slr_coefs  
+res_df = pd.DataFrame({'slr_betahat': slr_coefs}, index = cols)
+res_df
+```
+
+:::
+
+
+### (b) 
+
+Fit a multiple regression model to predict the response using all of the predictors. 
+Describe your results. For which predictors can we reject the null hypothesis 
+$\text{H}_0: \beta_j = 0$?
+
+**Solution**
+
+Retrieve multiple linear regression (MLR) coefficients and contrast to SLR coefficients. 
+
+::: {.panel-tabset}
+#### R
+
+```{r}
+lm(crim ~ ., data = Boston) %>%
+  tbl_regression() %>%
+  bold_labels() %>%
+  bold_p(t = 0.05)
+```
+
+#### Python
+
+```{python}
+mlr_coefs = smf.ols(formula = 'crim ~ ' + "+".join(cols), data = Boston).fit().params.to_frame(name = 'mlr_betahat')
+res_df = res_df.join(mlr_coefs) # left-join by default
+res_df
+```
+
+```{python}
+sns.relplot(
+  data = res_df, 
+  x = 'slr_betahat', 
+  y = 'mlr_betahat', 
+  height = 8).set(
+  xlabel = r'SLR $\hat{\beta}_j$',
+  ylabel = r'MLR $\hat{\beta}_j$',
+)
+```
+:::
+
+### (c)
+
+How do your results from (a) compare to your results from (b)?
+Create a plot displaying the univariate regression coeﬀicients
+from (a) on the x-axis, and the multiple regression coeﬀicients
+from (b) on the y-axis. That is, each predictor is displayed as a
+single point in the plot. 
+Its coeﬀicient in a simple linear regression model is shown on the x-axis, 
+and its coeﬀicient estimate in the multiple linear regression model 
+is shown on the y-axis.
+
+
+### (d) 
+
+Is there evidence of non-linear association between any of the
+predictors and the response? To answer this question, for each
+predictor X, fit a model of the form
+
+$$
+Y= \beta_0 + \beta_1X_1 + \beta_2X_2 + \beta_3X_3 + \epsilon.
+$$
+
+## Bonus question (20pts)
+
+For multiple linear regression, show that $R^2$ is equal to the correlation between the response vector $\mathbf{y} = (y_1, \ldots, y_n)^T$ and the fitted values $\hat{\mathbf{y}} = (\hat y_1, \ldots, \hat y_n)^T$. That is
+$$
+R^2 = 1 - \frac{\text{RSS}}{\text{TSS}} = [\operatorname{Cor}(\mathbf{y}, \hat{\mathbf{y}})]^2.
+$$
+
+### Solution
+
+
+
+- Recall that 
+\begin{eqnarray*}
+ \operatorname{Cor} (\mathbf{x}, \mathbf{y}) & = & \frac{\sum_i (x_i - \bar{x}) (y_i - \bar{y})} {\sqrt{\sum_i(x_i - \bar{x})^2 \sum_i(y_i - \bar{y})^2}}\\
+ & = & \frac{( \mathbf{x} - \frac{\mathbf{J}}{n}\mathbf{x} )^T (\mathbf{y} - \frac{\mathbf{J}}{n}\mathbf{y})}{\sqrt{(\mathbf{x} - \frac{\mathbf{J}}{n}\mathbf{x})^T (\mathbf{x} - \frac{\mathbf{J}}{n}\mathbf{x}) (\mathbf{y} - \frac{\mathbf{J}}{n}\mathbf{y})^T(\mathbf{y} - \frac{\mathbf{J}}{n}\mathbf{y})}}\\
+\end{eqnarray*}
+where 
+$$
+\mathbf{J} = \mathbf{1}\mathbf{1}^T = \begin{pmatrix} 1 & 1 & \cdots & 1 \\ 1 & 1 & \cdots & 1 \\ \vdots & \vdots & \ddots & \vdots \\ 1 & 1 & \cdots & 1 \end{pmatrix}_{n \times n}.
+$$
+
+- And for $\operatorname{R}^2$
+$$
+ \operatorname{R}^2  = 1-\frac{\text{RSS}} {\text{TSS}} = 1 - \frac{\sum_i (y_i- \hat{y}_i)^2}{\sum_i (y_i- \bar{y}_i)^2}
+$$
+and 
+$$
+ \operatorname{R}^2  = 1 - \frac{\sum_i (y_i- \hat{y}_i)^2}{\sum_i (y_i- \bar{y}_i)^2} = 1 - \frac{(\mathbf{Y}-\mathbf{H}\mathbf{Y})^T(\mathbf{Y}-\mathbf{H}\mathbf{Y})}{(\mathbf{Y}-\frac{\mathbf{J}}{n}\mathbf{Y})^T(\mathbf{Y}-\frac{\mathbf{J}}{n}\mathbf{Y})} = 1 - \frac{\mathbf{Y}^T(\mathbf{I}-\mathbf{H})^T(\mathbf{I}-\mathbf{H})\mathbf{Y}}{\mathbf{Y}^T(\mathbf{I}-\frac{\mathbf{J}}{n})^T(\mathbf{I}-\frac{\mathbf{J}}{n})\mathbf{Y}}
+$$
+Therefore,
+$$
+ \operatorname{R}^2  = 1 - \frac{\mathbf{Y}^T(\mathbf{I}-\mathbf{H})\mathbf{Y}}{\mathbf{Y}^T(\mathbf{I}-\frac{\mathbf{J}}{n})\mathbf{Y}}
+$$
+where $\mathbf{H} = \mathbf{X}(\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T$ is a projection matrix and so as $\mathbf{I}-\mathbf{H}$.
+
+Now, I will use $H_{\mathbf{1}_n}$ to be $\frac{\mathbf{J}}{n}$.
+
+\begin{eqnarray*}
+[\operatorname{Cor}(\mathbf{y}, \hat{\mathbf{y}})]^2 &=& \frac{[\langle (I - H_{\mathbf{1}_n}) H_{\mathbf{X}} \mathbf{y}, (I - H_{\mathbf{1}_n}) \mathbf{y} \rangle]^2}{\|(I - H_{\mathbf{1}_n}) H_{\mathbf{X}} \mathbf{y}\|^2 \|(I - H_{\mathbf{1}_n}) \mathbf{y}\|^2} \\
+&=& \frac{[\mathbf{y}^T H_{\mathbf{X}} (I - H_{\mathbf{1}_n}) \mathbf{y}]^2}{[\mathbf{y}^T H_{\mathbf{X}} (I - H_{\mathbf{1}_n}) H_{\mathbf{X}} \mathbf{y}][\mathbf{y}^T (I - H_{\mathbf{1}_n}) \mathbf{y}]} \\
+& & (\text{now } \mathbf{y}^T H_{\mathbf{X}} (I - H_{\mathbf{1}_n}) H_{\mathbf{X}} \mathbf{y} = \mathbf{y}^T H_{\mathbf{X}} \mathbf{y} - \mathbf{y}^T H_{\mathbf{1}_n} H_{\mathbf{X}} \mathbf{y} = \mathbf{y}^T H_{\mathbf{X}} (I - H_{\mathbf{1}_n}) \mathbf{y}) \\
+&=& \frac{|\mathbf{y}^T H_{\mathbf{X}} (I - H_{\mathbf{1}_n}) \mathbf{y}|}{\mathbf{y}^T (I - H_{\mathbf{1}_n}) \mathbf{y}} \\
+&=& \frac{|\mathbf{y}^T H_{\mathbf{X}} \mathbf{y} - \mathbf{y}^T H_{\mathbf{1}_n} \mathbf{y}|}{\mathbf{y}^T (I - H_{\mathbf{1}_n}) \mathbf{y}} \\
+&=& \frac{\mathbf{y}^T (\mathbf{I} - H_{\mathbf{1}_n}) \mathbf{y} - \mathbf{y}^T (\mathbf{I} - H_{\mathbf{X}}) \mathbf{y}}{\mathbf{y}^T (I - H_{\mathbf{1}_n}) \mathbf{y}} \\
+&=& 1 - \frac{\text{RSS}}{\text{TSS}}.
+\end{eqnarray*}
+
+
+<!--
+- Now we have
+$$
+\operatorname{Cor}(\mathbf{Y}, \hat{\mathbf{Y}})^2  =  \frac{[( \mathbf{Y} - \frac{\mathbf{J}}{n}\mathbf{Y} )^T (\hat{\mathbf{Y}} - \frac{\mathbf{J}}{n}\hat{\mathbf{Y}})]^2}{[(\mathbf{Y} - \frac{\mathbf{J}}{n}\mathbf{Y})^T (\mathbf{Y} - \frac{\mathbf{J}}{n}\mathbf{Y})][ (\hat{\mathbf{Y}} - \frac{\mathbf{J}}{n}\hat{\mathbf{Y}})^T (\hat{\mathbf{Y}} - \frac{\mathbf{J}}{n}\hat{\mathbf{Y})]}}  
+$$     
+
+where 
+$$
+\hat{\mathbf{Y}} = \mathbf{X}\hat{\boldsymbol{\beta}} = \mathbf{X}(\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{Y} = \mathbf{H}\mathbf{Y}
+$$
+-->
+
+## TA Reports 
+### James
+- Q1) Many students had a correct solution, a few assumed the defined optimal solution was optimal and used that to prove that it was optimal which is circular. 
+
+- Q2) Students did generally well here. A few did not have their graph display, one had test and train error inverted. 
+
+- Q3) Almost all students got this entirely correct a few did not answer it in full. 
+
+- Q4) 4d) was the major issue with many not identifying or justifying "exceptional values." In 4g several only identified a single minimum when two tracts were tied. 
+
+- Q5) The wording tripped up some as they selected IV instead of III). One student got the calculation wrong for 5.2. Several got 5.3 wrong as they thought a small coefficient was insignificant. 
+
+- Q6) In part c) many students provided a graph without explanation of how the coefficients compared.
+
+- Bonus) Many students asserted that $\text{cov}(y, \hat y) = \text{var}(\hat y)$ without justification. For a question of this type I figured they needed to actually prove this under the assumptions of multiple linear regression. Only two students gave a proof I accepted as sufficiently complete. 
+
+### Yingxin
+
+- Q1: For Q1.1, some students were unclear on how to begin their proof. Additionally, a few students were unable to complete the proof for Q1.2.
+
+- Q2: Most students were able to create the sketch using either R or handwriting, but some encountered issues displaying their plots in the HTML file due to incorrect settings.
+
+- Q3: All students provided some applications.
+
+- Q4: Most students completed this question well. However, many were unfamiliar with the concept of “outliers” in Q4.4, and some only identified one of the two lowest medv tracts in Q4.7.
+
+- Q5: While most students performed well, some selected extra choices instead of the correct option (iii) in Q5.1, and two students miscalculated their results for Q5.2.
+
+- Q6: All students completed this question correctly.
+
+- Bonus: All students who attempted the bonus missed the proof of $\sum {(y_i - \hat y_i)(\hat y_i - \bar y)} = 0$ or a similar key step.
+
+
+
