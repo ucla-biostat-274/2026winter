@@ -71,7 +71,7 @@ $$
 \operatorname{E}[R_{\text{train}}(\hat{\beta})] < \operatorname{E}[R_{\text{test}}(\hat{\beta})].
 $$
 
-## Quantify the optimism in the classical linear model
+## Quantify the optimism in the classical linear model (20% pts)
 
 Assume the **fixed-design** linear model
 $$
@@ -135,7 +135,7 @@ Let $\hat\beta$ be the ordinary least squares (OLS) estimator and $\hat y = X\ha
 
 
 
-## Verify optimism by simulation
+## Verify optimism by simulation (20% pts)
 
 In this problem you will empirically verify that training error is optimistically biased and that the optimism grows with model complexity.
 
@@ -174,7 +174,7 @@ $$
 Does the **difference** between test and train errors still scale roughly like $p/N$? Briefly discuss.
 
 
-## Bonus question (20% pts)
+## Bonus question (extra credit)
 
 For multiple linear regression, show that $R^2$ is equal to the correlation between the response vector $\mathbf{y} = (y_1, \ldots, y_n)^T$ and the fitted values $\hat{\mathbf{y}} = (\hat y_1, \ldots, \hat y_n)^T$. That is
 $$
