@@ -643,6 +643,15 @@ Image source: <https://people.idsia.ch/~juergen/deep-learning-history.html>
 
 - 2010s, deep learning.
 
+![](./ml_timeline.png){fig-align="center"}
+
+- From the 2nd decade of the 21st century, deep learning (LeCun, Bengio, and Hinton, 2025)
+- What have changed: 1. massive data; 2. graphics processing units (GPU)
+- A petaflop represents $10^{15}$ (a thousand trillion) floating point operations, and a petaflop/s is one petaflop per second.
+- One petaflop/s-day represents computation at the rate of a petaflop/s for a period of 24 hours, which is roughly $10^{20}$ floating point operations, and therefore, the top line of the graph represents an impressive $10^{24}$ floating point operations. 
+- Green line: “2-year doubling (Moore’s Law)” — what you’d expect if training compute only grew at the pace of typical hardware improvement.
+- Red line (modern era): “3.4-month doubling” — shows that since ~2010–2012, the compute used for top systems has been increasing much faster than Moore’s Law (driven by bigger training runs, more GPUs/TPUs, larger datasets/models, etc.).
+
 # Course logistics
 
 ## Learning objectives

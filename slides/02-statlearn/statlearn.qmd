@@ -471,3 +471,4 @@ Left panel: KNN with $K=1$. Right panel: KNN with $K=100$.
 KNN with $K \approx 10$ achieves the Bayes error rate (black dashed line).
 
 :::
+se l
