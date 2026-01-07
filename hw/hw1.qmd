@@ -159,12 +159,11 @@ Fix $\sigma^2 = 1$. For each repetition:
 2. For each $p$, report the **average** training MSE, the **average** test MSE, and their difference.
 
 3. Compare the empirical average gap to the theoretical prediction
-   $$
-   \frac{2\sigma^2 p}{N}.
-   $$
-   Present your comparison as a table.
+$$
+\frac{2\sigma^2 p}{N}.
+$$
 
-Therefore, we conclude that the gap increases with $p$ and decreases with $N$.
+Present your comparison as a table. We can conclude that the gap increases with $p$ and decreases with $N$.
 
 ### Optional extension (extra credit)
 Repeat the experiment with a misspecified model:
