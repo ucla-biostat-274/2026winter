@@ -59,7 +59,11 @@ Class attendance is required. Please proactively communicate with the instructor
 
 ### Homework
 
-You will be required to work on 5 homework assignments throughout the quarter.  
+- You will be required to work on 5 homework assignments throughout the quarter. 
+
+- [Homework grading guideline and grading policy](https://github.com/ucla-biostat-274/2026winter/blob/main/hw/grade_guide.md). 
+
+
 
 ### Exam
 
