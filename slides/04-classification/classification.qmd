@@ -173,7 +173,7 @@ sns.set(font_scale = 1.2)
 pd.set_option('display.max_columns', None)
 
 # Import Credit Default data
-Default = pd.read_csv("../data/Default.csv")
+Default = pd.read_csv("./slides/data/Default.csv")
 Default
 ```
 
