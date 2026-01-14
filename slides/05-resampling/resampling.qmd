@@ -68,13 +68,13 @@ versioninfo()
     
 - But the training error rate often is quite different from the test error rate, and in particular the former can dramatically underestimate the latter.
 
-- HW3 Bonus question rigorously justifies that the training error is an under-estimate of the test error.
+- Question 4 in HW1 rigorously justifies that the training error is an under-estimate of the test error.
 
 ![](training_vs_test.png)
 
 - Best solution: a large designated test set. Often not available.
 
-- Some methods make a mathematical adjustment to the training error rate in order to estimate the test error rate. These include the $C_p$ statistic, AIC and BIC, which are discussed in Chapter 6.
+- Some methods make a mathematical adjustment to the training error rate in order to estimate the test error rate. These include the $C_p$ statistic, AIC and BIC (ISL Chapter 6 and linear regression lecture notes).
 
 - Here we instead consider a class of methods that estimate the test error by **holding out** a subset of the training observations from the fitting process, and then applying the learning method to those held out observations.
 
