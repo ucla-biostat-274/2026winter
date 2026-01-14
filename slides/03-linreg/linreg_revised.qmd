@@ -52,7 +52,8 @@ In this course, we start with linear regression as a **machine learning algorith
 
 - **Task:** supervised learning (regression).
 - **Goal:** accurate prediction on *new, unseen* data (**generalization**).
-- **Why it matters:** it is fast, surprisingly strong, and a foundation for many modern methods (regularization, kernels, neural networks).
+- **Why:** it is fast, surprisingly strong, and a foundation for many modern methods (regularization, kernels, neural networks). Understanding linear methods is essential for understanding nonlinear
+ones.
 
 ### The supervised learning pipeline
 
@@ -63,8 +64,6 @@ We will repeatedly use the same template throughout the course:
 3. **Loss:** $\ell(y, f_\beta(x))$ (here: squared error).
 4. **Optimization / learning:** choose $\hat\beta$ to minimize training loss.
 5. **Evaluation:** estimate test performance with a train/test split or cross-validation.
-
-> In machine learning, we treat the “assumptions” behind a model as *inductive bias*—a preference for simpler functions that often generalize well.
 
 
 ## Linear regression
@@ -148,7 +147,23 @@ sns.pairplot(data = Advertising)
     - Is the relationship linear?  
     - Is there synergy among the advertising media?  
     
+## Recall
 
+- Data: observe a collection of i.i.d. training data, $\mathcal{D}_n = \{(\mathbf{x}_i, y_i)\}_{i=1}^n$ where $\mathbf{x}_i$ is a $p$-dimensional predictor vector, and $y_i \in \mathbb{R}$ is a continuous response.
+
+- A loss function $L$ measures discrepancy between $Y$ and $f(X)$. A commonly used loss is **squared error loss**. And the expected loss over the population is 
+$$
+R(f) = \mathbb{E}\,L\bigl(Y, f(X)\bigr) = \mathbb{E}\left[(Y - f(X))^2\right].
+$$
+- With training data $\mathcal{D}_n$, we minimize **empirical risk** by replacing the expectation with an average:
+$$
+\frac{1}{n}\sum_{i=1}^n L\bigl(y_i, f(x_i)\bigr).
+$$
+Using squared error, choose $\hat f$ to minimize:
+$$
+\hat f = \arg\min_{f\in\mathcal{F}} \sum_{i=1}^n \bigl(y_i - f(x_i)\bigr)^2,
+$$
+where $\mathcal{F}$ is the model class we consider.
 
 ## Simple linear regression vs multiple linear regression
 
@@ -173,7 +188,7 @@ For example,
 $$
 \text{sales} \approx \beta_0 + \beta_1 \times \text{TV} + \beta_2 \times \text{radio} + \cdots + \beta_3 \times \text{newspaper}.
 $$
-We review the multiple linear regression below.
+
 
 ## Estimation in multiple linear regression
 
@@ -181,43 +196,41 @@ We review the multiple linear regression below.
 $$
 \text{RSS} = \sum_{i=1}^n (y_i - \hat y_i)^2 = \sum_{i=1}^n (y_i - \beta_0 - \beta_1 x_{i1} - \cdots - \beta_p x_{ip})^2.
 $$
-
 From a machine learning perspective, least squares is **empirical risk minimization (ERM)** with *squared loss*.
 
-- **Training loss (MSE):**
-$$
-\operatorname{MSE}_{\text{train}} = \frac{1}{n}\sum_{i=1}^n (y_i-\hat y_i)^2 = \frac{\text{RSS}}{n}.
-$$
-
-- **Why MSE?** It is smooth and convex for linear models, which makes optimization and analysis convenient.
+- This loss is smooth and convex for linear models, which makes optimization and analysis convenient.
 
 ### Closed form vs optimization
 
-For linear regression, the ERM problem has a closed-form solution (shown below).  
-However, in modern machine learning we often fit models by **gradient-based optimization**, because it scales well to large datasets and extends directly to regularized models and neural networks.
+- For linear regression, the ERM problem has a closed-form solution. However, in modern machine learning we often fit models by **gradient-based optimization**, because it scales well to large datasets and extends directly to regularized models and neural networks.
 
-If we write $X$ for the (centered) design matrix and minimize
+- If we write $\mathbf{X}_{n\times{(p+1)}}$ for the design matrix and minimize
+\begin{align*}
+L(\beta) & =\frac{1}{n}\|y-X\beta\|_2^2\\
+& = \frac{1}{n}(y-X\beta)^T(y-X\beta)
+\end{align*}
+the gradient of $L$ is 
+\begin{align*}
+\nabla_\beta L(\beta) & = -\frac{2}{n}X^T\,(y-X\beta)\\
+& \propto X^T X \beta - X^T y. 
+\end{align*}
+We solve for $\beta$ by setting the gradient to zero:
 $$
-L(\beta)=\frac{1}{n}\|y-X\beta\|_2^2,
+X^T X \beta = X^T y
 $$
-then
-$$
-\nabla_\beta L(\beta) = -\frac{2}{n}X^T\,(y-X\beta),
-$$
-and gradient descent updates are
-$$
-\beta^{(t+1)}=\beta^{(t)}-\eta\,\nabla_\beta L(\beta^{(t)}).
-$$
-
-
 - The minimizer $\hat \beta_0, \hat \beta_1, \ldots, \hat \beta_p$ admits the analytical solution
 $$
 \hat \beta = (\mathbf{X}^T \mathbf{X})^{-1} \mathbf{X}^T \mathbf{y}.
 $$
-and we can make prediction using the formula
+
+- $X$ full rank $\Longleftrightarrow$ $X^\mathsf{T}X$ invertible.
+
+- In general we solve $\nabla_\beta L(\beta) = 0$ for $\beta$ and the gradient descent updates are
 $$
-\hat y = \hat \beta_0 + \hat \beta_1 x_1 + \cdots + \hat \beta_p x_p.
+\beta^{(t+1)}=\beta^{(t)}-\eta\,\nabla_\beta L(\beta^{(t)}).
 $$
+where $\eta$ is the step size (learning rate).
+
 
 ::: {.panel-tabset}
 
@@ -268,15 +281,6 @@ lmod.summary()
 :::
 
 
-## Prediction and evaluation (train vs test)
-
-In machine learning, a low training error is not the end goal—what matters is performance on **new data**.
-A simple way to estimate generalization is a **train/test split**.
-
-- **Training error:** computed on the data used to fit the model.
-- **Test error:** computed on held-out data; a proxy for generalization error.
-
-We will use metrics such as **MSE/RMSE** (in the same units as $Y$) and sometimes $R^2$.
 
 ::: {.panel-tabset}
 
@@ -324,134 +328,117 @@ r2   = r2_score(y_test, pred)
 
 :::
 
+## Statistical Properties of $\hat\beta$
 
-
-## Interpreting regression coefficients
-
-
-> **Note (ML vs inference).** Coefficients can be interpreted causally only under strong study-design assumptions.
-> For prediction-focused ML, coefficients are often treated as *parameters that improve generalization*; when predictors are correlated, individual coefficients can change a lot without changing predictive accuracy much.
-
-
-- We interpret $\beta_j$ as the average effect on $Y$ of a a one-unit increase in $X_j$, _holding all other predictors fixed_. 
-
-> a regression coefficient $\beta_j$ estimates the expected change in $Y$ per unit change in $X_j$, with all other predictors held fixed. But predictors usually change together!
-> 
-> "Data Analysis and Regression", Mosteller and Tukey 1977
-
-- Only when the predictors are uncorrelated (balanced or orthogonal design), each coefficient can be estimated, interpreted, and tested separately.
-
-    In other words, only in a balanced design, the regression coefficients estimated from multiple linear regression are the same as those from separate simple linear regressions.
-
-- Claims of **causality** should be avoided for observational data.
-
-## Some important questions
-
-### Goodness of fit
-
-**Question:** Is at least one of the predictors $X_1, X_2, \ldots, X_p$ useful in predicting the response? 
-
-- We can use the F-statistic to assess the fit of the overall model. Formally we are testing the null hypothesis
+Assume data are generated from:
 $$
-H_0: \beta_1 = \cdots = \beta_p = 0
+Y = X^\mathsf{T}\beta + \varepsilon,
 $$
-versus the alternative
-$$
-H_a: \text{at least one } \beta_j \text{ is non-zero}.
-$$
-F-statistic is defined as
-$$
-F = \frac{(\text{TSS} - \text{RSS})/p}{\text{RSS}/(n-p-1)} \sim F_{p, n-p-1},
-$$
-where
-$$
-\text{TSS} = \sum_{i=1}^n (y_i - \bar y)^2.
-$$
-If the linear model assumptions are correct, one can show that 
-$$
-\mathbf{E}{\text{RSS}/(n − p − 1)} = \sigma^2
-$$
-and that, provided $H_0$ is true,
-$$
-\mathbf{E}{(\text{TSS} − \text{RSS})/p} = \sigma^2.
-$$
-Hence, when there is no relationship between the response and predictors, F-statistic to take on a value close to 1. On the other hand, if $H_a$ is true, then $\mathbf{E}{(\text{TSS} − \text{RSS})/p} > \sigma^2$, so we expect F to be greater than 1. 
+with $\varepsilon_i$ i.i.d., $\mathbb{E}(\varepsilon_i)=0$, $\mathrm{Var}(\varepsilon_i)=\sigma^2$. Then:
 
-- The p-value for the F-statistic is computed using the F-distribution with $p$ and $n-p-1$ degrees of freedom.
+- **Unbiasedness**: $\mathbb{E}(\hat\beta) = \beta$
 
-- In general, the F-statistic for testing 
-$$
-H_0: \text{ a restricted model } \omega
-$$
-versus 
-$$
-H_a: \text{a more general model } \Omega
-$$
-takes the form
-$$
-F = \frac{(\text{RSS}_\omega - \text{RSS}_\Omega) / (\text{df}(\Omega) - \text{df}(\omega))}{\text{RSS}_\Omega / (n - \text{df}(\Omega))},
-$$
-where df is the degree of freedom (roughly speaking the number of free parameters) of a model.
+- **Variance–covariance**:
+  $$
+  \mathrm{Var}(\hat\beta) = (X^\mathsf{T}X)^{-1}\sigma^2
+  $$
+- **Gauss–Markov theorem**: $\hat\beta$ is the **BLUE** (best linear unbiased estimator).
 
-::: {.panel-tabset}
+- The **residuals** are the differences between the observed and predicted values:
+$$
+e_i = y_i - \hat y_i = y_i - X_i^\mathsf{T}\hat\beta.
+$$
+- An unbiased estimator of $\sigma^2$ is
+$$
+\hat \sigma^2 = \frac{1}{n - p-1} \sum_{i=1}^n e_i^2 = \frac{\text{RSS}}{n - p-1}.
+$$
 
 
+## Variable Selection: Dealing with Large $p$
 
-#### R
+- In many applications, we have many explanatory variables (large $p$, even $p \gg n$):
+  + $>20,000$ human protein-coding genes
+  + ~10 million SNPs
+  + $n$ often in hundreds or thousands
 
-```{r}
-lmod_null <- lm(sales ~ 1, data = Advertising)
-anova(lmod_null, lmod)
-```
+- Bias-variance trade off: identify a subset of $\mathbf{X}$ variables most relevant to $\mathbf{Y}$ 
 
-#### Python (statsmodels)
+- Inadequate to look at marginal effects alone (e.g., p-values).
 
-```{python}
-# F test for R \beta = 0
-R = [[0, 1, 0 , 0], [0, 0, 1, 0], [0, 0, 0, 1]]
-lmod.f_test(R)
-```
+### Training vs. Testing Error (Setup)
 
-the p-value associated with the F -statistic is essentially zero, so we have extremely strong evidence that at least one of the media is associated with increased sales.
+Training data $\mathcal{D}_n=\{(x_i,y_i)\}_{i=1}^n$.
 
-:::
+Suppose an (imaginary) independent testing dataset $\{(x_i, y_i^*)\}_{i=1}^n$ is collected at the **same** locations $x_i$ (in-sample prediction).
 
-### Model selection
+Assume data are from a linear model:
+$$
+y = \mu + e = X\beta + e,\qquad
+y^* = \mu + e^* = X\beta + e^*,
+$$
+where $e$ and $e^*$ are i.i.d. with mean 0 and variance $\sigma^2$.
+
+The true model is indeed linear.
 
 
-#### ML approach: validation and cross-validation
+### Training vs. Testing Error (Results)
+
+Testing error:
+$$
+\mathbb{E}[\mathrm{Test\, MSE}] =\frac{1}{n} \mathbb{E}\|y^* - X\hat\beta\|_2^2
+= \left (1+\frac{p}{n}\right)\sigma^2.
+$$
+
+Training error:
+$$
+\mathbb{E}[\mathrm{Train\ MSE}] = \frac{1}{n} \mathbb{E}\|y-\hat y\|_2^2
+= \left (1-\frac{p}{n}\right)\sigma^2.
+$$
+
+So, testing error **increases** with $p$ while training error **decreases** with $p$.  
+When $p$ is large, this becomes troublesome.
+
+
+### Conclusion
+
+Hence, selecting a set of relevant variables is necessary, especially when $p$ is large.
+
+Variable selection may improve:
+
+- Prediction accuracy
+- Interpretability
+
+Difficulties:
+
+- No natural ordering of variable importance
+- Importance depends on conditioning on other variables; high correlation causes trouble
+- Checking all combinations can be computationally infeasible
+
+
+## Model Selection 
+
+Model selection is usually done by:
+
+1. Give each model a **score**
+2. Use an algorithm to find the model with the best (smallest) score
+
+A typical score has the form:
+
+**Goodness-of-fit + Complexity penalty**
+
+- Fit term decreases as model becomes more complex
+- Penalty increases with number of predictors, favoring smaller models
+
+
+### ML approach: validation and cross-validation
 
 In machine learning, *model selection* is usually framed as choosing **hyperparameters** (e.g., which features to include, degree of a polynomial, or the regularization strength) by minimizing an estimate of **test error**.
 
 A standard approach is **$K$-fold cross-validation**.
 
-::: {.panel-tabset}
-
-#### Python (sklearn)
-
-```{python}
-from sklearn.model_selection import KFold, cross_val_score
-from sklearn.linear_model import LinearRegression
-import numpy as np
-
-X = Advertising[['TV', 'radio', 'newspaper']]
-y = Advertising['sales']
-
-cv = KFold(n_splits=5, shuffle=True, random_state=1)
-model = LinearRegression()
-
-# sklearn uses "neg_mean_squared_error" so we flip the sign
-cv_mse = -cross_val_score(model, X, y, cv=cv, scoring="neg_mean_squared_error")
-{"CV_MSE_mean": float(np.mean(cv_mse)), "CV_MSE_sd": float(np.std(cv_mse))}
-```
-
-:::
-
-
-
-**Question:** Do all the predictors help to explain $Y$ , or is only a subset of the predictors useful?
-
+### Subset selection
 - For a naive implementation of the best subset, forward selection, and backward selection regressions in Python, interesting readers can read this [blog](https://xavierbourretsicotte.github.io/subset_selection.html). 
+
 
 #### Best subset regression
 
@@ -460,9 +447,6 @@ cv_mse = -cross_val_score(model, X, y, cv=cv, scoring="neg_mean_squared_error")
 -  We try the highly-optimized [`abess`](https://abess.readthedocs.io/en/latest/index.html) package here.
 
 ::: {.panel-tabset}
-
-
-
 #### R
 
 ```{r}
@@ -523,6 +507,7 @@ lmod_abess.coef_
 #### R
 
 ```{r}
+lmod_null <- lm(sales ~ 1, data = Advertising)
 step(lmod_null,
      scope = list(lower = sales ~ 1, upper = sales ~ TV + radio + newspaper),
      trace = TRUE, 
@@ -581,9 +566,31 @@ step(lmod_null,
 
 #### Other model selection criteria
 
-Commonly used model selection criteria include Mallow's $C_p$, Akaike information criterion (AIC), Bayesian information criterion (BIC), adjusted $R^2$, and cross-validation (CV).
+Commonly used model selection criteria include Mallow's $C_p$, Akaike information criterion (AIC), Bayesian information criterion (BIC), and adjusted $R^2$.
 
-### Model fit
+- As we saw earlier, the training set MSE is generally an underestimate of the test MSE. Therefore the training RSS and $R^2$
+ may not be used for selecting the best model unless we adjust for this underestimation.
+ 
+- Mallow's $C_p$ is an estimate of the test MSE that adjusts for the bias in the training MSE:
+ $$
+ C_p = \frac{1}{n}(\text{RSS} + 2d\hat\sigma^2),
+ $$
+ where $d$ is the number of predictors in the model (including the intercept) and $\hat\sigma^2$ is an estimate of the variance of the error terms.
+ 
+- AIC is defined as
+$$
+\text{AIC} = \frac{1}{n\hat\sigma^2}(\text{RSS} + 2d\hat\sigma^2).
+$$
+
+- BIC is defined as
+$$
+\text{BIC} = \frac{1}{n}(\text{RSS} + \log(n)d\hat\sigma^2).
+$$
+ 
+- Both AIC and BIC impose a penalty for model complexity. BIC imposes a larger penalty than AIC when $n$ is large.
+
+
+## Model fit
 
 **Question:** How well does the selected model fit the data?
 

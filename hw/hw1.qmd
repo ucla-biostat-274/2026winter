@@ -86,52 +86,51 @@ where $X\in\mathbb{R}^{N\times p}$ has full column rank.
 Let $\hat\beta$ be the ordinary least squares (OLS) estimator and $\hat y = X\hat\beta$.
 
 1. **Hat matrix.** Show that $\hat y = Hy$, where
-   $$
-   H = X(X^\top X)^{-1}X^\top.
-   $$
+$$
+H = X(X^\top X)^{-1}X^\top.
+$$
 
 
 2. **Projection properties.** Prove that $H$ is symmetric and idempotent:
-   $$
-   H^\top = H
-   \quad\text{and}\quad
-   H^2 = H.
-   $$
-   Conclude that $\mathrm{tr}(H)=p$.
+$$
+H^\top = H
+\quad\text{and}\quad
+H^2 = H.
+$$
+Conclude that $\mathrm{tr}(H)=p$.
 
 3. **Expected training error.** Define the training mean squared error (MSE)
-   $$
-   \mathrm{MSE}_{\mathrm{train}} = \frac{1}{N}\|y-\hat y\|^2.
-   $$
-   Show that
-   $$
-   \mathbb{E}\!\left[\mathrm{MSE}_{\mathrm{train}} \mid X\right]
-   = \sigma^2\left(1-\frac{p}{N}\right).
-   $$
+$$
+\mathrm{MSE}_{\mathrm{train}} = \frac{1}{N}\|y-\hat y\|^2.
+$$
+Show that
+$$
+\mathbb{E}\!\left[\mathrm{MSE}_{\mathrm{train}} \mid X\right]
+= \sigma^2\left(1-\frac{p}{N}\right).
+$$
 
 4. **Expected test error (same inputs, new noise).** Let
-   $$
-   y^{\mathrm{new}} = X\beta^\star + \varepsilon^{\mathrm{new}},
-   $$
-   where $\varepsilon^{\mathrm{new}}$ is independent of $\varepsilon$ and satisfies
-   $\mathbb{E}[\varepsilon^{\mathrm{new}}\mid X]=0$ and 
-   $\mathrm{Var}(\varepsilon^{\mathrm{new}}\mid X)=\sigma^2 I_N$.
-   Define the test MSE on the same inputs $X$ as
-   $$
-   \mathrm{MSE}_{\mathrm{test}} = \frac{1}{N}\|y^{\mathrm{new}}-X\hat\beta\|^2.
-   $$
-   Show that
-   $$
-   \mathbb{E}\!\left[\mathrm{MSE}_{\mathrm{test}} \mid X\right]
-   = \sigma^2\left(1+\frac{p}{N}\right).
-   $$
+$$
+y^{\mathrm{new}} = X\beta^\star + \varepsilon^{\mathrm{new}},
+$$
+where $\varepsilon^{\mathrm{new}}$ is independent of $\varepsilon$ and satisfies
+$\mathbb{E}[\varepsilon^{\mathrm{new}}\mid X]=0$ and 
+$\mathrm{Var}(\varepsilon^{\mathrm{new}}\mid X)=\sigma^2 I_N$. Define the test MSE on the same inputs $X$ as
+$$
+\mathrm{MSE}_{\mathrm{test}} = \frac{1}{N}\|y^{\mathrm{new}}-X\hat\beta\|^2.
+$$
+Show that
+$$
+\mathbb{E}\!\left[\mathrm{MSE}_{\mathrm{test}} \mid X\right]
+= \sigma^2\left(1+\frac{p}{N}\right).
+$$
 
 5. **Optimism gap.** Conclude that the expected optimism (test minus train) equals
-   $$
-   \mathbb{E}\!\left[\mathrm{MSE}_{\mathrm{test}}-\mathrm{MSE}_{\mathrm{train}}\mid X\right]
-   = \frac{2\sigma^2 p}{N}.
-   $$
-   In 2–4 sentences, interpret how this gap depends on $p$, $N$, and $\sigma^2$.
+$$
+\mathbb{E}\!\left[\mathrm{MSE}_{\mathrm{test}}-\mathrm{MSE}_{\mathrm{train}}\mid X\right]
+= \frac{2\sigma^2 p}{N}.
+$$
+In 2–4 sentences, interpret how this gap depends on $p$, $N$, and $\sigma^2$.
 
 
 
