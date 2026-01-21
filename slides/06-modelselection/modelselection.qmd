@@ -973,4 +973,4 @@ The lasso was performed with $n = 100$ observations and three values of $p$, the
 
 - Later, we will return to sparsity in more detail, and will describe related approaches such as the **elastic net**.
 
-## Lab
+
