@@ -43,7 +43,7 @@ library(ISLR2)
 ## Linear regression recap
 
 - Response $Y$ continuous
-- Model: $Y=\beta_0+\beta^\top X + \epsilon$, $\epsilon\sim\mathcal{N}(0,\sigma^2)$
+- Model: $Y=\beta_0+\beta^\top X + \epsilon$, $\epsilon\sim\mathcal{N}(0,\sigma^2\text{I})$
 - Estimate $\beta_0,\beta$ by minimizing **residual sum of squares**:
 
 $$
