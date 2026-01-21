@@ -4,14 +4,27 @@ subtitle: "Biostat 274"
 author: "Dr. Jin Zhou @ UCLA"
 date: today
 format:
-  html:
-    theme: cosmo
+  revealjs:
+    theme: simple
     embed-resources: true
     number-sections: true
     toc: true
     toc-depth: 4
     toc-location: left
     code-fold: false
+    slide-number: true
+    smaller: true
+    transition: fade
+    scrollable: true
+html-math-method: mathml
+include-in-header:
+  text: |
+    <style>
+      #title-slide .title {
+        font-size: 4.5em; /* Adjust as needed */
+        color: ;  /* Optional: change color */
+      }
+    </style>
 engine: knitr
 knitr:
   opts_chunk: 
@@ -19,64 +32,32 @@ knitr:
     # fig.width: 6
     # fig.height: 4
     message: FALSE
+    warning: FALSE
     cache: false
 ---
 
-Credit: This note heavily uses material from the books [_An Introduction to Statistical Learning: with Applications in R_](https://www.statlearning.com/) (ISL2) and [_Elements of Statistical Learning: Data Mining, Inference, and Prediction_](https://hastie.su.domains/ElemStatLearn/) (ESL2).
- 
-Display system information for reproducibility.
 
-::: {.panel-tabset}
 
-## R
-
-```{r}
-sessionInfo()
-```
-
-## Python
-
-```{python}
-import IPython
-print(IPython.sys_info())
-```
-
-## Julia
-
-```{julia}
-#| eval: false
-using InteractiveUtils
-
-versioninfo()
-```
-
-:::
 
 ## Overview
 
-- In the section we discuss two resampling methods: **cross-validation** and the **bootstrap**.
+- In the section we discuss two resampling methods: 
+  + **cross-validation** 
+  
+  + **bootstrap**.
 
 - These methods refit a model of interest to samples formed from the training set, in order to obtain additional information about the fitted model.
 
-- For example, they provide estimates of test-set prediction error, and the standard deviation and bias of our parameter estimates.
-
-## Training error vs test error
-
-- **Test error** is the average error that results from using a learning method to predict the response on a new observation, one that was not used in training the method.
-    
-- **Training error** can be easily calculated by applying the statistical learning method to the observations used in its training.
-    
-- But the training error rate often is quite different from the test error rate, and in particular the former can dramatically underestimate the latter.
-
-- Question 4 in HW1 rigorously justifies that the training error is an under-estimate of the test error.
-
-![](training_vs_test.png)
+  + For example, they provide estimates of test-set prediction error, and the standard deviation and bias of our parameter estimates.
 
 - Best solution: a large designated test set. Often not available.
 
 - Some methods make a mathematical adjustment to the training error rate in order to estimate the test error rate. These include the $C_p$ statistic, AIC and BIC (ISL Chapter 6 and linear regression lecture notes).
 
 - Here we instead consider a class of methods that estimate the test error by **holding out** a subset of the training observations from the fitting process, and then applying the learning method to those held out observations.
+
+
+---
 
 ## Validation-set approach
 
@@ -87,34 +68,42 @@ versioninfo()
 - The resulting validation-set error provides an estimate of the test error. This is typically assessed using MSE in the case of a quantitative response and misclassification rate in the case of a qualitative (discrete) response.
 
 
+ 
 ::: {#fig-validation-set}
 
 <p align="center">
-![](ISL_fig_5_1.pdf){width=500px height=250px}
+![](./ISL_fig_5_1.png){width=600px height=200px}
 </p>
 
 A random splitting into two halves: left part is training set, right part is validation set.
-
 :::
+
+---
 
 ::: {#fig-validation-auto}
 
 <p align="center">
-![](ISL_fig_5_2.pdf){width=600px height=350px}
+![](./ISL_fig_5_2.png){width=700px height=350px}
 </p>
 
 The validation set approach was used on the `Auto` data set in order to estimate the test error that results from predicting `mpg` using polynomial functions of `horsepower`. Left: Validation error estimates for a single split into training and validation data sets. Right: The validation method was repeated ten times, each time using a different random split of the observations into a training set and a validation set. This illustrates the variability in the estimated test MSE that results from this approach.
 
 :::
 
+---
+
 - Drawbacks of validation set approach
 
     - The validation estimate of the test error can be **highly variable**, depending on precisely which observations are included in the training set and which observations are included in the validation set.
     
-    - In the validation approach, only a subset of the observations - those that are included in the training set rather than in the validation set - are used to fit the model.
+    - In the validation approach, only a subset of the observations, those that are included in the training set rather than in the validation set, are used to fit the model.
     
     - This suggests that the validation set error may tend to **overestimate the test error** for the model fit on the entire data set. (Why?)
-    
+
+
+---
+
+
 ## $K$-fold cross-validation
 
 - **Widely used approach** for estimating test error.
@@ -129,12 +118,14 @@ idea of the test error of the final chosen model.
 ::: {#fig-10-fold-cv-auto}
 
 <p align="center">
-![](ISL_fig_5_5.pdf){width=600px height=350px}
+![](ISL_fig_5_5.png){width=600px height=350px}
 </p>
 
 A schematic display of 5-fold CV. A set of $n$ observations is randomly split into five non-overlapping groups. Each of these fifths acts as a validation set (shown in beige), and the remainder as a training set (shown in blue). The test error is estimated by averaging the five resulting MSE estimates.
 
 :::
+
+---
 
 - Let the $K$ parts be $C_1, C_2, \ldots, C_K$, where $C_k$ denotes the indices of the observations in part $k$. There are $n_k$ observations in part $k$. If $N$ is a multiple of $K$, then $n_k = n / K$.
 
@@ -147,6 +138,9 @@ $$
 \text{MSE}_k = \frac{1}{n_k} \sum_{i \in C_k} (y_i - \hat y_i)^2,
 $$
 and $\hat y_i$ is the fit for observation $i$, obtained from the data with part $k$ removed.
+
+
+---
 
 ### LOOCV
 
@@ -166,24 +160,29 @@ where $\hat y_i$ is the $i$th fitted value from the original least squares fit, 
 ::: {#fig-10-fold-cv-auto}
 
 <p align="center">
-![](ISL_fig_5_4.pdf){width=600px height=350px}
+![](ISL_fig_5_4.png){width=600px height=300px}
 </p>
 
 Cross-validation was used on the `Auto` data set in order to estimate the test error that results from predicting `mpg` using polynomial functions of `horsepower`. Left: The LOOCV error curve. Right: 10-fold CV was run nine separate times, each with a different random split of the data into ten parts. The figure shows the nine slightly different CV error curves.
 
 :::
 
+---
+
 ::: {#fig-true-vs-estimated-test-MSE}
 
 <p align="center">
-![](ISL_fig_5_6.pdf){width=600px height=350px}
+![](ISL_fig_5_6.png){width=700px height=300px}
 </p>
 
-Blue: true test MSE. Black dashed line: LOOCV estimate of test MSE. Orange: 10-fold CV estimate of test MSE. The crosses indicate the minimum of each of the MSE curves. [Left data](https://ucla-biostat-212a.github.io/2025winter/slides/02-statlearn/statlearn.html#fig-tradeoff-truth). [Middle data](https://ucla-biostat-212a.github.io/2025winter/slides/02-statlearn/statlearn.html#fig-tradeoff-smooth-truth). [Right data](https://ucla-biostat-212a.github.io/2025winter/slides/02-statlearn/statlearn.html#fig-tradeoff-wiggly-truth).
+Blue: true test MSE. Black dashed line: LOOCV estimate of test MSE. Orange: 10-fold CV estimate of test MSE. The crosses indicate the minimum of each of the MSE curves. [Left data](https://ucla-biostat-274.github.io/2026winter/slides/02-statlearn/statlearn.html#fig-tradeoff-truth). [Middle data](https://ucla-biostat-274.github.io/2026winter/slides/02-statlearn/statlearn.html#fig-tradeoff-smooth-truth). [Right data](https://ucla-biostat-274.github.io/2026winter/slides/02-statlearn/statlearn.html#fig-tradeoff-wiggly-truth).
 
 :::
 
-## Bias-variance tradeoff for cross-validation
+
+---
+
+### Bias-variance tradeoff for cross-validation
 
 - Since each training set is only $(K - 1) / K$ as big as the original training set, the estimates of prediction error will typically be biased upward. (Why?)
 
@@ -192,7 +191,9 @@ Blue: true test MSE. Black dashed line: LOOCV estimate of test MSE. Orange: 10-f
 - $K = 5$ or $10$ provides a good compromise for this
 bias-variance trade-off.
 
-## Cross-validation for classification problems
+---
+
+### Cross-validation for classification problems
 
 - We divide the data into $K$ roughly equal-sized parts $C_1, C_2, \ldots, C_K$. $C_k$ denotes the indices of the observations in part $k$. There are $n_k$ observations in part $k$. If $n$ is a multiple of $K$, then $n_k = n / K$.
 
@@ -209,6 +210,8 @@ $$
 \hat{\text{SE}}(\text{CV}_k) = \sqrt{\frac{1}{K} \sum_{k=1}^K \frac{(\text{Err}_k - \bar{\text{Err}_k})^2}{K-1}}.
 $$
 This is a useful estimate, but strictly speaking, not quite valid. 
+
+---
 
 ## Bootstrap
 
@@ -239,16 +242,20 @@ $$
 \hat{\alpha} = \frac{\hat{\sigma}_{Y}^2 - \hat{\sigma}_{XY}}{\hat{\sigma}_X^2 + \hat{\sigma}_Y^2 - 2 \hat{\sigma}_{XY}}.
 $$
 
+---
+
 ::: {#fig-unrealistic-toy}
 
 <p align="center">
-![](ISL_fig_5_9.pdf){width=600px height=600px}
+![](ISL_fig_5_9.png){width=600px height=600px}
 </p>
 
 Each panel displays 100 simulated returns for investments $X$
 and $Y$. From left to right and top to bottom, the resulting estimates for $\alpha$ are 0.576, 0.532, 0.657, and 0.651.
 
 :::
+
+---
 
 - An unrealistic method:
 
@@ -268,16 +275,19 @@ $$
 $$
 This gives us a very good idea of the accuracy of $\hat{\alpha}$: $\text{SE}(\hat{\alpha}) \approx 0.083$. So roughly speaking, for a random sample from the population, we would expect $\hat{\alpha}$ to differ from $\alpha$ by approximately 0.08, on average.
 
+---
 
 ::: {#fig-bootstrap-toy}
 
 <p align="center">
-![](ISL_fig_5_11.pdf){width=600px height=600px}
+![](ISL_fig_5_11.png){width=600px height=600px}
 </p>
 
 A graphical illustration of the bootstrap approach on a small sample containing $n = 3$ observations. Each bootstrap data set contains $n$ observations, sampled with replacement from the original data set. Each bootstrap data set is used to obtain an estimate of $\alpha$.
 
 :::
+
+---
 
 - **Bootstrap** method.
 
@@ -300,18 +310,22 @@ $$
 
     - This serves as an estimate of the standard error of $\hat{\alpha}$ estimated from the original data set. For this example, $\operatorname{SE}_B(\hat{\alpha}) = 0.087$.
     
+---
+
+    
 ::: {#fig-unrealistic-vs-bootstrap-toy}
 
 <p align="center">
-![](ISL_fig_5_10.pdf){width=500px height=350px}
+![](ISL_fig_5_10.png){width=500px height=350px}
 </p>
 
 Left: A histogram of the estimates of $\alpha$ obtained by generating 1,000 simulated data sets from the true population. Center: A histogram of the estimates of $\alpha$ obtained from 1,000 bootstrap samples from a single data set. Right: The estimates of $\alpha$ displayed in the left and center panels are shown as boxplots. In each panel, the pink line indicates the true value of $\alpha$.
 
 :::
 
+---
 
-## Bootstrap in general
+### Bootstrap in general
 
 ::: {#fig-bootstrap-general-pic}
 
@@ -322,6 +336,8 @@ Left: A histogram of the estimates of $\alpha$ obtained by generating 1,000 simu
 Bootstrap general scheme.
 
 :::
+
+---
 
 - In more complex data situations, figuring out the appropriate way to generate bootstrap samples can require some thought.
     
@@ -334,7 +350,9 @@ Bootstrap general scheme.
     - Also provides approximate confidence intervals for a population parameter. For example, looking at the histogram in the middle panel of histogram, the 5% and 95% quantiles of the 1000 values is (0.43, 0.72).
     
     - This is called a **Bootstrap Percentile confidence interval**. It is the simplest method (among many approaches) for obtaining a confidence interval from the bootstrap.
-    
+
+---
+
 - Can the bootstrap estimate prediction error?
 
     - In cross-validation, each of the $K$ validation folds is distinct from the other $K-1$ folds used for training: there is no overlap. This is crucial for its success.
@@ -351,210 +369,3 @@ Bootstrap general scheme.
     
     - But the method gets complicated, and in the end, cross-validation provides a simpler, more attractive approach for estimating prediction error.
     
-## Lab
-### The validation set approach
-- Goal: use of the validation set approach to estimate the test error rates that from fitting linear models on the `Auto` data set.
-- We begin by using the `set.seed()` function in order to set a seed for `R`'s random number generator, so that the reader of this book will obtain the same results as those shown here.
-- We later (during the weekend) will talk about pipelines that we do all of these automatically. 
-
-```{r}
-library(ISLR2)
-library(tidyverse)
-set.seed(1)
-# sample() function is used to randomly sample the integers from 1 to 392, without replacement
-train <- sample(392, 196)
-(train <- sort(train))
-```
-
-
-- Use the `subset` option in `lm()` to fit a linear regression using only the observations corresponding to the training set.
-
-```{r}
-ggplot(Auto, aes(x = horsepower, y = mpg)) + 
-  geom_point() +
-  geom_smooth()
-```
-
-```{r}
-lm.fit <- lm(mpg ~ horsepower, data = Auto, subset = train)
-```
-
-- Use the `predict()` function Compute the mean squared error of the model on the validation set.
-```{r}
-mean((Auto$mpg[-train] - predict(lm.fit, Auto[-train, ]))^2)
-
-#Auto %>% select(mpg, horsepower) %>% slice(-train) %>% 
-#  mutate(pred = predict(lm.fit, Auto[-train,])) # %>% 
-#  ggplot(aes(x = mpg, y = pred)) + 
-#  geom_point() + 
-#  geom_smooth(method = "lm") + 
-  #geom_abline(intercept = 0, slope = 1, color = "red") + 
-#  labs(title = "Validation set approach", x = "Observed mpg", y = "Predicted mpg")
-```
-Therefore, the estimated test MSE for the linear regression fit is 23.27. 
-
-- We can use the `poly()` function to estimate the test error for the quadratic and cubic regressions.
-```{r}
-lm.fit2 <- lm(mpg ~ poly(horsepower, 2), data = Auto, subset = train)
-mean((Auto$mpg - predict(lm.fit2, Auto))[-train]^2)
-
-#Auto %>% select(mpg, horsepower) %>% slice(-train) %>% 
-#  mutate(pred = predict(lm.fit2, Auto[-train,])) 
-```
-
-```{r}
-lm.fit3 <- lm(mpg ~ poly(horsepower, 3), data = Auto, subset = train)
-mean((Auto$mpg - predict(lm.fit3, Auto))[-train]^2)
-```
-
-- The estimated test MSE for the quadratic and cubic regressions are 18.716 and 18.794, respectively. 
-- These results are not surprising, given that the relationship between `mpg` and `horsepower` appears to be fairly linear.
-- If we choose a different training set instead, then we will obtain somewhat different errors on the validation set.
-
-```{r}
-set.seed(2)
-train <- sample(392, 196)
-lm.fit <- lm(mpg ~ horsepower, data = Auto, subset = train)
-mean((Auto$mpg[-train] - predict(lm.fit, Auto[-train,]))^2)
-lm.fit2 <- lm(mpg ~ poly(horsepower, 2), data = Auto, subset = train)
-mean((Auto$mpg - predict(lm.fit2, Auto))[-train]^2)
-lm.fit3 <- lm(mpg ~ poly(horsepower, 3), data = Auto, subset = train)
-mean((Auto$mpg - predict(lm.fit3, Auto))[-train]^2)
-
-```
-- These results are consistent with our previous findings: 
-  + a model that predicts mpg using a **quadratic** function of horsepower performs **better** than a model that involves only a **linear** function of horsepower, 
-  + there is little evidence in favor of a model that uses a cubic function of horsepower.
-
-### Leave-One-Out Cross-Validation
-- The LOOCV estimate can be automatically computed for any generalized linear model using the `glm()` and `cv.glm()` functions.
-- In the lab, we use the `glm()` function to perform **logistic regression** by passing in the `family="binomial"` argument.
-- If we leave it blank, it will perform linear regression.
-- We use the `cv.glm()` function in `boot` library to perform **LOOCV** for the previous example
-
-```{r}
-library(boot)
-glm.fit <- glm(mpg ~ horsepower, data = Auto)
-cv.err <- cv.glm(Auto, glm.fit)
-cv.err$delta
-```
-
-- The `cv.glm()` function produces a list with several components. The `delta` component contains LOOCV statistic given in (5.1).
-- We can repeat this procedure for increasingly complex polynomial fits.
-```{r}
-cv.error <- rep(0, 10)
-for (i in 1:10) {
- glm.fit <- glm(mpg ~ poly(horsepower, i), data = Auto)
- cv.error[i] <- cv.glm(Auto, glm.fit)$delta[1]
-}
-cv.error
-plot(cv.error, type = "b")
-```
-
-### k-Fold Cross-Validation
-- The `cv.glm()` function can also be used to perform **k-fold CV**.
-- Below, we use `k=10` to perform 10-fold CV.
-```{r}
-set.seed(17)
-cv.error.10 <- rep(0, 10)
-for (i in 1:10) {
- glm.fit <- glm(mpg ~ poly(horsepower, i), data = Auto)
- cv.error.10[i] <- cv.glm(Auto, glm.fit, K = 10)$delta[1]
-}
-cv.error.10
-plot(cv.error.10, type = "b")
-
-```
-- We see that the computation time is much shorter than for LOOCV.
-- Due to the availability of the formula (5.2) for LOOCV; however, unfortunately the `cv.glm()` function does not make use of this formula.
-- Two numbers associated with delta are the same when LOOCV is performed. When we instead perform k-fold CV, then the two numbers associated with delta differ slightly. The first is the standard k-fold CV estimate, as in equation (5.3). The second is a bias-corrected version.
-
-### The Bootstrap
-
-- Performing a bootstrap analysis in R entails only two steps:
-  + First, we must create a function that computes the statistic of interest. 
-  + Second, we use the `boot()` function to perform the bootstrap by repeatedly sampling observations from the data set **with replacement**.
-- The `Portfolio` data set in the ISLR2 package is simulated data of 100 pairs of returns, <https://rdrr.io/cran/ISLR/man/Portfolio.html>
-- Remember we would like to estimate the optimal fraction in each asset to invest in order to minimize the risk, the standard error of the combined portfolio.
-```{r}
-alpha.fn <- function(data, index) {
-  X <- data$X[index]
-  Y <- data$Y[index] 
-  alpha = (var(Y) - cov(X, Y)) / (var(X) + var(Y) - 2 * cov(X, Y)) 
-  return(alpha)
-}
-```
-
-
-```{r}
-median.fn <- function(data, index) {
-  X <- data$medv[index]
-  medhat = median(X) 
-  return(medhat)
-}
-```
-
-- For instance, the following command tells R to use the `alpha.fn()` function to compute the bootstrap estimate for alpha using all 100 bootstrap samples.
-```{r}
-alpha.fn(Portfolio, 1:100)
-```
-- Now we use `sample()` function to randomly select 100 observations from the range 1 to 100, **with replacement**. This is equivalent to constructing a new bootstrap data set.
-```{r}
-set.seed(7)
-alpha.fn(Portfolio, sample(100, 100, replace = T))
-(sort(sample(100, 100, replace = T)))
-```
-- A bootstrap analysis:  perform this command many times, record all of the corresponding estimates for $\alpha$, and computing the resulting standard deviation.  
-```{r}
-boot(Portfolio, alpha.fn, R = 1000)
-```
-- The final output shows that using the original data, $\hat \alpha = 0.5758$, and that the bootstrap estimate for SE($\hat \alpha$) is 0.0897.
-- Essentially you can code a bootsrap analysis yourself to compute the standard error of $\hat \alpha$
-```{r}
-B = 1000
-boot.alpha2 <- replicate(B, alpha.fn(Portfolio, sample(100, 100, replace = T)))
-sqrt(sum((boot.alpha2 - mean(boot.alpha2))^2)/(B - 1))
-```
-
-### Estimating the Accuracy of a Linear Regression Model
-- Let's use the bootstrap approach in order to assess the variability of the estimates for $\beta_0$ and $\beta_1$, the intercept and slope terms for the linear regression model that uses `horsepower` to predict `mpg` in the `Auto` data set.
-```{r}
-boot.fn <- function(data, index) {
-  return(coef(lm(mpg ~ horsepower, data = data, subset = index)))
-}
-boot.fn(Auto, 1:392)
-```
-
-- The `boot.fn()` function can also be used in order to create bootstrap estimates for the intercept and slope terms by randomly sampling from among the observations with replacement.
-
-```{r}
-set.seed(1)
-boot.fn(Auto, sample(392, 392, replace = T))
-```
-
-- We can use the `boot()` function to compute the standard errors of 1,000 bootstrap estimates for the intercept and slope terms.
-```{r}
-boot(Auto, boot.fn, 1000)
-```
-
-- Compare with the standard errors obtained using the `summary()` function from linear regression: 
-```{r}
-summary(lm(mpg ~ horsepower, data = Auto))$coef
-```
-
-- The bootstrap standard errors for the intercept and slope are 0.842 and 0.007, respectively.
-- The standard errors for the intercept and slope terms obtained from linear regression are 0.717 and 0.006, respectively.
-- The bootstrap approach does not rely on any of the following assumptions, and so it is likely giving a more accurate estimate of the standard errors. 
-  + The estimates of $\sigma^2$ rely on the assumption that the true relationship between `mpg` and `horsepower` is linear.
-  + Standard formulas assume that the $x_i$ are fixed, and all the variability comes from the variation in the errors $\epsilon_i$
-  + The bootstrap approach is more general, and hence is applicable in a wider range of settings.
-- Quadratic example:
-```{r}
-boot.fn2 <- function(data, index) {
-  return(coef(lm(mpg ~ horsepower + I(horsepower^2), data = data, subset = index)))
-}
-set.seed(1)
-boot(Auto, boot.fn2, 1000)
-
-summary(lm(mpg ~ horsepower + I(horsepower^2), data = Auto))$coef
-```
