@@ -110,7 +110,7 @@ sns.set(font_scale = 2)
 pd.set_option('display.max_columns', None)
 
 # Import Advertising data
-Credit = pd.read_csv("../data/Credit.csv")
+Credit = pd.read_csv("./slides/data/Credit.csv")
 Credit
 ```
 
