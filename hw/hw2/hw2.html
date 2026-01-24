@@ -2471,7 +2471,9 @@ y=\Phi\theta^{*}+\varepsilon,\qquad \mathbb{E}[\varepsilon]=0,
 </div>
 <p>Now conclude that <span class="math display">\[
 \mathbb{E}[\widehat\theta_\lambda]=\theta^{*}-\lambda(\widehat\Sigma+\lambda I)^{-1}\theta^{*}.
-\]</span> Explain in words why this shows the mean of ridge is a <em>shrunken</em> version of <span class="math inline">\(\theta^{*}\)</span>.</p>
+\]</span> Explain in words why ridge estimators are biased and the mean of ridge is a <em>shrunken</em> version of <span class="math inline">\(\theta^{*}\)</span>. Compute the bias of ridge regression, defined as <span class="math display">\[
+\text{Bias}[\widehat\theta_\lambda] = \mathbb{E}[\widehat\theta_\lambda] - \theta^*.
+\]</span></p>
 </section>
 </section>
 <section id="pts-simulation-problem" class="level2" data-number="4">
@@ -2647,10 +2649,37 @@ y=\Phi\theta^{*}+\varepsilon,\qquad \mathbb{E}[\varepsilon]=0,
 </section>
 <section id="bonus" class="level2" data-number="5">
 <h2 data-number="5" class="anchored" data-anchor-id="bonus"><span class="header-section-number">5</span> (Bonus)</h2>
-<p>Shrunk estimators like ridge are biased. Compute the bias of ridge regression, defined as <span class="math display">\[
-\text{Bias}[\widehat\theta_\lambda] = \mathbb{E}[\widehat\theta_\lambda] - \theta^*,
-\]</span></p>
-<p>where we assume the data is generated according to the linear model <span class="math inline">\(y = \Phi\theta^* + \epsilon\)</span>, with <span class="math inline">\(\epsilon\sim\mathcal{N}(0,\sigma^2 I)\)</span>.</p>
+<ol type="1">
+<li><p>Show ridge estimator is a shrunken version of OLS estimator <span class="math display">\[
+\widehat\theta_\lambda = (I + n\lambda(\Phi^\top\Phi)^{-1})^{-1}\widehat\theta_{OLS},
+\]</span> where <span class="math display">\[
+\widehat\theta_{OLS} = (\Phi^\top\Phi)^{-1}\Phi^\top y.
+\]</span> Let <span class="math inline">\(S =(I + n\lambda(\Phi^\top\Phi)^{-1})^{-1}\)</span>, then <span class="math display">\[
+\widehat\theta_\lambda = S \widehat \theta_{OLS}.
+\]</span></p></li>
+<li><p>Then show that <span class="math display">\[
+\widehat\theta_\lambda = U \text{diag}\left(\frac{s_i^2}{s_i^2 + \lambda}\right) U^\top \widehat\theta_{OLS},
+\]</span> where <span class="math inline">\(U\)</span> are the eigenvectors of <span class="math inline">\(\Phi^\top\Phi\)</span> and <span class="math inline">\(s_i^2\)</span> are the corresponding eigenvalues.</p></li>
+<li><p>Finally, conclude that <span class="math display">\[
+\|\widehat\theta_\lambda\|_2 =\|S \theta_{OLS}\|_2 \leq \|S\|_2 \|\theta_{OLS}\|_2
+\]</span></p></li>
+</ol>
+<p>where <span class="math display">\[
+\|S\|_2 = \max_i \frac{s_i^2}{s_i^2 + \lambda} &lt; 1.
+\]</span> Thus ridge regression shrinks the OLS coefficients.</p>
+<div class="callout callout-style-default callout-tip callout-titled" title="Hint">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Hint
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Start from the ridge solution and factor out <span class="math inline">\(\Phi^\top\Phi\)</span>. Use the eigen decomposition of <span class="math inline">\(\Phi^\top\Phi\)</span> if needed.</p>
+</div>
+</div>
 </section>
 <section id="bonus-1" class="level2" data-number="6">
 <h2 data-number="6" class="anchored" data-anchor-id="bonus-1"><span class="header-section-number">6</span> (Bonus)</h2>

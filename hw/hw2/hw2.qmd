@@ -91,7 +91,10 @@ Now conclude that
 $$
 \mathbb{E}[\widehat\theta_\lambda]=\theta^{*}-\lambda(\widehat\Sigma+\lambda I)^{-1}\theta^{*}.
 $$
-Explain in words why this shows the mean of ridge is a *shrunken* version of $\theta^{*}$.
+Explain in words why ridge estimators are biased and the mean of ridge is a *shrunken* version of $\theta^{*}$. Compute the bias of ridge regression, defined as
+$$
+\text{Bias}[\widehat\theta_\lambda] = \mathbb{E}[\widehat\theta_\lambda] - \theta^*.
+$$
 
 
 
@@ -264,14 +267,41 @@ plot(log10(lambda_grid), theta_norms, type = "l",
 
 ```
 
-## (Bonus) 
+## (Bonus)
 
-Shrunk estimators like ridge are biased. Compute the bias of ridge regression, defined as
+(1) Show ridge estimator is a shrunken version of OLS estimator
 $$
-\text{Bias}[\widehat\theta_\lambda] = \mathbb{E}[\widehat\theta_\lambda] - \theta^*,
+\widehat\theta_\lambda = (I + n\lambda(\Phi^\top\Phi)^{-1})^{-1}\widehat\theta_{OLS},
+$$
+where 
+$$
+\widehat\theta_{OLS} = (\Phi^\top\Phi)^{-1}\Phi^\top y.
+$$
+Let $S =(I + n\lambda(\Phi^\top\Phi)^{-1})^{-1}$, then 
+$$
+\widehat\theta_\lambda = S \widehat \theta_{OLS}.
+$$
+(2) Then show that 
+$$
+\widehat\theta_\lambda = U \text{diag}\left(\frac{s_i^2}{s_i^2 + \lambda}\right) U^\top \widehat\theta_{OLS},
+$$
+where $U$ are the eigenvectors of $\Phi^\top\Phi$ and $s_i^2$ are the corresponding eigenvalues. 
+
+(3) Finally, conclude that 
+$$
+\|\widehat\theta_\lambda\|_2 =\|S \theta_{OLS}\|_2 \leq \|S\|_2 \|\theta_{OLS}\|_2
 $$
 
-where we assume the data is generated according to the linear model $y = \Phi\theta^* + \epsilon$, with $\epsilon\sim\mathcal{N}(0,\sigma^2 I)$.
+where
+$$
+\|S\|_2 = \max_i \frac{s_i^2}{s_i^2 + \lambda} < 1.
+$$
+Thus ridge regression shrinks the OLS coefficients.  
+
+
+::: {.callout-tip title="Hint"}
+ Start from the ridge solution and factor out $\Phi^\top\Phi$. Use the eigen decomposition of $\Phi^\top\Phi$ if needed.
+:::
 
 ## (Bonus) 
 
