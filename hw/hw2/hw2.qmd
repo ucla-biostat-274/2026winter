@@ -1,0 +1,281 @@
+---
+title: "Biostat 212a Homework 2"
+subtitle: "Due Feb 8, 2025 @ 11:59PM"
+author: "YOUR NAME and UID"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    number-sections: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    code-fold: false
+engine: knitr
+knitr:
+  opts_chunk: 
+    fig.align: 'center'
+    # fig.width: 6
+    # fig.height: 4
+    message: FALSE
+    cache: false
+---
+
+
+
+## ISL Exercise 4.8.4 (20pts)
+
+## ISL Exercise 4.8.13 (20pts)
+
+## Ridge regression (30pts)
+
+
+
+Let $\Phi\in\mathbb{R}^{n\times d}$ and $y\in\mathbb{R}^n$. Assume the linear model
+$$
+y=\Phi\theta^{*}+\varepsilon,\qquad \mathbb{E}[\varepsilon]=0,
+$$
+where $\theta^{*}\in\mathbb{R}^d$ is the true parameter vector and $\Phi$ is the design matrix (can be function of $X$). Ridge regression is defined by
+$$
+\widehat\theta_\lambda \in \arg\min_{\theta\in\mathbb{R}^d}
+\frac{1}{n}\|y-\Phi\theta\|_2^2 + \lambda\|\theta\|_2^2,
+\qquad \lambda>0.
+$$
+where $\lambda$ is a regularization parameter, $\|\cdot\|_2$ is the Euclidean norm, $n$ is the number of samples, and $d$ is the number of features.
+
+
+### (5pts) 
+
+Show that the solution of ridge regression is given by
+$$
+\widehat\theta_\lambda = (\Phi^\top\Phi + n\lambda I )^{-1}\Phi^\top y.
+$$
+
+### (5pts) 
+
+Show that the ridge regression estimator can be written as
+$$
+\widehat\theta_\lambda = \Phi^\top(\Phi\Phi^\top + n\lambda I)^{-1}y.
+$$
+and explain why this form is useful when $d\gg n$.
+
+### (5pts)  
+
+Why does ridge typically have a unique solution even if $\Phi^\top\Phi$ is not invertible?
+
+### (5pts) 
+
+Show that
+$$
+ \mathbb{E}[\widehat\theta_\lambda]=(\widehat\Sigma+\lambda I)^{-1}\widehat\Sigma\,\theta^{*}.
+$$
+where we define the empirical covariance matrix as
+$$
+\widehat\Sigma:=\frac{1}{n}\Phi^\top\Phi.
+$$
+
+
+### (10pts)
+
+Show that
+$$
+\ (\widehat\Sigma+\lambda I)^{-1}\widehat\Sigma = I-\lambda(\widehat\Sigma+\lambda I)^{-1}.
+$$
+
+::: {.callout-tip title="Hint"}
+Use $\widehat\Sigma = (\widehat\Sigma+\lambda I) - \lambda I$ and distribute $(\widehat\Sigma+\lambda I)^{-1}$.
+:::
+
+Now conclude that
+$$
+\mathbb{E}[\widehat\theta_\lambda]=\theta^{*}-\lambda(\widehat\Sigma+\lambda I)^{-1}\theta^{*}.
+$$
+Explain in words why this shows the mean of ridge is a *shrunken* version of $\theta^{*}$.
+
+
+
+## (30pts) Simulation Problem
+
+Goal: You will simulate data where OLS tends to overfit and ridge regression helps. 
+
+You will:
+
+1. Fit OLS and ridge over a grid of $\lambda$ values.
+2. Plot test MSE vs $\log_{10}(\lambda)$.
+3. Show ridge "shrinks" coefficients by plotting $\|\hat\theta_\lambda\|_2$ vs $\log_{10}(\lambda)$.
+4. (Optional) Estimate empirical bias and variance using repeated simulations.
+
+---
+
+### Part A — Data Generating Process 
+
+We generate:
+- $x_i \sim \mathrm{Unif}[-1,1]$
+- $f(x) = x^2 - \frac{1}{2}$
+- $y_i = f(x_i) + \varepsilon_i$, where $\varepsilon_i \sim \mathcal{N}(0,\sigma^2)$
+
+Use $\sigma = 0.25$.
+
+We fit a polynomial model of degree $k$ with features:
+$$
+\phi(x) = (1, x, x^2, \dots, x^k)^\top.
+$$
+
+**Settings**:
+- $n_{\text{train}} = 30$
+- $n_{\text{test}} = 1000$
+- $k = 15$ (so $d = k+1 = 16$)
+- $\lambda$ grid: 50 log-spaced values from $10^{-6}$ to $10^2$
+
+---
+
+### Tasks  
+
+#### Task 1 (5 pts): Implement the design matrix and ridge solver
+Complete the functions `poly_design()` and `ridge_fit()`.
+
+- `poly_design(x, degree)` should return an $n \times (degree+1)$ matrix with columns $(1, x, x^2, \dots, x^{degree})$.
+- `ridge_fit(X, y, lambda)` should implement the ridge closed form:
+$$
+  \hat\theta_\lambda = (\Phi^\top \Phi + n\lambda I)^{-1}\Phi^\top y.
+$$
+Use `solve()` (do not compute an explicit inverse).
+
+#### Task 2 (5 pts): Generate one dataset and fit OLS
+- Generate one training and one test set.
+- Fit OLS using `lm.fit`.
+- Report training MSE and test MSE.
+
+#### Task 3 (10 pts): Fit ridge over $\lambda$ and plot test MSE
+- Fit ridge for each $\lambda$ in the grid.
+- Plot ridge **test MSE** vs $\log_{10}(\lambda)$.
+- Add a horizontal line showing OLS test MSE.
+
+#### Task 4 (5 pts): Plot coefficient shrinkage
+- For each $\lambda$, compute $\|\hat\theta_\lambda\|_2$.
+- Plot $\|\hat\theta_\lambda\|_2$ vs $\log_{10}(\lambda)$.
+
+#### Task 5 (5 pts): Short interpretation
+In 6–10 lines:
+- Describe the shape of the test MSE curve.
+- Roughly what $\lambda$ values perform best?
+- Explain what the coefficient-norm plot says about “shrinkage”.
+
+---
+
+### Starter R Code (fill in TODOs)
+
+```{r, eval = F}
+# -----------------------------
+# Helper functions (TODOs)
+# -----------------------------
+
+poly_design <- function(x, degree) {
+  # TODO: return n x (degree+1) matrix [1, x, x^2, ..., x^degree]
+  # Hint: sapply(0:degree, function(p) x^p)
+}
+
+mse <- function(y_true, y_pred) {
+  mean((y_true - y_pred)^2)
+}
+
+ridge_fit <- function(X, y, lambda) {
+  # TODO: implement theta = (X'X + n*lambda*I)^(-1) X'y
+  # Use solve(A, b)
+  # Hint:
+  # n <- nrow(X); d <- ncol(X)
+  # A <- crossprod(X) + n * lambda * diag(d)
+  # b <- crossprod(X, y)
+  # theta <- solve(A, b)
+}
+
+# -----------------------------
+# Data generation
+# -----------------------------
+set.seed(0)
+
+n_train <- 30
+n_test  <- 1000
+degree  <- 15
+sigma   <- 0.25
+
+f <- function(x) x^2 - 0.5
+
+x_tr <- runif(n_train, -1, 1)
+x_te <- runif(n_test,  -1, 1)
+
+y_tr <- f(x_tr) + rnorm(n_train, 0, sigma)
+y_te <- f(x_te) + rnorm(n_test,  0, sigma)
+
+X_tr <- poly_design(x_tr, degree)
+X_te <- poly_design(x_te, degree)
+
+# -----------------------------
+# OLS baseline
+# -----------------------------
+ols <- lm.fit(x = X_tr, y = y_tr)
+theta_ols <- ols$coefficients
+
+ols_train_mse <- mse(y_tr, X_tr %*% theta_ols)
+ols_test_mse  <- mse(y_te, X_te %*% theta_ols)
+
+ols_train_mse
+ols_test_mse
+
+# -----------------------------
+# Ridge over a lambda grid
+# -----------------------------
+lambda_grid <- 10^seq(-6, 2, length.out = 50)
+
+ridge_train_mse <- numeric(length(lambda_grid))
+ridge_test_mse  <- numeric(length(lambda_grid))
+theta_norms     <- numeric(length(lambda_grid))
+
+for (i in seq_along(lambda_grid)) {
+  lam <- lambda_grid[i]
+  theta <- ridge_fit(X_tr, y_tr, lam)
+
+  ridge_train_mse[i] <- mse(y_tr, X_tr %*% theta)
+  ridge_test_mse[i]  <- mse(y_te, X_te %*% theta)
+  theta_norms[i]     <- sqrt(sum(theta^2))
+}
+
+# -----------------------------
+# Plot 1: Test MSE vs log10(lambda)
+# -----------------------------
+plot(log10(lambda_grid), ridge_test_mse, type = "l",
+     xlab = expression(log[10](lambda)),
+     ylab = "Test MSE",
+     main = "Ridge vs OLS: Test MSE")
+abline(h = ols_test_mse, lty = 2)
+legend("topright", legend = c("Ridge", "OLS baseline"),
+       lty = c(1, 2), bty = "n")
+
+# -----------------------------
+# Plot 2: Coefficient norm vs log10(lambda)
+# -----------------------------
+plot(log10(lambda_grid), theta_norms, type = "l",
+     xlab = expression(log[10](lambda)),
+     ylab = expression(norm(hat(theta)[lambda], "2")),
+     main = "Shrinkage: ||theta_hat||2 vs Ridge Penalty")
+
+```
+
+## (Bonus) 
+
+Shrunk estimators like ridge are biased. Compute the bias of ridge regression, defined as
+$$
+\text{Bias}[\widehat\theta_\lambda] = \mathbb{E}[\widehat\theta_\lambda] - \theta^*,
+$$
+
+where we assume the data is generated according to the linear model $y = \Phi\theta^* + \epsilon$, with $\epsilon\sim\mathcal{N}(0,\sigma^2 I)$.
+
+## (Bonus) 
+
+Compute the variance of ridge regression, defined as
+$$
+\text{Var}[\widehat\theta_\lambda] = \mathbb{E} \left[\|\widehat\theta_\lambda - \mathbb{E}[\widehat\theta_\lambda]\|_2^2\right].
+$$
+
+
