@@ -123,6 +123,7 @@ $$
 $$
 
 **Settings**:
+
 - $n_{\text{train}} = 30$
 - $n_{\text{test}} = 1000$
 - $k = 15$ (so $d = k+1 = 16$)
@@ -158,6 +159,7 @@ Use `solve()` (do not compute an explicit inverse).
 
 #### Task 5 (5 pts): Short interpretation
 In 6–10 lines:
+
 - Describe the shape of the test MSE curve.
 - Roughly what $\lambda$ values perform best?
 - Explain what the coefficient-norm plot says about “shrinkage”.
