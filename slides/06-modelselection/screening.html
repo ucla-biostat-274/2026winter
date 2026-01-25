@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script src="screening_files/libs/clipboard/clipboard.min.js"></script>
+<script src="screening_files/libs/quarto-html/tabby.min.js"></script>
+<script src="screening_files/libs/quarto-html/popper.min.js"></script>
+<script src="screening_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="screening_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="screening_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="screening_files/libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.8.25">
+
+  <meta name="author" content="Dr.&nbsp;Jin Zhou @ UCLA">
+  <meta name="dcterms.date" content="2026-01-24">
+  <title>Feature Screening</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="screening_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="screening_files/libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      { color: #003b4f; background-color: #f1f3f5; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span { color: #003b4f; } /* Normal */
+    code span.al { color: #ad0000; } /* Alert */
+    code span.an { color: #5e5e5e; } /* Annotation */
+    code span.at { color: #657422; } /* Attribute */
+    code span.bn { color: #ad0000; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #003b4f; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #20794d; } /* Char */
+    code span.cn { color: #8f5902; } /* Constant */
+    code span.co { color: #5e5e5e; } /* Comment */
+    code span.cv { color: #5e5e5e; font-style: italic; } /* CommentVar */
+    code span.do { color: #5e5e5e; font-style: italic; } /* Documentation */
+    code span.dt { color: #ad0000; } /* DataType */
+    code span.dv { color: #ad0000; } /* DecVal */
+    code span.er { color: #ad0000; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #ad0000; } /* Float */
+    code span.fu { color: #4758ab; } /* Function */
+    code span.im { color: #00769e; } /* Import */
+    code span.in { color: #5e5e5e; } /* Information */
+    code span.kw { color: #003b4f; font-weight: bold; } /* Keyword */
+    code span.op { color: #5e5e5e; } /* Operator */
+    code span.ot { color: #003b4f; } /* Other */
+    code span.pp { color: #ad0000; } /* Preprocessor */
+    code span.sc { color: #5e5e5e; } /* SpecialChar */
+    code span.ss { color: #20794d; } /* SpecialString */
+    code span.st { color: #20794d; } /* String */
+    code span.va { color: #111111; } /* Variable */
+    code span.vs { color: #20794d; } /* VerbatimString */
+    code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="screening_files/libs/revealjs/dist/theme/quarto-0fde88a82f0356838740f155f1088782.css">
+  <link href="screening_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="screening_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="screening_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="screening_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+  <style>
+    #title-slide .title {
+      font-size: 4em;
+      color: ;
+    }
+  </style>
+</head>
+<body class="quarto-light">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">Feature Screening</h1>
+  <p class="subtitle">Biostat 274</p>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+Dr.&nbsp;Jin Zhou @ UCLA 
+</div>
+</div>
+</div>
+
+  <p class="date">2026-01-24</p>
+</section>
+<section id="learning-goals" class="slide level2">
+<h2>Learning goals</h2>
+<ul>
+<li>Motivate feature screening in <strong>p ≫ n</strong> omics</li>
+<li>Learn the <strong>two-scale</strong> idea: <em>screen → select</em></li>
+<li>Understand the <strong>sure screening</strong> goal (informal, no proofs)</li>
+<li>Recognize when SIS fails and why ISIS / conditional SIS helps</li>
+<li>Connect screening to <strong>lasso/elastic net</strong> and what guarantees they need</li>
+<li>Implement a <strong>no-leakage</strong> RNA-seq pipeline in R:
+<ul>
+<li>CPM filter + VST</li>
+<li>variance filter</li>
+<li>limma screening (train-only)</li>
+<li>elastic net (glmnet) + outer CV + stability</li>
+</ul></li>
+</ul>
+<aside class="notes">
+<p>In this lecture we focus on the first step of modern high-dimensional pipelines: feature screening. The goal is practical: make large omics problems computationally feasible while keeping the true signals. We’ll (1) set up the statistical problem, (2) define SIS and the sure screening property, (3) discuss why marginal screening can fail and what iterative / conditional ideas do, (4) connect screening to sparse regularization like the lasso, and (5) implement an RNA-seq prediction workflow without information leakage using nested cross-validation.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="why-screening-in-rna-seq" class="slide level2">
+<h2>Why screening in RNA-seq?</h2>
+<ul>
+<li>Ultra-high dimensional data faces: <strong>collinearity</strong>, <strong>spurious correlation</strong>, <strong>noise accumulation</strong></li>
+<li>With many noise features, using <em>all</em> genes can degrade prediction (often toward random guess)</li>
+<li>Screening improves:
+<ul>
+<li><strong>scalability</strong> (time/memory)</li>
+<li><strong>statistical efficiency</strong> (less noise to accumulate)</li>
+</ul></li>
+</ul>
+<aside class="notes">
+<p>RNA-seq is a classic setting with p in the tens of thousands and n in the tens to hundreds. Two pathologies show up quickly: spurious correlations (some genes will look associated just by chance) and noise accumulation (downstream models can get overwhelmed by irrelevant features). Screening is a cheap first pass that reduces the feature space so that the second-stage model selection is both computationally feasible and statistically better behaved.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="pipeline-overview-what-well-implement" class="slide level2 scrollable">
+<h2>Pipeline overview (what we’ll implement)</h2>
+<ol type="1">
+<li><strong>Filter low counts</strong> (unsupervised)<br>
+</li>
+<li><strong>Normalize + transform</strong> (DESeq2 size factors + <strong>VST</strong>)<br>
+</li>
+<li><strong>Variance filter</strong> (unsupervised)<br>
+</li>
+<li><strong>Marginal screening score</strong> (train-only): limma moderated t / p-value <strong>or</strong> |cor|<br>
+</li>
+<li><strong>Moderate-scale selection</strong>: elastic net on screened genes<br>
+</li>
+<li><strong>Evaluate</strong>: outer CV AUC + stability</li>
+</ol>
+<aside class="notes">
+<p>This is the two-scale template: cheap screening first, then a multivariate model. A key detail for honest evaluation is “train-only” screening inside each CV fold. Anything that uses the labels (t-tests, limma, correlations with y) must be computed on training data only. Otherwise you leak information from test to train and inflate AUC.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section>
+<section>
+<section id="theory" class="title-slide slide level1 center">
+<h1>Theory</h1>
+
+</section>
+<section id="problem-setup-sparse-high-dimensional-regression" class="slide level2">
+<h2>Problem setup: sparse high-dimensional regression</h2>
+<p>We observe <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>,</mo><msub><mi>y</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(x_i, y_i)</annotation></semantics></math> for <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>n</mi></mrow><annotation encoding="application/x-tex">i=1,\dots,n</annotation></semantics></math> with <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mi>i</mi></msub><mo>∈</mo><msup><mi>ℝ</mi><mi>p</mi></msup></mrow><annotation encoding="application/x-tex">x_i\in\mathbb{R}^p</annotation></semantics></math>.</p>
+<p>A canonical model:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>=</mo><mi>X</mi><mi>β</mi><mo>+</mo><mi>ε</mi><mo>,</mo><mspace width="2.0em"></mspace><mi>p</mi><mo>≫</mo><mi>n</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+ y = X\beta + \varepsilon, \qquad p \gg n.
+</annotation></semantics></math></p>
+<p>Assume <strong>sparsity</strong>:</p>
+<ul>
+<li>true support <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mi>j</mi><mo>:</mo><msub><mi>β</mi><mi>j</mi></msub><mo>≠</mo><mn>0</mn><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">S = \{j: \beta_j \neq 0\}</annotation></semantics></math></li>
+<li>sparsity level <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>s</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">|</mo><mi>S</mi><mo stretchy="true" form="postfix">|</mo></mrow><mo>≪</mo><mi>n</mi></mrow><annotation encoding="application/x-tex">s = |S| \ll n</annotation></semantics></math></li>
+</ul>
+<aside class="notes">
+<p>To talk clearly about screening we need notation. We’ll use the linear model as the core template, even if in practice we later use logistic regression or other losses. The key structural assumption is sparsity: only a small subset of genes truly drives the outcome. Screening tries to produce a reduced set S that still contains S.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="high-dimensional-vs-ultra-high-dimensional" class="slide level2">
+<h2>“High-dimensional” vs “ultra-high-dimensional”</h2>
+<p>A common asymptotic distinction:</p>
+<ul>
+<li><strong>High-dimensional:</strong> <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>p</mi><mi>n</mi></msub><mo>=</mo><mi>O</mi><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>n</mi><mi>ξ</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">p_n = O(n^\xi)</annotation></semantics></math> (polynomial growth)</li>
+<li><strong>Ultra-high-dimensional:</strong> <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><msub><mi>p</mi><mi>n</mi></msub><mo>=</mo><mi>O</mi><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>n</mi><mi>ξ</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\log p_n = O(n^\xi)</annotation></semantics></math> (non-polynomial growth)</li>
+</ul>
+<p>RNA-seq is often closer to <strong>ultra-high-dimensional</strong> behavior.</p>
+<aside class="notes">
+<p>This distinction matters because the “multiple comparisons” effect explodes when p grows too quickly. In the ultra-high regime, even if each noise variable has tiny chance to look significant, with exponentially many variables you almost surely see large spurious correlations. Sure screening theory is designed to handle this regime.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="sis-screening-by-a-marginal-utility" class="slide level2">
+<h2>SIS: screening by a marginal utility</h2>
+<p>Sure Independence Screening (SIS) ranks features by a <strong>marginal utility</strong> <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>U</mi><mi>j</mi></msub><annotation encoding="application/x-tex">U_j</annotation></semantics></math>.</p>
+<p>Common choices:</p>
+<ul>
+<li>correlation: <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>U</mi><mi>j</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">|</mo><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">r</mi></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mi>j</mi></msub><mo>,</mo><mi>y</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">|</mo></mrow></mrow><annotation encoding="application/x-tex">U_j = |\mathrm{corr}(X_j, y)|</annotation></semantics></math></li>
+<li>marginal regression slope: <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>U</mi><mi>j</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">|</mo><msubsup><mover><mi>β</mi><mo accent="true">̂</mo></mover><mi>j</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>m</mi><mi>a</mi><mi>r</mi><mi>g</mi><mo stretchy="true" form="postfix">)</mo></mrow></msubsup><mo stretchy="true" form="postfix">|</mo></mrow></mrow><annotation encoding="application/x-tex">U_j = |\hat\beta^{(marg)}_j|</annotation></semantics></math></li>
+<li>two-sample t / <strong>limma</strong> moderated t (omics-friendly)</li>
+</ul>
+<p>Then keep the top <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>d</mi><annotation encoding="application/x-tex">d</annotation></semantics></math> features: <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>S</mi><mo accent="true">̂</mo></mover><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mi>j</mi><mo>:</mo><msub><mi>U</mi><mi>j</mi></msub><mrow><mspace width="0.333em"></mspace><mtext mathvariant="normal"> is among the top </mtext><mspace width="0.333em"></mspace></mrow><mi>d</mi><mo stretchy="false" form="postfix">}</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\hat S = \{j: U_j \text{ is among the top } d\}.
+</annotation></semantics></math></p>
+<aside class="notes">
+<p>SIS is simple: compute a one-dimensional score for each feature independently. In genomics, limma’s moderated t is a popular marginal score because it stabilizes variance estimates across genes. In classification problems, two-sample t-tests are a special case of this marginal approach. The tuning parameter is d: how many features we keep for the second-stage model.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="componentwise-regression" class="slide level2">
+<h2>Componentwise regression</h2>
+<p>Let <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math> be column-standardized (each gene has mean 0, variance 1).</p>
+<p>Define the <strong>componentwise regression score</strong> <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ω</mi><mo>=</mo><msup><mi>X</mi><mi>⊤</mi></msup><mi>y</mi><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>ω</mi><mi>j</mi></msub><mo>=</mo><msubsup><mi>x</mi><mi>j</mi><mi>⊤</mi></msubsup><mi>y</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\omega = X^\top y, \qquad \omega_j = x_j^\top y.
+</annotation></semantics></math></p>
+<p>Interpretation:</p>
+<ul>
+<li>If <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>x</mi><mi>j</mi></msub><annotation encoding="application/x-tex">x_j</annotation></semantics></math> is standardized, then <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ω</mi><mi>j</mi></msub><annotation encoding="application/x-tex">\omega_j</annotation></semantics></math> is proportional to <strong>sample covariance</strong> between <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>x</mi><mi>j</mi></msub><annotation encoding="application/x-tex">x_j</annotation></semantics></math> and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>.</li>
+<li>The univariate OLS slope satisfies <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mover><mi>β</mi><mo accent="true">̂</mo></mover><mi>j</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>m</mi><mi>a</mi><mi>r</mi><mi>g</mi><mo stretchy="true" form="postfix">)</mo></mrow></msubsup><mo>=</mo><mfrac><mrow><msubsup><mi>x</mi><mi>j</mi><mi>⊤</mi></msubsup><mi>y</mi></mrow><mrow><msubsup><mi>x</mi><mi>j</mi><mi>⊤</mi></msubsup><msub><mi>x</mi><mi>j</mi></msub></mrow></mfrac><mo>∝</mo><msub><mi>ω</mi><mi>j</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\hat\beta^{(marg)}_j = \frac{x_j^\top y}{x_j^\top x_j} \propto \omega_j.
+</annotation></semantics></math></li>
+</ul>
+<p>So ranking by <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">|</mo><msub><mi>ω</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">|</mo></mrow><annotation encoding="application/x-tex">|\omega_j|</annotation></semantics></math> is (essentially) ranking by marginal correlation.</p>
+<aside class="notes">
+<p>“Componentwise regression” just means: regress y on one predictor at a time. If you center and standardize each x_j, then the univariate slope is basically x_j^T y divided by a constant. So the vector omega = X^T y collects all marginal association scores in one matrix multiply. That’s why SIS is extremely fast: it’s essentially one pass over the design matrix.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="sure-screening-property" class="slide level2">
+<h2>Sure screening property</h2>
+<p>Let <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>S</mi><annotation encoding="application/x-tex">S</annotation></semantics></math> be the true signal set and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>S</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat S</annotation></semantics></math> the screened set.</p>
+<p><strong>Sure screening property:</strong> <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>Pr</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>S</mi><mo>⊆</mo><mover><mi>S</mi><mo accent="true">̂</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mo>→</mo><mn>1</mn><mspace width="1.0em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mi>n</mi><mo>→</mo><mi>∞</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\Pr(S \subseteq \hat S) \to 1 \quad (n\to\infty).
+</annotation></semantics></math></p>
+<p>Interpretation:</p>
+<ul>
+<li>screening prioritizes <strong>low false negatives</strong></li>
+<li>false positives are tolerated; stage 2 handles them</li>
+</ul>
+<aside class="notes">
+<p>Sure screening is not the same as perfect selection. We only ask the screening step to keep the true signals with high probability. It may keep many extra variables—and that’s fine. The second-stage method (lasso/SCAD/elastic net, etc.) is where we try to remove false positives.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="what-assumptions-make-sure-screening-plausible" class="slide level2">
+<h2>What assumptions make sure screening plausible?</h2>
+<p>At a high level, SIS needs:</p>
+<ul>
+<li><strong>signal strength</strong>: true effects are not too tiny (a “beta-min” condition)</li>
+<li><strong>concentration</strong>: sample correlations concentrate around population correlations</li>
+<li><strong>not-too-extreme collinearity</strong>: correlation structure is not adversarial</li>
+</ul>
+<p>Practical mental model:</p>
+<blockquote>
+<p>True signals must stand above the <strong>maximum spurious correlation</strong> among noise variables.</p>
+</blockquote>
+<aside class="notes">
+<p>Theorem statements in SIS papers look technical, but the intuition is simple. Noise variables have correlations with y that fluctuate around 0; with huge p, the largest fluctuation can still be large. To not miss true signals, each true variable needs enough marginal association so it ranks above those spurious extremes. This is why screening is easiest when signals are strong and not fully masked by correlation structure.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="how-big-should-d-be" class="slide level2">
+<h2>How big should <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>d</mi><annotation encoding="application/x-tex">d</annotation></semantics></math> be?</h2>
+<p>Theory shows sure screening can hold even when <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math> grows very fast, with <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>d</mi><annotation encoding="application/x-tex">d</annotation></semantics></math> scaling like a small multiple of <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>.</p>
+<p>Conservative choices suggested in early SIS work:</p>
+<ul>
+<li><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mo>=</mo><mi>n</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">d = n - 1</annotation></semantics></math></li>
+<li><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mo>=</mo><mo stretchy="false" form="prefix">⌊</mo><mi>n</mi><mi>/</mi><mo>log</mo><mi>n</mi><mo stretchy="false" form="postfix">⌋</mo></mrow><annotation encoding="application/x-tex">d = \lfloor n / \log n \rfloor</annotation></semantics></math></li>
+</ul>
+<p>Practice:</p>
+<ul>
+<li>treat <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>d</mi><annotation encoding="application/x-tex">d</annotation></semantics></math> as a hyperparameter</li>
+<li>tune it <strong>inside CV</strong> (or use a thresholding rule)</li>
+</ul>
+<aside class="notes">
+<p>The original SIS papers emphasize keeping d on the order of n, not on the order of p. This makes stage 2 feasible and also keeps the probability of retaining all true signals high. In practice you can pick a grid of d values like 200, 500, 1000, 2000 and tune inside CV. Alternatively, you can use permutation thresholding to set a cutoff.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="permutation-thresholding" class="slide level2 scrollable">
+<h2>Permutation thresholding</h2>
+<p>Goal: choose a cutoff that reflects <strong>spurious</strong> marginal association.</p>
+<p>Procedure:</p>
+<ol type="1">
+<li>Permute labels <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math> → destroys true association</li>
+<li>Recompute marginal scores <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>U</mi><mi>j</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>p</mi><mi>e</mi><mi>r</mi><mi>m</mi><mo stretchy="true" form="postfix">)</mo></mrow></msubsup><annotation encoding="application/x-tex">U_j^{(perm)}</annotation></semantics></math></li>
+<li>Set threshold <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>r</mi><mo>*</mo></msup><annotation encoding="application/x-tex">r^*</annotation></semantics></math> as the maximum (or qth percentile) of <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">|</mo><msubsup><mi>U</mi><mi>j</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>p</mi><mi>e</mi><mi>r</mi><mi>m</mi><mo stretchy="true" form="postfix">)</mo></mrow></msubsup><mo stretchy="true" form="postfix">|</mo></mrow><annotation encoding="application/x-tex">|U_j^{(perm)}|</annotation></semantics></math></li>
+<li>Screen by <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>S</mi><mo accent="true">̂</mo></mover><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mi>j</mi><mo>:</mo><mrow><mo stretchy="true" form="prefix">|</mo><msub><mi>U</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">|</mo></mrow><mo>≥</mo><msup><mi>r</mi><mo>*</mo></msup><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\hat S = \{j: |U_j| \ge r^*\}</annotation></semantics></math></li>
+</ol>
+<aside class="notes">
+<p>This is a clean, model-agnostic way to pick a threshold. The permuted data keeps the same feature distribution and the same label distribution, but breaks any real association. So the largest marginal score under permutation is a proxy for the largest “purely spurious” score. Keeping only features above that level is a way to control false positives at the screening stage.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="why-marginal-screening-can-fail" class="slide level2 scrollable">
+<h2>Why marginal screening can fail</h2>
+<p>Two classic failure modes:</p>
+<ol type="1">
+<li><strong>Proxy noise features</strong>: a noise gene highly correlated with a true gene can rank higher than the true gene.</li>
+<li><strong>Marginally silent signals</strong>: a truly important gene can have near-zero marginal correlation but be important jointly.</li>
+</ol>
+<p>These motivate iterative/conditional variants.</p>
+<aside class="notes">
+<p>SIS is a marginal method; it ignores the joint correlation structure. If a noise gene shadows a real signal gene, it can “steal” rank. And in multivariate settings, a variable can matter only after conditioning on others. This is the same reason naive marginal p-values can miss interaction or suppression effects.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="isis-and-conditional-sis-intuition" class="slide level2">
+<h2>ISIS and conditional SIS (intuition)</h2>
+<p><strong>Iterative SIS (ISIS):</strong></p>
+<ul>
+<li>screen → fit a multivariate model on screened set → compute residuals</li>
+<li>re-screen <em>remaining</em> variables against residuals</li>
+<li>iterate to recruit masked signals</li>
+</ul>
+<p><strong>Conditional SIS:</strong></p>
+<ul>
+<li>if you have a “must-include” set (batch, known covariates), screen others <strong>conditional</strong> on that set.</li>
+</ul>
+<aside class="notes">
+<p>ISIS tries to approximate a multivariate search while keeping computations cheap. The idea is: once you include some strong signals, the residual contains what’s left unexplained. Genes that were marginally weak because of masking can become strongly associated with the residual. Conditional SIS is the same idea but driven by prior knowledge.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="beyond-linear-regression-glm-classification-screening" class="slide level2">
+<h2>Beyond linear regression: GLM / classification screening</h2>
+<p>For binary or count responses, SIS generalizes by using marginal likelihood utilities:</p>
+<ul>
+<li><strong>marginal MLE magnitude</strong> (fit one-variable GLM)</li>
+<li><strong>marginal likelihood ratio statistic</strong></li>
+</ul>
+<p>These can still achieve sure screening under suitable conditions.</p>
+<p>RNA-seq prediction examples:</p>
+<ul>
+<li>case/control → logistic regression screening score</li>
+<li>counts outcome → Poisson/negative binomial style utilities</li>
+</ul>
+<aside class="notes">
+<p>In classification you often prefer screening scores based on a classification-appropriate loss. Fan &amp; coauthors show that in GLMs you can screen by fitting p separate one-variable models and ranking by the marginal coefficient or a likelihood ratio statistic. In practice, many genomics pipelines still use t/limma as a strong baseline, especially after VST.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="nonlinear-robust-screening" class="slide level2">
+<h2>Nonlinear + robust screening</h2>
+<p>When relationships are nonlinear or data are heavy-tailed/outlier-prone (i.e., Pearson corr is the wrong tool):</p>
+<ul>
+<li><strong>Nonparametric independence screening (NIS):</strong> marginal nonparametric fits, rank by fitted-function norm</li>
+<li><strong>Robust screening:</strong> Kendall’s <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math> rank correlation</li>
+<li><strong>Model-free screening:</strong> distance correlation</li>
+</ul>
+<aside class="notes">
+<p>Pearson correlation is sensitive to outliers and only measures linear association. For nonlinear signals, marginal nonparametric regression can pick up structure that correlation misses. Robust rank-based measures like Kendall’s tau are less sensitive to heavy tails. Distance correlation is attractive because it detects general dependence, not just linear. These are more advanced tools, but it’s important for students to know they exist.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="after-screening-lassoelastic-net-is-a-natural-stage-2" class="slide level2">
+<h2>After screening, lasso/elastic net is a natural stage 2</h2>
+<p>Stage 2 solves a <em>multivariate</em> sparse problem on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>d</mi><annotation encoding="application/x-tex">d</annotation></semantics></math> features:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>β</mi><mo accent="true">̂</mo></mover><mo>=</mo><mo>arg</mo><munder><mo>min</mo><mi>β</mi></munder><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="postfix">∥</mo><mi>y</mi><mo>−</mo><mi>X</mi><mi>β</mi><msubsup><mo stretchy="false" form="postfix">∥</mo><mn>2</mn><mn>2</mn></msubsup><mo>+</mo><mi>λ</mi><mo stretchy="false" form="postfix">∥</mo><mi>β</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>1</mn></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\hat\beta = \arg\min_\beta \frac{1}{2}\|y - X\beta\|_2^2 + \lambda\|\beta\|_1.
+</annotation></semantics></math></p>
+<p>Key lasso facts you should know:</p>
+<ul>
+<li>KKT/subgradient condition: <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>X</mi><mi>⊤</mi></msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>y</mi><mo>−</mo><mi>X</mi><mover><mi>β</mi><mo accent="true">̂</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>λ</mi><mi>s</mi></mrow><annotation encoding="application/x-tex">X^\top(y - X\hat\beta) = \lambda s</annotation></semantics></math></li>
+<li><strong>Equicorrelation set</strong> collects variables most correlated with the residual</li>
+<li>With continuous predictors, the lasso solution is typically unique</li>
+<li><strong>Saturation:</strong> lasso selects at most <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>min</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>n</mi><mo>,</mo><mi>d</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\min(n,d)</annotation></semantics></math> variables</li>
+</ul>
+<aside class="notes">
+<p>Screening reduces the size so that lasso/elastic net becomes fast and stable. The KKT condition is the core: selected variables have correlation exactly lambda with the residual. The equicorrelation set formalizes this. Saturation is an underappreciated point: with n samples, lasso can’t select more than n predictors when unique. This is another reason screening is helpful—if you keep d too big and n is small, you’ll hit saturation anyway.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="fast-rates-need-design-conditions" class="slide level2">
+<h2>“Fast rates” need design conditions</h2>
+<p>Without assumptions on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>, lasso prediction bounds can be slow.</p>
+<p>Under conditions controlling feature correlations (e.g., <strong>compatibility</strong> / <strong>restricted eigenvalue</strong>):</p>
+<ul>
+<li>prediction error scales like <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">risk</mtext><mo>∼</mo><mfrac><mrow><mi>s</mi><mo>log</mo><mi>d</mi></mrow><mi>n</mi></mfrac></mrow><annotation encoding="application/x-tex">
+\text{risk} \sim \frac{s\log d}{n}
+</annotation></semantics></math></li>
+</ul>
+<p>Takeaway:</p>
+<ul>
+<li>screening aims to reduce <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>d</mi><annotation encoding="application/x-tex">d</annotation></semantics></math></li>
+<li>good design / weak collinearity improves stage-2 guarantees</li>
+</ul>
+<aside class="notes">
+<p>The literature distinguishes slow and fast rates. Fast rates require that the active predictors are not too collinear and that the design matrix behaves well on sparse vectors. This is exactly what compatibility and restricted eigenvalue conditions enforce. From a teaching perspective: emphasize that guarantees depend on both sparsity and correlation structure.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="practical-warning-avoid-information-leakage" class="slide level2">
+<h2>Practical warning: avoid information leakage</h2>
+<p>If you compute supervised screening on the full dataset, you leak test labels into train.</p>
+<p>Correct approach:</p>
+<ul>
+<li>within each outer CV fold:
+<ul>
+<li>compute screening scores using <strong>training</strong> samples only</li>
+<li>fit the stage-2 model on training samples only</li>
+<li>evaluate on held-out samples</li>
+</ul></li>
+</ul>
+<aside class="notes">
+<p>This is the #1 way people accidentally get “too good to be true” AUCs. Any step that uses y—t-tests, limma, correlation screening, even choosing hyperparameters—must be trained only on training data. We’ll implement the full pipeline with fold-specific screening to keep the evaluation honest.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section id="data-code-tcga-brca-via-recount3" class="title-slide slide level1 center">
+<h1>Data + code (TCGA-BRCA via recount3)</h1>
+<div class="cell" data-layout-align="center">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a><span class="do">## ============================================================</span></span>
+<span id="cb1-2"><a href=""></a><span class="do">## Dual-score feature screening (RNA-seq)</span></span>
+<span id="cb1-3"><a href=""></a><span class="do">## Dataset: TCGA-BRCA Tumor vs Normal via recount3 (Bioc 3.22 compatible)</span></span>
+<span id="cb1-4"><a href=""></a><span class="do">##</span></span>
+<span id="cb1-5"><a href=""></a><span class="do">## Two screening scores inside each TRAIN fold:</span></span>
+<span id="cb1-6"><a href=""></a><span class="do">##   (A) limma moderated t (rank by p-value)</span></span>
+<span id="cb1-7"><a href=""></a><span class="do">##   (B) SIS-style |corr(X_j, y)| on VST values</span></span>
+<span id="cb1-8"><a href=""></a><span class="do">##</span></span>
+<span id="cb1-9"><a href=""></a><span class="do">## Pipeline per fold:</span></span>
+<span id="cb1-10"><a href=""></a><span class="do">##   TRAIN-only CPM filter -&gt; VST (design~1) -&gt; TRAIN-only variance filter -&gt;</span></span>
+<span id="cb1-11"><a href=""></a><span class="do">##   screen (limma or SIS) -&gt; elastic net (glmnet) inner CV -&gt; predict on test</span></span>
+<span id="cb1-12"><a href=""></a><span class="do">##</span></span>
+<span id="cb1-13"><a href=""></a><span class="do">## Outputs:</span></span>
+<span id="cb1-14"><a href=""></a><span class="do">##   - One-run outer CV AUC for limma and SIS</span></span>
+<span id="cb1-15"><a href=""></a><span class="do">##   - Repeated outer CV AUC distributions</span></span>
+<span id="cb1-16"><a href=""></a><span class="do">##   - Stability (screen frequency)</span></span>
+<span id="cb1-17"><a href=""></a><span class="do">##   - Optional permutation sanity check</span></span>
+<span id="cb1-18"><a href=""></a><span class="do">## ============================================================</span></span>
+<span id="cb1-19"><a href=""></a></span>
+<span id="cb1-20"><a href=""></a><span class="do">## ---- packages ----</span></span>
+<span id="cb1-21"><a href=""></a>pkgs_cran <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"tidyverse"</span>, <span class="st">"matrixStats"</span>, <span class="st">"pROC"</span>, <span class="st">"glmnet"</span>)</span>
+<span id="cb1-22"><a href=""></a>pkgs_bioc <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"recount3"</span>, <span class="st">"SummarizedExperiment"</span>, <span class="st">"DESeq2"</span>, <span class="st">"edgeR"</span>, <span class="st">"limma"</span>)</span>
+<span id="cb1-23"><a href=""></a></span>
+<span id="cb1-24"><a href=""></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">requireNamespace</span>(<span class="st">"BiocManager"</span>, <span class="at">quietly =</span> <span class="cn">TRUE</span>)) <span class="fu">install.packages</span>(<span class="st">"BiocManager"</span>)</span>
+<span id="cb1-25"><a href=""></a><span class="cf">for</span> (p <span class="cf">in</span> pkgs_cran) <span class="cf">if</span> (<span class="sc">!</span><span class="fu">requireNamespace</span>(p, <span class="at">quietly =</span> <span class="cn">TRUE</span>)) <span class="fu">install.packages</span>(p)</span>
+<span id="cb1-26"><a href=""></a><span class="cf">for</span> (p <span class="cf">in</span> pkgs_bioc) <span class="cf">if</span> (<span class="sc">!</span><span class="fu">requireNamespace</span>(p, <span class="at">quietly =</span> <span class="cn">TRUE</span>)) BiocManager<span class="sc">::</span><span class="fu">install</span>(p, <span class="at">ask =</span> <span class="cn">FALSE</span>, <span class="at">update =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-27"><a href=""></a></span>
+<span id="cb1-28"><a href=""></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-29"><a href=""></a><span class="fu">library</span>(matrixStats)</span>
+<span id="cb1-30"><a href=""></a><span class="fu">library</span>(pROC)</span>
+<span id="cb1-31"><a href=""></a><span class="fu">library</span>(glmnet)</span>
+<span id="cb1-32"><a href=""></a></span>
+<span id="cb1-33"><a href=""></a><span class="fu">library</span>(recount3)</span>
+<span id="cb1-34"><a href=""></a><span class="fu">library</span>(SummarizedExperiment)</span>
+<span id="cb1-35"><a href=""></a><span class="fu">library</span>(DESeq2)</span>
+<span id="cb1-36"><a href=""></a><span class="fu">library</span>(edgeR)</span>
+<span id="cb1-37"><a href=""></a><span class="fu">library</span>(limma)</span>
+<span id="cb1-38"><a href=""></a></span>
+<span id="cb1-39"><a href=""></a><span class="do">## ---- helper: find first matching column by regex ----</span></span>
+<span id="cb1-40"><a href=""></a>first_col_match <span class="ot">&lt;-</span> <span class="cf">function</span>(df, pattern) {</span>
+<span id="cb1-41"><a href=""></a>  hits <span class="ot">&lt;-</span> <span class="fu">grep</span>(pattern, <span class="fu">colnames</span>(df), <span class="at">ignore.case =</span> <span class="cn">TRUE</span>, <span class="at">value =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-42"><a href=""></a>  <span class="cf">if</span> (<span class="fu">length</span>(hits) <span class="sc">==</span> <span class="dv">0</span>) <span class="fu">return</span>(<span class="cn">NA_character_</span>)</span>
+<span id="cb1-43"><a href=""></a>  hits[<span class="dv">1</span>]</span>
+<span id="cb1-44"><a href=""></a>}</span>
+<span id="cb1-45"><a href=""></a></span>
+<span id="cb1-46"><a href=""></a><span class="do">## ---- helper: stratified folds ----</span></span>
+<span id="cb1-47"><a href=""></a>make_strat_folds <span class="ot">&lt;-</span> <span class="cf">function</span>(y, K) {</span>
+<span id="cb1-48"><a href=""></a>  fold_id <span class="ot">&lt;-</span> <span class="fu">integer</span>(<span class="fu">length</span>(y))</span>
+<span id="cb1-49"><a href=""></a>  <span class="cf">for</span> (lev <span class="cf">in</span> <span class="fu">levels</span>(y)) {</span>
+<span id="cb1-50"><a href=""></a>    idx <span class="ot">&lt;-</span> <span class="fu">which</span>(y <span class="sc">==</span> lev)</span>
+<span id="cb1-51"><a href=""></a>    fold_id[idx] <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>K, <span class="at">length.out =</span> <span class="fu">length</span>(idx)))</span>
+<span id="cb1-52"><a href=""></a>  }</span>
+<span id="cb1-53"><a href=""></a>  tab <span class="ot">&lt;-</span> <span class="fu">table</span>(fold_id, y)</span>
+<span id="cb1-54"><a href=""></a>  <span class="cf">if</span> (<span class="fu">any</span>(tab <span class="sc">==</span> <span class="dv">0</span>)) <span class="fu">stop</span>(<span class="st">"A fold has a missing class. Reduce K or re-sample."</span>)</span>
+<span id="cb1-55"><a href=""></a>  fold_id</span>
+<span id="cb1-56"><a href=""></a>}</span>
+<span id="cb1-57"><a href=""></a></span>
+<span id="cb1-58"><a href=""></a><span class="do">## ---- helper: SIS-style abs correlation screening ----</span></span>
+<span id="cb1-59"><a href=""></a>screen_sis_abs_cor <span class="ot">&lt;-</span> <span class="cf">function</span>(X_genes_by_samples, y_factor, top_k) {</span>
+<span id="cb1-60"><a href=""></a>  y_bin <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(y_factor <span class="sc">==</span> <span class="fu">levels</span>(y_factor)[<span class="dv">2</span>], <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb1-61"><a href=""></a>  y_c <span class="ot">&lt;-</span> y_bin <span class="sc">-</span> <span class="fu">mean</span>(y_bin)</span>
+<span id="cb1-62"><a href=""></a>  sdy <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(y_c<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> (<span class="fu">length</span>(y_c) <span class="sc">-</span> <span class="dv">1</span>))</span>
+<span id="cb1-63"><a href=""></a></span>
+<span id="cb1-64"><a href=""></a>  Xc <span class="ot">&lt;-</span> X_genes_by_samples <span class="sc">-</span> <span class="fu">rowMeans</span>(X_genes_by_samples)</span>
+<span id="cb1-65"><a href=""></a>  sdX <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">rowSums</span>(Xc<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> (<span class="fu">ncol</span>(Xc) <span class="sc">-</span> <span class="dv">1</span>))</span>
+<span id="cb1-66"><a href=""></a></span>
+<span id="cb1-67"><a href=""></a>  cov_g <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>((Xc <span class="sc">%*%</span> y_c) <span class="sc">/</span> (<span class="fu">ncol</span>(Xc) <span class="sc">-</span> <span class="dv">1</span>))</span>
+<span id="cb1-68"><a href=""></a>  r <span class="ot">&lt;-</span> cov_g <span class="sc">/</span> (sdX <span class="sc">*</span> sdy)</span>
+<span id="cb1-69"><a href=""></a>  r[<span class="sc">!</span><span class="fu">is.finite</span>(r)] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb1-70"><a href=""></a></span>
+<span id="cb1-71"><a href=""></a>  ord <span class="ot">&lt;-</span> <span class="fu">order</span>(<span class="fu">abs</span>(r), <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-72"><a href=""></a>  keep <span class="ot">&lt;-</span> ord[<span class="dv">1</span><span class="sc">:</span><span class="fu">min</span>(top_k, <span class="fu">length</span>(ord))]</span>
+<span id="cb1-73"><a href=""></a>  <span class="fu">rownames</span>(X_genes_by_samples)[keep]</span>
+<span id="cb1-74"><a href=""></a>}</span>
+<span id="cb1-75"><a href=""></a></span>
+<span id="cb1-76"><a href=""></a><span class="do">## ---- helper: limma screening (rank by p-value) ----</span></span>
+<span id="cb1-77"><a href=""></a>screen_limma_p <span class="ot">&lt;-</span> <span class="cf">function</span>(X_genes_by_samples, y_factor, top_k) {</span>
+<span id="cb1-78"><a href=""></a>  design <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="sc">~</span> y_factor)</span>
+<span id="cb1-79"><a href=""></a>  fit <span class="ot">&lt;-</span> limma<span class="sc">::</span><span class="fu">eBayes</span>(limma<span class="sc">::</span><span class="fu">lmFit</span>(X_genes_by_samples, design))</span>
+<span id="cb1-80"><a href=""></a>  tab <span class="ot">&lt;-</span> limma<span class="sc">::</span><span class="fu">topTable</span>(fit, <span class="at">coef =</span> <span class="dv">2</span>, <span class="at">number =</span> <span class="cn">Inf</span>, <span class="at">sort.by =</span> <span class="st">"P"</span>)</span>
+<span id="cb1-81"><a href=""></a>  <span class="fu">rownames</span>(tab)[<span class="dv">1</span><span class="sc">:</span><span class="fu">min</span>(top_k, <span class="fu">nrow</span>(tab))]</span>
+<span id="cb1-82"><a href=""></a>}</span>
+<span id="cb1-83"><a href=""></a></span>
+<span id="cb1-84"><a href=""></a><span class="do">## ---- helper: train + predict glmnet ----</span></span>
+<span id="cb1-85"><a href=""></a>fit_predict_glmnet <span class="ot">&lt;-</span> <span class="cf">function</span>(Xtr_genes_by_samples, Xte_genes_by_samples, y_train, <span class="at">alpha =</span> <span class="fl">0.5</span>) {</span>
+<span id="cb1-86"><a href=""></a>  Xtr <span class="ot">&lt;-</span> <span class="fu">t</span>(Xtr_genes_by_samples)</span>
+<span id="cb1-87"><a href=""></a>  Xte <span class="ot">&lt;-</span> <span class="fu">t</span>(Xte_genes_by_samples)</span>
+<span id="cb1-88"><a href=""></a></span>
+<span id="cb1-89"><a href=""></a>  y_bin <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(y_train <span class="sc">==</span> <span class="fu">levels</span>(y_train)[<span class="dv">2</span>], <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb1-90"><a href=""></a>  cvfit <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">cv.glmnet</span>(Xtr, y_bin, <span class="at">family =</span> <span class="st">"binomial"</span>, <span class="at">alpha =</span> alpha)</span>
+<span id="cb1-91"><a href=""></a></span>
+<span id="cb1-92"><a href=""></a>  prob <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">predict</span>(cvfit, <span class="at">newx =</span> Xte, <span class="at">s =</span> <span class="st">"lambda.min"</span>, <span class="at">type =</span> <span class="st">"response"</span>))</span>
+<span id="cb1-93"><a href=""></a>  <span class="fu">list</span>(<span class="at">prob =</span> prob, <span class="at">lambda =</span> cvfit<span class="sc">$</span>lambda.min)</span>
+<span id="cb1-94"><a href=""></a>}</span>
+<span id="cb1-95"><a href=""></a></span>
+<span id="cb1-96"><a href=""></a><span class="do">## ---- 1) Download TCGA-BRCA gene-level data via recount3 ----</span></span>
+<span id="cb1-97"><a href=""></a>projects <span class="ot">&lt;-</span> recount3<span class="sc">::</span><span class="fu">available_projects</span>()</span>
+<span id="cb1-98"><a href=""></a>brca_info <span class="ot">&lt;-</span> projects <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(file_source <span class="sc">==</span> <span class="st">"tcga"</span>, project <span class="sc">==</span> <span class="st">"BRCA"</span>)</span>
+<span id="cb1-99"><a href=""></a><span class="cf">if</span> (<span class="fu">nrow</span>(brca_info) <span class="sc">!=</span> <span class="dv">1</span>) <span class="fu">stop</span>(<span class="st">"Did not find a unique TCGA BRCA entry in available_projects()."</span>)</span>
+<span id="cb1-100"><a href=""></a></span>
+<span id="cb1-101"><a href=""></a>rse <span class="ot">&lt;-</span> recount3<span class="sc">::</span><span class="fu">create_rse</span>(brca_info, <span class="at">type =</span> <span class="st">"gene"</span>)</span>
+<span id="cb1-102"><a href=""></a><span class="fu">assay</span>(rse, <span class="st">"counts"</span>) <span class="ot">&lt;-</span> recount3<span class="sc">::</span><span class="fu">transform_counts</span>(rse)</span>
+<span id="cb1-103"><a href=""></a></span>
+<span id="cb1-104"><a href=""></a>meta <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">colData</span>(rse))</span>
+<span id="cb1-105"><a href=""></a><span class="fu">cat</span>(<span class="st">"Downloaded samples:"</span>, <span class="fu">nrow</span>(meta), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-106"><a href=""></a></span>
+<span id="cb1-107"><a href=""></a><span class="do">## ---- 2) Define outcome: Tumor vs Normal (robust) ----</span></span>
+<span id="cb1-108"><a href=""></a>y_full <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb1-109"><a href=""></a></span>
+<span id="cb1-110"><a href=""></a><span class="co"># (A) Try explicit sample-type-like columns</span></span>
+<span id="cb1-111"><a href=""></a>stype_col <span class="ot">&lt;-</span> <span class="fu">first_col_match</span>(meta, <span class="st">"sample.*type|tumou?r|normal|tissue.*normal|primary.*tumor"</span>)</span>
+<span id="cb1-112"><a href=""></a><span class="fu">cat</span>(<span class="st">"Candidate sample-type-like column:"</span>, stype_col, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-113"><a href=""></a></span>
+<span id="cb1-114"><a href=""></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.na</span>(stype_col)) {</span>
+<span id="cb1-115"><a href=""></a>  stype <span class="ot">&lt;-</span> <span class="fu">as.character</span>(meta[[stype_col]])</span>
+<span id="cb1-116"><a href=""></a>  stype_norm <span class="ot">&lt;-</span> <span class="fu">tolower</span>(<span class="fu">gsub</span>(<span class="st">"_"</span>, <span class="st">" "</span>, stype))</span>
+<span id="cb1-117"><a href=""></a></span>
+<span id="cb1-118"><a href=""></a>  tumor_like  <span class="ot">&lt;-</span> stype_norm <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"primary tumor"</span>, <span class="st">"tumor"</span>, <span class="st">"primary tumour"</span>)</span>
+<span id="cb1-119"><a href=""></a>  normal_like <span class="ot">&lt;-</span> stype_norm <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"solid tissue normal"</span>, <span class="st">"normal"</span>, <span class="st">"tissue normal"</span>)</span>
+<span id="cb1-120"><a href=""></a></span>
+<span id="cb1-121"><a href=""></a>  <span class="cf">if</span> (<span class="fu">sum</span>(tumor_like) <span class="sc">==</span> <span class="dv">0</span> <span class="sc">||</span> <span class="fu">sum</span>(normal_like) <span class="sc">==</span> <span class="dv">0</span>) {</span>
+<span id="cb1-122"><a href=""></a>    tumor_like  <span class="ot">&lt;-</span> <span class="fu">grepl</span>(<span class="st">"primary.*tumou?r|tumou?r"</span>, stype_norm)</span>
+<span id="cb1-123"><a href=""></a>    normal_like <span class="ot">&lt;-</span> <span class="fu">grepl</span>(<span class="st">"solid.*tissue.*normal|tissue.*normal|</span><span class="sc">\\</span><span class="st">bnormal</span><span class="sc">\\</span><span class="st">b"</span>, stype_norm)</span>
+<span id="cb1-124"><a href=""></a>  }</span>
+<span id="cb1-125"><a href=""></a></span>
+<span id="cb1-126"><a href=""></a>  <span class="cf">if</span> (<span class="fu">sum</span>(tumor_like) <span class="sc">&gt;=</span> <span class="dv">10</span> <span class="sc">&amp;&amp;</span> <span class="fu">sum</span>(normal_like) <span class="sc">&gt;=</span> <span class="dv">10</span>) {</span>
+<span id="cb1-127"><a href=""></a>    y_full <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">NA_character_</span>, <span class="fu">nrow</span>(meta))</span>
+<span id="cb1-128"><a href=""></a>    y_full[tumor_like]  <span class="ot">&lt;-</span> <span class="st">"Tumor"</span></span>
+<span id="cb1-129"><a href=""></a>    y_full[normal_like] <span class="ot">&lt;-</span> <span class="st">"Normal"</span></span>
+<span id="cb1-130"><a href=""></a>    y_full <span class="ot">&lt;-</span> <span class="fu">factor</span>(y_full, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Tumor"</span>, <span class="st">"Normal"</span>))</span>
+<span id="cb1-131"><a href=""></a>  } <span class="cf">else</span> {</span>
+<span id="cb1-132"><a href=""></a>    <span class="fu">cat</span>(<span class="st">"Found stype_col but labels didn't map cleanly. Falling back to barcode parsing.</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-133"><a href=""></a>  }</span>
+<span id="cb1-134"><a href=""></a>}</span>
+<span id="cb1-135"><a href=""></a></span>
+<span id="cb1-136"><a href=""></a><span class="co"># (B) Fallback: derive from TCGA barcode/sample id</span></span>
+<span id="cb1-137"><a href=""></a><span class="cf">if</span> (<span class="fu">is.null</span>(y_full)) {</span>
+<span id="cb1-138"><a href=""></a>  barcode_col <span class="ot">&lt;-</span> <span class="fu">first_col_match</span>(meta, <span class="st">"submitter|external|barcode|tcga|case.*submitter|sample.*submitter|id$"</span>)</span>
+<span id="cb1-139"><a href=""></a>  <span class="fu">cat</span>(<span class="st">"Candidate barcode-like column:"</span>, barcode_col, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-140"><a href=""></a></span>
+<span id="cb1-141"><a href=""></a>  <span class="cf">if</span> (<span class="fu">is.na</span>(barcode_col)) {</span>
+<span id="cb1-142"><a href=""></a>    <span class="fu">cat</span>(<span class="st">"Available metadata columns (first 80):</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-143"><a href=""></a>    <span class="fu">print</span>(<span class="fu">head</span>(<span class="fu">colnames</span>(meta), <span class="dv">80</span>))</span>
+<span id="cb1-144"><a href=""></a>    <span class="fu">stop</span>(<span class="st">"Could not find a sample-type column or a barcode-like column in colData()."</span>)</span>
+<span id="cb1-145"><a href=""></a>  }</span>
+<span id="cb1-146"><a href=""></a></span>
+<span id="cb1-147"><a href=""></a>  barcode <span class="ot">&lt;-</span> <span class="fu">as.character</span>(meta[[barcode_col]])</span>
+<span id="cb1-148"><a href=""></a></span>
+<span id="cb1-149"><a href=""></a>  code_14_15 <span class="ot">&lt;-</span> <span class="fu">suppressWarnings</span>(<span class="fu">as.integer</span>(<span class="fu">substr</span>(barcode, <span class="dv">14</span>, <span class="dv">15</span>)))</span>
+<span id="cb1-150"><a href=""></a>  <span class="cf">if</span> (<span class="fu">all</span>(<span class="fu">is.na</span>(code_14_15))) {</span>
+<span id="cb1-151"><a href=""></a>    code_14_15 <span class="ot">&lt;-</span> <span class="fu">suppressWarnings</span>(<span class="fu">as.integer</span>(<span class="fu">sub</span>(<span class="st">".*-([0-9]{2}).*$"</span>, <span class="st">"</span><span class="sc">\\</span><span class="st">1"</span>, barcode)))</span>
+<span id="cb1-152"><a href=""></a>  }</span>
+<span id="cb1-153"><a href=""></a></span>
+<span id="cb1-154"><a href=""></a>  is_tumor  <span class="ot">&lt;-</span> <span class="sc">!</span><span class="fu">is.na</span>(code_14_15) <span class="sc">&amp;</span> code_14_15 <span class="sc">&gt;=</span> <span class="dv">1</span>  <span class="sc">&amp;</span> code_14_15 <span class="sc">&lt;=</span> <span class="dv">9</span></span>
+<span id="cb1-155"><a href=""></a>  is_normal <span class="ot">&lt;-</span> <span class="sc">!</span><span class="fu">is.na</span>(code_14_15) <span class="sc">&amp;</span> code_14_15 <span class="sc">&gt;=</span> <span class="dv">10</span> <span class="sc">&amp;</span> code_14_15 <span class="sc">&lt;=</span> <span class="dv">19</span></span>
+<span id="cb1-156"><a href=""></a></span>
+<span id="cb1-157"><a href=""></a>  <span class="cf">if</span> (<span class="fu">sum</span>(is_tumor) <span class="sc">&lt;</span> <span class="dv">10</span> <span class="sc">||</span> <span class="fu">sum</span>(is_normal) <span class="sc">&lt;</span> <span class="dv">10</span>) {</span>
+<span id="cb1-158"><a href=""></a>    <span class="fu">cat</span>(<span class="st">"Example barcodes:</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-159"><a href=""></a>    <span class="fu">print</span>(<span class="fu">head</span>(barcode, <span class="dv">10</span>))</span>
+<span id="cb1-160"><a href=""></a>    <span class="fu">cat</span>(<span class="st">"Parsed codes (first 10):</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-161"><a href=""></a>    <span class="fu">print</span>(<span class="fu">head</span>(code_14_15, <span class="dv">10</span>))</span>
+<span id="cb1-162"><a href=""></a>    <span class="fu">stop</span>(<span class="st">"Could not reliably derive Tumor/Normal from barcodes."</span>)</span>
+<span id="cb1-163"><a href=""></a>  }</span>
+<span id="cb1-164"><a href=""></a></span>
+<span id="cb1-165"><a href=""></a>  y_full <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">NA_character_</span>, <span class="fu">length</span>(barcode))</span>
+<span id="cb1-166"><a href=""></a>  y_full[is_tumor]  <span class="ot">&lt;-</span> <span class="st">"Tumor"</span></span>
+<span id="cb1-167"><a href=""></a>  y_full[is_normal] <span class="ot">&lt;-</span> <span class="st">"Normal"</span></span>
+<span id="cb1-168"><a href=""></a>  y_full <span class="ot">&lt;-</span> <span class="fu">factor</span>(y_full, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Tumor"</span>, <span class="st">"Normal"</span>))</span>
+<span id="cb1-169"><a href=""></a>}</span>
+<span id="cb1-170"><a href=""></a></span>
+<span id="cb1-171"><a href=""></a>keep_idx <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="sc">!</span><span class="fu">is.na</span>(y_full))</span>
+<span id="cb1-172"><a href=""></a>rse2 <span class="ot">&lt;-</span> rse[, keep_idx]</span>
+<span id="cb1-173"><a href=""></a>y_full <span class="ot">&lt;-</span> <span class="fu">droplevels</span>(y_full[keep_idx])</span>
+<span id="cb1-174"><a href=""></a></span>
+<span id="cb1-175"><a href=""></a><span class="fu">cat</span>(<span class="st">"Tumor/Normal counts:</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-176"><a href=""></a><span class="fu">print</span>(<span class="fu">table</span>(y_full))</span>
+<span id="cb1-177"><a href=""></a></span>
+<span id="cb1-178"><a href=""></a><span class="do">## ---- 3) Subsample to balanced manageable set (e.g., 200/200) ----</span></span>
+<span id="cb1-179"><a href=""></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb1-180"><a href=""></a>n_per_class <span class="ot">&lt;-</span> <span class="dv">200</span></span>
+<span id="cb1-181"><a href=""></a></span>
+<span id="cb1-182"><a href=""></a>tum_idx <span class="ot">&lt;-</span> <span class="fu">which</span>(y_full <span class="sc">==</span> <span class="st">"Tumor"</span>)</span>
+<span id="cb1-183"><a href=""></a>nor_idx <span class="ot">&lt;-</span> <span class="fu">which</span>(y_full <span class="sc">==</span> <span class="st">"Normal"</span>)</span>
+<span id="cb1-184"><a href=""></a></span>
+<span id="cb1-185"><a href=""></a>n_take <span class="ot">&lt;-</span> <span class="fu">min</span>(n_per_class, <span class="fu">length</span>(tum_idx), <span class="fu">length</span>(nor_idx))</span>
+<span id="cb1-186"><a href=""></a>sel_idx <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">sample</span>(tum_idx, n_take), <span class="fu">sample</span>(nor_idx, n_take))</span>
+<span id="cb1-187"><a href=""></a>sel_idx <span class="ot">&lt;-</span> <span class="fu">sample</span>(sel_idx)</span>
+<span id="cb1-188"><a href=""></a></span>
+<span id="cb1-189"><a href=""></a>rse3 <span class="ot">&lt;-</span> rse2[, sel_idx]</span>
+<span id="cb1-190"><a href=""></a>y <span class="ot">&lt;-</span> <span class="fu">droplevels</span>(y_full[sel_idx])</span>
+<span id="cb1-191"><a href=""></a><span class="fu">print</span>(<span class="fu">table</span>(y))</span>
+<span id="cb1-192"><a href=""></a></span>
+<span id="cb1-193"><a href=""></a>counts <span class="ot">&lt;-</span> <span class="fu">assay</span>(rse3, <span class="st">"counts"</span>)</span>
+<span id="cb1-194"><a href=""></a>counts <span class="ot">&lt;-</span> <span class="fu">round</span>(counts)</span>
+<span id="cb1-195"><a href=""></a><span class="fu">storage.mode</span>(counts) <span class="ot">&lt;-</span> <span class="st">"integer"</span></span>
+<span id="cb1-196"><a href=""></a><span class="fu">cat</span>(<span class="st">"Counts dim:"</span>, <span class="fu">paste</span>(<span class="fu">dim</span>(counts), <span class="at">collapse =</span> <span class="st">" x "</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-197"><a href=""></a></span>
+<span id="cb1-198"><a href=""></a><span class="do">## ---- 4) Optional global CPM filter for speed ----</span></span>
+<span id="cb1-199"><a href=""></a>cpm_mat <span class="ot">&lt;-</span> edgeR<span class="sc">::</span><span class="fu">cpm</span>(counts)</span>
+<span id="cb1-200"><a href=""></a>k_global <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb1-201"><a href=""></a>keep_cpm_global <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(cpm_mat <span class="sc">&gt;</span> <span class="dv">1</span>) <span class="sc">&gt;=</span> k_global</span>
+<span id="cb1-202"><a href=""></a>counts_f <span class="ot">&lt;-</span> counts[keep_cpm_global, , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb1-203"><a href=""></a><span class="fu">cat</span>(<span class="st">"Genes after global CPM filter:"</span>, <span class="fu">nrow</span>(counts_f), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-204"><a href=""></a></span>
+<span id="cb1-205"><a href=""></a><span class="do">## ---- 5) One fold: dual-score screening + glmnet ----</span></span>
+<span id="cb1-206"><a href=""></a>fit_one_fold_dual <span class="ot">&lt;-</span> <span class="cf">function</span>(counts_train, y_train, counts_test, y_test,</span>
+<span id="cb1-207"><a href=""></a>                              <span class="at">cpm_thresh =</span> <span class="dv">1</span>, <span class="at">min_samples =</span> <span class="dv">10</span>,</span>
+<span id="cb1-208"><a href=""></a>                              <span class="at">var_quantile =</span> <span class="fl">0.50</span>,</span>
+<span id="cb1-209"><a href=""></a>                              <span class="at">top_k =</span> <span class="dv">500</span>,</span>
+<span id="cb1-210"><a href=""></a>                              <span class="at">alpha =</span> <span class="fl">0.5</span>) {</span>
+<span id="cb1-211"><a href=""></a></span>
+<span id="cb1-212"><a href=""></a>  <span class="cf">if</span> (<span class="fu">length</span>(<span class="fu">unique</span>(y_train)) <span class="sc">&lt;</span> <span class="dv">2</span>) <span class="fu">stop</span>(<span class="st">"Training fold has only one class."</span>)</span>
+<span id="cb1-213"><a href=""></a></span>
+<span id="cb1-214"><a href=""></a>  <span class="co"># (a) TRAIN-only CPM filter</span></span>
+<span id="cb1-215"><a href=""></a>  cpm_tr <span class="ot">&lt;-</span> edgeR<span class="sc">::</span><span class="fu">cpm</span>(counts_train)</span>
+<span id="cb1-216"><a href=""></a>  keep <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(cpm_tr <span class="sc">&gt;</span> cpm_thresh) <span class="sc">&gt;=</span> min_samples</span>
+<span id="cb1-217"><a href=""></a>  ct_tr <span class="ot">&lt;-</span> counts_train[keep, , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb1-218"><a href=""></a>  ct_te <span class="ot">&lt;-</span> counts_test[<span class="fu">rownames</span>(ct_tr), , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb1-219"><a href=""></a></span>
+<span id="cb1-220"><a href=""></a>  <span class="co"># (b) VST (design ~ 1)</span></span>
+<span id="cb1-221"><a href=""></a>  dds_tr <span class="ot">&lt;-</span> DESeq2<span class="sc">::</span><span class="fu">DESeqDataSetFromMatrix</span>(</span>
+<span id="cb1-222"><a href=""></a>    <span class="at">countData =</span> ct_tr,</span>
+<span id="cb1-223"><a href=""></a>    <span class="at">colData   =</span> <span class="fu">data.frame</span>(<span class="at">row.names =</span> <span class="fu">colnames</span>(ct_tr)),</span>
+<span id="cb1-224"><a href=""></a>    <span class="at">design    =</span> <span class="sc">~</span> <span class="dv">1</span></span>
+<span id="cb1-225"><a href=""></a>  )</span>
+<span id="cb1-226"><a href=""></a>  dds_tr <span class="ot">&lt;-</span> DESeq2<span class="sc">::</span><span class="fu">estimateSizeFactors</span>(dds_tr)</span>
+<span id="cb1-227"><a href=""></a>  Xtr <span class="ot">&lt;-</span> <span class="fu">assay</span>(DESeq2<span class="sc">::</span><span class="fu">vst</span>(dds_tr, <span class="at">blind =</span> <span class="cn">TRUE</span>))  <span class="co"># genes x samples</span></span>
+<span id="cb1-228"><a href=""></a></span>
+<span id="cb1-229"><a href=""></a>  dds_te <span class="ot">&lt;-</span> DESeq2<span class="sc">::</span><span class="fu">DESeqDataSetFromMatrix</span>(</span>
+<span id="cb1-230"><a href=""></a>    <span class="at">countData =</span> ct_te,</span>
+<span id="cb1-231"><a href=""></a>    <span class="at">colData   =</span> <span class="fu">data.frame</span>(<span class="at">row.names =</span> <span class="fu">colnames</span>(ct_te)),</span>
+<span id="cb1-232"><a href=""></a>    <span class="at">design    =</span> <span class="sc">~</span> <span class="dv">1</span></span>
+<span id="cb1-233"><a href=""></a>  )</span>
+<span id="cb1-234"><a href=""></a>  dds_te <span class="ot">&lt;-</span> DESeq2<span class="sc">::</span><span class="fu">estimateSizeFactors</span>(dds_te)</span>
+<span id="cb1-235"><a href=""></a>  Xte <span class="ot">&lt;-</span> <span class="fu">assay</span>(DESeq2<span class="sc">::</span><span class="fu">vst</span>(dds_te, <span class="at">blind =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb1-236"><a href=""></a></span>
+<span id="cb1-237"><a href=""></a>  <span class="co"># (c) TRAIN-only variance filter</span></span>
+<span id="cb1-238"><a href=""></a>  v <span class="ot">&lt;-</span> matrixStats<span class="sc">::</span><span class="fu">rowVars</span>(Xtr)</span>
+<span id="cb1-239"><a href=""></a>  keep_v <span class="ot">&lt;-</span> v <span class="sc">&gt;=</span> <span class="fu">quantile</span>(v, var_quantile)</span>
+<span id="cb1-240"><a href=""></a>  Xtr_v <span class="ot">&lt;-</span> Xtr[keep_v, , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb1-241"><a href=""></a>  Xte_v <span class="ot">&lt;-</span> Xte[<span class="fu">rownames</span>(Xtr_v), , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb1-242"><a href=""></a></span>
+<span id="cb1-243"><a href=""></a>  <span class="co"># (d1) limma screen</span></span>
+<span id="cb1-244"><a href=""></a>  sel_limma <span class="ot">&lt;-</span> <span class="fu">screen_limma_p</span>(Xtr_v, y_train, <span class="at">top_k =</span> top_k)</span>
+<span id="cb1-245"><a href=""></a></span>
+<span id="cb1-246"><a href=""></a>  <span class="co"># (d2) SIS abs-corr screen</span></span>
+<span id="cb1-247"><a href=""></a>  sel_sis <span class="ot">&lt;-</span> <span class="fu">screen_sis_abs_cor</span>(Xtr_v, y_train, <span class="at">top_k =</span> top_k)</span>
+<span id="cb1-248"><a href=""></a></span>
+<span id="cb1-249"><a href=""></a>  <span class="co"># (e) Fit/predict for each screened set</span></span>
+<span id="cb1-250"><a href=""></a>  pred_limma <span class="ot">&lt;-</span> <span class="fu">fit_predict_glmnet</span>(</span>
+<span id="cb1-251"><a href=""></a>    <span class="at">Xtr_genes_by_samples =</span> Xtr_v[sel_limma, , <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb1-252"><a href=""></a>    <span class="at">Xte_genes_by_samples =</span> Xte_v[sel_limma, , <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb1-253"><a href=""></a>    <span class="at">y_train =</span> y_train,</span>
+<span id="cb1-254"><a href=""></a>    <span class="at">alpha =</span> alpha</span>
+<span id="cb1-255"><a href=""></a>  )</span>
+<span id="cb1-256"><a href=""></a></span>
+<span id="cb1-257"><a href=""></a>  pred_sis <span class="ot">&lt;-</span> <span class="fu">fit_predict_glmnet</span>(</span>
+<span id="cb1-258"><a href=""></a>    <span class="at">Xtr_genes_by_samples =</span> Xtr_v[sel_sis, , <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb1-259"><a href=""></a>    <span class="at">Xte_genes_by_samples =</span> Xte_v[sel_sis, , <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb1-260"><a href=""></a>    <span class="at">y_train =</span> y_train,</span>
+<span id="cb1-261"><a href=""></a>    <span class="at">alpha =</span> alpha</span>
+<span id="cb1-262"><a href=""></a>  )</span>
+<span id="cb1-263"><a href=""></a></span>
+<span id="cb1-264"><a href=""></a>  y_true <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(y_test <span class="sc">==</span> <span class="fu">levels</span>(y_test)[<span class="dv">2</span>], <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb1-265"><a href=""></a></span>
+<span id="cb1-266"><a href=""></a>  <span class="fu">list</span>(</span>
+<span id="cb1-267"><a href=""></a>    <span class="at">prob_limma =</span> pred_limma<span class="sc">$</span>prob,</span>
+<span id="cb1-268"><a href=""></a>    <span class="at">prob_sis   =</span> pred_sis<span class="sc">$</span>prob,</span>
+<span id="cb1-269"><a href=""></a>    <span class="at">y_true     =</span> y_true,</span>
+<span id="cb1-270"><a href=""></a>    <span class="at">selected_limma =</span> sel_limma,</span>
+<span id="cb1-271"><a href=""></a>    <span class="at">selected_sis   =</span> sel_sis</span>
+<span id="cb1-272"><a href=""></a>  )</span>
+<span id="cb1-273"><a href=""></a>}</span>
+<span id="cb1-274"><a href=""></a></span>
+<span id="cb1-275"><a href=""></a><span class="do">## ---- 6) Outer CV runner (dual) ----</span></span>
+<span id="cb1-276"><a href=""></a>run_one_cv_dual <span class="ot">&lt;-</span> <span class="cf">function</span>(counts_f, y, <span class="at">K =</span> <span class="dv">5</span>,</span>
+<span id="cb1-277"><a href=""></a>                            <span class="at">var_quantile =</span> <span class="fl">0.50</span>, <span class="at">top_k =</span> <span class="dv">500</span>, <span class="at">alpha =</span> <span class="fl">0.5</span>,</span>
+<span id="cb1-278"><a href=""></a>                            <span class="at">cpm_thresh =</span> <span class="dv">1</span>, <span class="at">min_samples =</span> <span class="dv">10</span>) {</span>
+<span id="cb1-279"><a href=""></a></span>
+<span id="cb1-280"><a href=""></a>  fold_id <span class="ot">&lt;-</span> <span class="fu">make_strat_folds</span>(y, K)</span>
+<span id="cb1-281"><a href=""></a>  n <span class="ot">&lt;-</span> <span class="fu">ncol</span>(counts_f)</span>
+<span id="cb1-282"><a href=""></a></span>
+<span id="cb1-283"><a href=""></a>  prob_limma <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">NA_real_</span>, n)</span>
+<span id="cb1-284"><a href=""></a>  prob_sis   <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">NA_real_</span>, n)</span>
+<span id="cb1-285"><a href=""></a></span>
+<span id="cb1-286"><a href=""></a>  sel_limma_list <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">"list"</span>, K)</span>
+<span id="cb1-287"><a href=""></a>  sel_sis_list   <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">"list"</span>, K)</span>
+<span id="cb1-288"><a href=""></a></span>
+<span id="cb1-289"><a href=""></a>  <span class="cf">for</span> (k <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>K) {</span>
+<span id="cb1-290"><a href=""></a>    test_idx <span class="ot">&lt;-</span> <span class="fu">which</span>(fold_id <span class="sc">==</span> k)</span>
+<span id="cb1-291"><a href=""></a>    train_idx <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="fu">seq_len</span>(n), test_idx)</span>
+<span id="cb1-292"><a href=""></a></span>
+<span id="cb1-293"><a href=""></a>    res <span class="ot">&lt;-</span> <span class="fu">fit_one_fold_dual</span>(</span>
+<span id="cb1-294"><a href=""></a>      <span class="at">counts_train =</span> counts_f[, train_idx, <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb1-295"><a href=""></a>      <span class="at">y_train      =</span> <span class="fu">droplevels</span>(y[train_idx]),</span>
+<span id="cb1-296"><a href=""></a>      <span class="at">counts_test  =</span> counts_f[, test_idx, <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb1-297"><a href=""></a>      <span class="at">y_test       =</span> <span class="fu">droplevels</span>(y[test_idx]),</span>
+<span id="cb1-298"><a href=""></a>      <span class="at">cpm_thresh   =</span> cpm_thresh,</span>
+<span id="cb1-299"><a href=""></a>      <span class="at">min_samples  =</span> min_samples,</span>
+<span id="cb1-300"><a href=""></a>      <span class="at">var_quantile =</span> var_quantile,</span>
+<span id="cb1-301"><a href=""></a>      <span class="at">top_k        =</span> top_k,</span>
+<span id="cb1-302"><a href=""></a>      <span class="at">alpha        =</span> alpha</span>
+<span id="cb1-303"><a href=""></a>    )</span>
+<span id="cb1-304"><a href=""></a></span>
+<span id="cb1-305"><a href=""></a>    prob_limma[test_idx] <span class="ot">&lt;-</span> res<span class="sc">$</span>prob_limma</span>
+<span id="cb1-306"><a href=""></a>    prob_sis[test_idx]   <span class="ot">&lt;-</span> res<span class="sc">$</span>prob_sis</span>
+<span id="cb1-307"><a href=""></a></span>
+<span id="cb1-308"><a href=""></a>    sel_limma_list[[k]] <span class="ot">&lt;-</span> res<span class="sc">$</span>selected_limma</span>
+<span id="cb1-309"><a href=""></a>    sel_sis_list[[k]]   <span class="ot">&lt;-</span> res<span class="sc">$</span>selected_sis</span>
+<span id="cb1-310"><a href=""></a>  }</span>
+<span id="cb1-311"><a href=""></a></span>
+<span id="cb1-312"><a href=""></a>  y_true_all <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(y <span class="sc">==</span> <span class="fu">levels</span>(y)[<span class="dv">2</span>], <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb1-313"><a href=""></a></span>
+<span id="cb1-314"><a href=""></a>  auc_limma <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(pROC<span class="sc">::</span><span class="fu">auc</span>(y_true_all, prob_limma))</span>
+<span id="cb1-315"><a href=""></a>  auc_sis   <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(pROC<span class="sc">::</span><span class="fu">auc</span>(y_true_all, prob_sis))</span>
+<span id="cb1-316"><a href=""></a></span>
+<span id="cb1-317"><a href=""></a>  <span class="fu">list</span>(</span>
+<span id="cb1-318"><a href=""></a>    <span class="at">auc_limma =</span> auc_limma,</span>
+<span id="cb1-319"><a href=""></a>    <span class="at">auc_sis   =</span> auc_sis,</span>
+<span id="cb1-320"><a href=""></a>    <span class="at">prob_limma =</span> prob_limma,</span>
+<span id="cb1-321"><a href=""></a>    <span class="at">prob_sis   =</span> prob_sis,</span>
+<span id="cb1-322"><a href=""></a>    <span class="at">selected_limma =</span> sel_limma_list,</span>
+<span id="cb1-323"><a href=""></a>    <span class="at">selected_sis   =</span> sel_sis_list</span>
+<span id="cb1-324"><a href=""></a>  )</span>
+<span id="cb1-325"><a href=""></a>}</span>
+<span id="cb1-326"><a href=""></a></span>
+<span id="cb1-327"><a href=""></a><span class="do">## ---- 7) Single run + ROC curves ----</span></span>
+<span id="cb1-328"><a href=""></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb1-329"><a href=""></a>K <span class="ot">&lt;-</span> <span class="dv">5</span></span>
+<span id="cb1-330"><a href=""></a>out <span class="ot">&lt;-</span> <span class="fu">run_one_cv_dual</span>(counts_f, y, <span class="at">K =</span> K, <span class="at">var_quantile =</span> <span class="fl">0.5</span>, <span class="at">top_k =</span> <span class="dv">500</span>, <span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
+<span id="cb1-331"><a href=""></a></span>
+<span id="cb1-332"><a href=""></a><span class="fu">cat</span>(<span class="st">"One-run outer CV AUC (limma):"</span>, out<span class="sc">$</span>auc_limma, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-333"><a href=""></a><span class="fu">cat</span>(<span class="st">"One-run outer CV AUC (SIS abs-corr):"</span>, out<span class="sc">$</span>auc_sis, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-334"><a href=""></a></span>
+<span id="cb1-335"><a href=""></a>y_true_all <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(y <span class="sc">==</span> <span class="fu">levels</span>(y)[<span class="dv">2</span>], <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb1-336"><a href=""></a></span>
+<span id="cb1-337"><a href=""></a>roc_limma <span class="ot">&lt;-</span> pROC<span class="sc">::</span><span class="fu">roc</span>(y_true_all, out<span class="sc">$</span>prob_limma)</span>
+<span id="cb1-338"><a href=""></a><span class="fu">plot</span>(roc_limma, <span class="at">main =</span> <span class="fu">paste</span>(<span class="st">"ROC (limma screen), AUC ="</span>, <span class="fu">round</span>(out<span class="sc">$</span>auc_limma, <span class="dv">3</span>)))</span>
+<span id="cb1-339"><a href=""></a></span>
+<span id="cb1-340"><a href=""></a>roc_sis <span class="ot">&lt;-</span> pROC<span class="sc">::</span><span class="fu">roc</span>(y_true_all, out<span class="sc">$</span>prob_sis)</span>
+<span id="cb1-341"><a href=""></a><span class="fu">plot</span>(roc_sis, <span class="at">main =</span> <span class="fu">paste</span>(<span class="st">"ROC (SIS abs-corr screen), AUC ="</span>, <span class="fu">round</span>(out<span class="sc">$</span>auc_sis, <span class="dv">3</span>)))</span>
+<span id="cb1-342"><a href=""></a></span>
+<span id="cb1-343"><a href=""></a><span class="do">## Stability across folds (single run)</span></span>
+<span id="cb1-344"><a href=""></a>sel_tbl_limma <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">table</span>(<span class="fu">unlist</span>(out<span class="sc">$</span>selected_limma)), <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-345"><a href=""></a>sel_tbl_sis   <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">table</span>(<span class="fu">unlist</span>(out<span class="sc">$</span>selected_sis)), <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-346"><a href=""></a></span>
+<span id="cb1-347"><a href=""></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Top 20 screened genes (limma) across folds:</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-348"><a href=""></a><span class="fu">print</span>(<span class="fu">head</span>(sel_tbl_limma, <span class="dv">20</span>))</span>
+<span id="cb1-349"><a href=""></a></span>
+<span id="cb1-350"><a href=""></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Top 20 screened genes (SIS abs-corr) across folds:</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-351"><a href=""></a><span class="fu">print</span>(<span class="fu">head</span>(sel_tbl_sis, <span class="dv">20</span>))</span>
+<span id="cb1-352"><a href=""></a></span>
+<span id="cb1-353"><a href=""></a><span class="do">## ---- 8) Repeated CV (recommended) ----</span></span>
+<span id="cb1-354"><a href=""></a><span class="fu">set.seed</span>(<span class="dv">2</span>)</span>
+<span id="cb1-355"><a href=""></a>R <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb1-356"><a href=""></a>aucs_limma <span class="ot">&lt;-</span> <span class="fu">numeric</span>(R)</span>
+<span id="cb1-357"><a href=""></a>aucs_sis   <span class="ot">&lt;-</span> <span class="fu">numeric</span>(R)</span>
+<span id="cb1-358"><a href=""></a></span>
+<span id="cb1-359"><a href=""></a>sel_all_limma <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">"list"</span>, R)</span>
+<span id="cb1-360"><a href=""></a>sel_all_sis   <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">"list"</span>, R)</span>
+<span id="cb1-361"><a href=""></a></span>
+<span id="cb1-362"><a href=""></a><span class="cf">for</span> (r <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>R) {</span>
+<span id="cb1-363"><a href=""></a>  out_r <span class="ot">&lt;-</span> <span class="fu">run_one_cv_dual</span>(counts_f, y, <span class="at">K =</span> K, <span class="at">var_quantile =</span> <span class="fl">0.5</span>, <span class="at">top_k =</span> <span class="dv">500</span>, <span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
+<span id="cb1-364"><a href=""></a>  aucs_limma[r] <span class="ot">&lt;-</span> out_r<span class="sc">$</span>auc_limma</span>
+<span id="cb1-365"><a href=""></a>  aucs_sis[r]   <span class="ot">&lt;-</span> out_r<span class="sc">$</span>auc_sis</span>
+<span id="cb1-366"><a href=""></a>  sel_all_limma[[r]] <span class="ot">&lt;-</span> out_r<span class="sc">$</span>selected_limma</span>
+<span id="cb1-367"><a href=""></a>  sel_all_sis[[r]]   <span class="ot">&lt;-</span> out_r<span class="sc">$</span>selected_sis</span>
+<span id="cb1-368"><a href=""></a>}</span>
+<span id="cb1-369"><a href=""></a></span>
+<span id="cb1-370"><a href=""></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Repeated outer CV AUC summary (limma):</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-371"><a href=""></a><span class="fu">print</span>(<span class="fu">summary</span>(aucs_limma))</span>
+<span id="cb1-372"><a href=""></a><span class="fu">hist</span>(aucs_limma, <span class="at">main =</span> <span class="st">"Repeated outer CV AUC (limma screen)"</span>, <span class="at">xlab =</span> <span class="st">"AUC"</span>)</span>
+<span id="cb1-373"><a href=""></a></span>
+<span id="cb1-374"><a href=""></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Repeated outer CV AUC summary (SIS abs-corr):</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-375"><a href=""></a><span class="fu">print</span>(<span class="fu">summary</span>(aucs_sis))</span>
+<span id="cb1-376"><a href=""></a><span class="fu">hist</span>(aucs_sis, <span class="at">main =</span> <span class="st">"Repeated outer CV AUC (SIS abs-corr screen)"</span>, <span class="at">xlab =</span> <span class="st">"AUC"</span>)</span>
+<span id="cb1-377"><a href=""></a></span>
+<span id="cb1-378"><a href=""></a>stab_limma <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">table</span>(<span class="fu">unlist</span>(<span class="fu">unlist</span>(sel_all_limma, <span class="at">recursive =</span> <span class="cn">FALSE</span>))), <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-379"><a href=""></a>stab_sis   <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">table</span>(<span class="fu">unlist</span>(<span class="fu">unlist</span>(sel_all_sis, <span class="at">recursive =</span> <span class="cn">FALSE</span>))), <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-380"><a href=""></a></span>
+<span id="cb1-381"><a href=""></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Top 20 screened genes overall (limma, repeats+folds):</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-382"><a href=""></a><span class="fu">print</span>(<span class="fu">head</span>(stab_limma, <span class="dv">20</span>))</span>
+<span id="cb1-383"><a href=""></a></span>
+<span id="cb1-384"><a href=""></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Top 20 screened genes overall (SIS abs-corr, repeats+folds):</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-385"><a href=""></a><span class="fu">print</span>(<span class="fu">head</span>(stab_sis, <span class="dv">20</span>))</span>
+<span id="cb1-386"><a href=""></a></span>
+<span id="cb1-387"><a href=""></a><span class="do">## ---- 9) Optional permutation sanity check ----</span></span>
+<span id="cb1-388"><a href=""></a><span class="fu">set.seed</span>(<span class="dv">3</span>)</span>
+<span id="cb1-389"><a href=""></a>Rperm <span class="ot">&lt;-</span> <span class="dv">5</span></span>
+<span id="cb1-390"><a href=""></a>perm_auc_limma <span class="ot">&lt;-</span> <span class="fu">numeric</span>(Rperm)</span>
+<span id="cb1-391"><a href=""></a>perm_auc_sis   <span class="ot">&lt;-</span> <span class="fu">numeric</span>(Rperm)</span>
+<span id="cb1-392"><a href=""></a></span>
+<span id="cb1-393"><a href=""></a><span class="cf">for</span> (r <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>Rperm) {</span>
+<span id="cb1-394"><a href=""></a>  y_perm <span class="ot">&lt;-</span> <span class="fu">sample</span>(y)</span>
+<span id="cb1-395"><a href=""></a>  outp <span class="ot">&lt;-</span> <span class="fu">run_one_cv_dual</span>(counts_f, y_perm, <span class="at">K =</span> K, <span class="at">var_quantile =</span> <span class="fl">0.5</span>, <span class="at">top_k =</span> <span class="dv">500</span>, <span class="at">alpha =</span> <span class="fl">0.5</span>)</span>
+<span id="cb1-396"><a href=""></a>  perm_auc_limma[r] <span class="ot">&lt;-</span> outp<span class="sc">$</span>auc_limma</span>
+<span id="cb1-397"><a href=""></a>  perm_auc_sis[r]   <span class="ot">&lt;-</span> outp<span class="sc">$</span>auc_sis</span>
+<span id="cb1-398"><a href=""></a>}</span>
+<span id="cb1-399"><a href=""></a></span>
+<span id="cb1-400"><a href=""></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Permutation AUC summary (limma):</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-401"><a href=""></a><span class="fu">print</span>(<span class="fu">summary</span>(perm_auc_limma))</span>
+<span id="cb1-402"><a href=""></a><span class="fu">hist</span>(perm_auc_limma, <span class="at">main =</span> <span class="st">"Permutation AUC (limma)"</span>, <span class="at">xlab =</span> <span class="st">"AUC"</span>)</span>
+<span id="cb1-403"><a href=""></a></span>
+<span id="cb1-404"><a href=""></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Permutation AUC summary (SIS abs-corr):</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb1-405"><a href=""></a><span class="fu">print</span>(<span class="fu">summary</span>(perm_auc_sis))</span>
+<span id="cb1-406"><a href=""></a><span class="fu">hist</span>(perm_auc_sis, <span class="at">main =</span> <span class="st">"Permutation AUC (SIS abs-corr)"</span>, <span class="at">xlab =</span> <span class="st">"AUC"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<aside class="notes">
+<p>This final slide is a self-contained script that runs the complete analysis. When you record, you don’t need to read line-by-line. Instead, narrate the structure: (1) download and define labels, (2) do unsupervised filtering, (3) run fold-specific supervised screening using either limma or absolute correlation on VST values, (4) fit elastic net within each fold, (5) evaluate via outer CV AUC, and (6) summarize stability by counting how often genes are screened. Point out that the key methodological idea is <em>no leakage</em>: all supervised steps are computed only on training data inside each fold.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+
+</section>
+    </div>
+  <div class="quarto-auto-generated-content" style="display: none;">
+<div class="footer footer-default">
+
+</div>
+</div></div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="screening_files/libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="screening_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="screening_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="screening_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="screening_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="screening_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="screening_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="screening_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="screening_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': false,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'jumpToSlide': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleScrollView(event)\"><kbd>r</kbd> Scroll View Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"5\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'smaller': true,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'none',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'none',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1280,
+
+        height: 720,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, QuartoSupport,
+
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    
+    <script>
+      // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+      // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+      // slide changes (different for each slide format).
+      (function () {
+        // dispatch for htmlwidgets
+        function fireSlideEnter() {
+          const event = window.document.createEvent("Event");
+          event.initEvent("slideenter", true, true);
+          window.document.dispatchEvent(event);
+        }
+
+        function fireSlideChanged(previousSlide, currentSlide) {
+          fireSlideEnter();
+
+          // dispatch for shiny
+          if (window.jQuery) {
+            if (previousSlide) {
+              window.jQuery(previousSlide).trigger("hidden");
+            }
+            if (currentSlide) {
+              window.jQuery(currentSlide).trigger("shown");
+            }
+          }
+        }
+
+        // hookup for slidy
+        if (window.w3c_slidy) {
+          window.w3c_slidy.add_observer(function (slide_num) {
+            // slide_num starts at position 1
+            fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+          });
+        }
+
+      })();
+    </script>
+
+    <script id="quarto-html-after-body" type="application/javascript">
+      window.document.addEventListener("DOMContentLoaded", function (event) {
+        const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+        tabsets.forEach(function(tabset) {
+          const tabby = new Tabby('#' + tabset.id);
+        });
+        const isCodeAnnotation = (el) => {
+          for (const clz of el.classList) {
+            if (clz.startsWith('code-annotation-')) {                     
+              return true;
+            }
+          }
+          return false;
+        }
+        const onCopySuccess = function(e) {
+          // button target
+          const button = e.trigger;
+          // don't keep focus
+          button.blur();
+          // flash "checked"
+          button.classList.add('code-copy-button-checked');
+          var currentTitle = button.getAttribute("title");
+          button.setAttribute("title", "Copied!");
+          let tooltip;
+          if (window.bootstrap) {
+            button.setAttribute("data-bs-toggle", "tooltip");
+            button.setAttribute("data-bs-placement", "left");
+            button.setAttribute("data-bs-title", "Copied!");
+            tooltip = new bootstrap.Tooltip(button, 
+              { trigger: "manual", 
+                customClass: "code-copy-button-tooltip",
+                offset: [0, -8]});
+            tooltip.show();    
+          }
+          setTimeout(function() {
+            if (tooltip) {
+              tooltip.hide();
+              button.removeAttribute("data-bs-title");
+              button.removeAttribute("data-bs-toggle");
+              button.removeAttribute("data-bs-placement");
+            }
+            button.setAttribute("title", currentTitle);
+            button.classList.remove('code-copy-button-checked');
+          }, 1000);
+          // clear code selection
+          e.clearSelection();
+        }
+        const getTextToCopy = function(trigger) {
+          const outerScaffold = trigger.parentElement.cloneNode(true);
+          const codeEl = outerScaffold.querySelector('code');
+          for (const childEl of codeEl.children) {
+            if (isCodeAnnotation(childEl)) {
+              childEl.remove();
+            }
+          }
+          return codeEl.innerText;
+        }
+        const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+          text: getTextToCopy
+        });
+        clipboard.on('success', onCopySuccess);
+        if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+          const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+            text: getTextToCopy,
+            container: window.document.getElementById('quarto-embedded-source-code-modal')
+          });
+          clipboardModal.on('success', onCopySuccess);
+        }
+          var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+          var mailtoRegex = new RegExp(/^mailto:/);
+            var filterRegex = new RegExp('/' + window.location.host + '/');
+          var isInternal = (href) => {
+              return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+          }
+          // Inspect non-navigation links and adorn them if external
+         var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+          for (var i=0; i<links.length; i++) {
+            const link = links[i];
+            if (!isInternal(link.href)) {
+              // undo the damage that might have been done by quarto-nav.js in the case of
+              // links that we want to consider external
+              if (link.dataset.originalHref !== undefined) {
+                link.href = link.dataset.originalHref;
+              }
+            }
+          }
+        function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+          const config = {
+            allowHTML: true,
+            maxWidth: 500,
+            delay: 100,
+            arrow: false,
+            appendTo: function(el) {
+                return el.closest('section.slide') || el.parentElement;
+            },
+            interactive: true,
+            interactiveBorder: 10,
+            theme: 'light-border',
+            placement: 'bottom-start',
+          };
+          if (contentFn) {
+            config.content = contentFn;
+          }
+          if (onTriggerFn) {
+            config.onTrigger = onTriggerFn;
+          }
+          if (onUntriggerFn) {
+            config.onUntrigger = onUntriggerFn;
+          }
+            config['offset'] = [0,0];
+            config['maxWidth'] = 700;
+          window.tippy(el, config); 
+        }
+        const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+        for (var i=0; i<noterefs.length; i++) {
+          const ref = noterefs[i];
+          tippyHover(ref, function() {
+            // use id or data attribute instead here
+            let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+            try { href = new URL(href).hash; } catch {}
+            const id = href.replace(/^#\/?/, "");
+            const note = window.document.getElementById(id);
+            if (note) {
+              return note.innerHTML;
+            } else {
+              return "";
+            }
+          });
+        }
+        const findCites = (el) => {
+          const parentEl = el.parentElement;
+          if (parentEl) {
+            const cites = parentEl.dataset.cites;
+            if (cites) {
+              return {
+                el,
+                cites: cites.split(' ')
+              };
+            } else {
+              return findCites(el.parentElement)
+            }
+          } else {
+            return undefined;
+          }
+        };
+        var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+        for (var i=0; i<bibliorefs.length; i++) {
+          const ref = bibliorefs[i];
+          const citeInfo = findCites(ref);
+          if (citeInfo) {
+            tippyHover(citeInfo.el, function() {
+              var popup = window.document.createElement('div');
+              citeInfo.cites.forEach(function(cite) {
+                var citeDiv = window.document.createElement('div');
+                citeDiv.classList.add('hanging-indent');
+                citeDiv.classList.add('csl-entry');
+                var biblioDiv = window.document.getElementById('ref-' + cite);
+                if (biblioDiv) {
+                  citeDiv.innerHTML = biblioDiv.innerHTML;
+                }
+                popup.appendChild(citeDiv);
+              });
+              return popup.innerHTML;
+            });
+          }
+        }
+      });
+      </script>
+    
+
+</body></html>
