@@ -37,11 +37,11 @@ knitr:
 
 - Motivate feature screening in **p ≫ n** omics
 - Learn the **two-scale** idea: *screen → select*
-- Understand the **sure screening** goal (informal, no proofs)
-- Recognize when SIS fails and why ISIS / conditional SIS helps
+- Understand the **sure screening** goal 
+- SIS vs Iterative SIS vs conditional SIS  
 - Connect screening to **lasso/elastic net** and what guarantees they need
-- Implement a **no-leakage** RNA-seq pipeline in R:
-  - CPM filter + VST
+- Implement a **no-leakage** RNA-seq pipeline in R (HW):
+  - CPM filter + Variance Stabilizing Transformation
   - variance filter
   - limma screening (train-only)
   - elastic net (glmnet) + outer CV + stability
