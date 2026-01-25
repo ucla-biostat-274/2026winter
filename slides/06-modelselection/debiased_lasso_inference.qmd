@@ -1,0 +1,642 @@
+---
+title: "High-Dimensional Inference (Debiased / Desparsified Lasso)"
+subtitle: "Biostat 274"
+author: "Dr. Jin Zhou @ UCLA"
+date: today
+engine: knitr
+knitr:
+  opts_chunk: 
+    fig.align: 'center'
+    # fig.width: 6
+    # fig.height: 4
+    message: FALSE
+    warning: FALSE
+    cache: false
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    number-sections: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    code-fold: false
+html-math-method: mathml
+include-in-header:
+  text: |
+    <style>
+      #title-slide .title {
+        font-size: 4em;
+        color: ;
+      }
+    </style>
+execute:
+  keep-md: false # Deletes intermediate markdown
+  cache: false   # Disable caching if not needed
+---
+
+# Introduction
+
+## Learning goals
+
+- Why **lasso is great for prediction** but *not directly usable for inference*
+- The **semi-low-dimensional** viewpoint: *parameter of interest + nuisance*
+- Understand **orthogonalization / low-dimensional projection** (LDPE)
+- Construct the **debiased / desparsified lasso** and interpret each term
+- Build **Wald-style CIs and p-values** (plus multiple testing control)
+- Run a **small simulation** to check:
+  - coverage of 95% CIs
+  - type I error / FDR behavior
+
+
+
+---
+
+## Why do we need new tools?
+
+**Lasso achieves**
+
+- shrinkage estimation
+- variable selection
+- strong prediction performance
+
+**But lasso does NOT directly provide**
+
+- valid p-values / confidence intervals for coefficients
+- asymptotic normality for coefficients
+- simple bootstrap-based uncertainty (exact zeros break smoothness)
+
+
+
+---
+
+## What is "high-dimensional inference" trying to achieve?
+
+When $p > n$, goals include:
+
+- **Unbiased, non-sparse** (or "less biased") estimator for target coefficients
+- **Asymptotic normality** for low-dimensional functionals (e.g., a single $\beta_j$)
+- **Accurate inference** (CIs, tests) for a small number of parameters
+
+
+
+---
+
+## Big picture: 5 families of high-dimensional inference
+
+1) **Debiased / desparsified lasso** (today’s focus)  
+2) **Low-dimensional projection / orthogonal score** approaches  
+3) **Sample splitting** / cross-fitting (easy, but lower power)  
+4) **Selective inference** (condition on selection event)  
+5) **Knockoffs** (FDR-controlled variable discovery)
+
+
+
+---
+
+
+
+## Semi-low-dimensional (LD) decomposition idea
+
+A useful framing is
+
+$$
+\text{HD model} = \text{LD component} + \text{HD nuisance}.
+$$
+
+Example in linear regression $Y=X\beta+\varepsilon$:
+
+- **LD (interest):** $X_{j_0}\beta_{j_0}$ (a "treatment effect" coefficient)
+- **HD (nuisance):** $X_{-j_0}\beta_{-j_0}$
+
+
+
+---
+
+# Low-dimensional projection in the classical case
+
+## Partialling-out when p is small
+
+For coefficient $\beta_j$, the OLS estimator can be written using a residualized predictor:
+
+$$
+\hat\beta^{(lse)}_j
+= \frac{(X_j^\perp)^\top Y}{(X_j^\perp)^\top X_j},
+$$
+
+where $X_j^\perp$ is the projection of $X_j$ onto the orthogonal complement of span $(X_{-j})$.
+
+
+
+---
+
+## What breaks when p > n?
+
+When $p > n$, the column space of $X_{-j}$ fills $\mathbb{R}^n$, so
+
+- the exact orthogonal residual $X_j^\perp$ can become **0**
+- OLS becomes undefined / non-unique
+
+Idea: replace "exact orthogonality" with "approximate orthogonality".
+
+
+
+---
+
+## Low-dimensional projection estimator (LDPE)
+
+Pick a vector $z_j$ depending only on X, and take
+
+$$
+\hat\beta_j
+=
+\hat\beta^{(init)}_j
++
+\frac{z_j^\top (Y - X\hat\beta^{(init)})}{z_j^\top X_j}.
+$$
+
+Interpretation:
+- start from a sparse initial estimator $\hat\beta^{(init)}$ (often lasso)
+- do a **one-step bias correction** using a linear projection of the residual
+
+
+
+---
+
+## Noise–bias decomposition (why $z_j$ matters)
+
+A generic decomposition looks like
+
+$$
+\hat\beta_j-\beta_j
+=
+\underbrace{z_j^\top \varepsilon}_{\text{noise}}
++
+\underbrace{\sum_{k\neq j} \frac{z_j^\top X_k}{z_j^\top X_j}\,(\beta_k-\hat\beta^{(init)}_k)}_{\text{bias from nuisance}}.
+$$
+
+So we must control:
+
+- variance of $z_j^\top \varepsilon$
+- correlations $z_j^\top X_k$ with nuisance features *and*
+  the estimation error of $\hat\beta^{(init)}$
+
+
+---
+
+# Debiased / desparsified lasso
+
+## The estimator (vector form)
+
+Let $\hat\beta_{\lambda}$ be the lasso estimate, and $\hat\Sigma = X^\top X/n$.
+
+Define
+
+$$
+\tilde\beta
+=
+\hat\beta_{\lambda}
++
+\hat\Theta\,\frac{X^\top (Y - X\hat\beta_{\lambda})}{n},
+$$
+
+where $\hat\Theta$ is an estimate of $\Sigma^{-1}$ (precision matrix).
+
+---
+
+## A derivation sketch from the lasso KKT condition
+
+In linear regression $Y=X\beta_0+\varepsilon$, lasso KKT implies
+
+$$
+\hat\Sigma(\hat\beta_\lambda-\beta_0) + \lambda \hat\tau
+=
+\frac{X^\top \varepsilon}{n}.
+$$
+
+If $\hat\Theta$ were exactly $\hat\Sigma^{-1}$, we’d get an (approximate) linear expansion:
+
+$$
+\tilde{\beta} - \beta_0 \approx \hat\Theta\,\frac{X^\top \varepsilon}{n}.
+$$
+
+The remainder term is controlled if $(\hat\Theta\hat\Sigma-I)$ is small enough and $\hat\beta_\lambda$ is sparse enough.
+
+
+
+---
+
+## How to estimate $\Theta \approx \Sigma^{-1}$
+
+A standard approach: **nodewise lasso**.
+
+For each j:
+
+1) regress $X_j$ on $X_{-j}$ via lasso
+2) use residuals to form row j of $\hat\Theta$
+
+Intuition:
+
+- in Gaussian designs, regression coefficients encode entries of the precision matrix
+- sparsity of $\Theta$ means each feature depends on only a few others
+
+
+
+---
+
+## Asymptotic normality and CIs
+
+Under regularity + sparsity conditions,
+
+$$
+\sqrt{n}(\tilde\beta-\beta_0)
+=
+W + o_p(1),
+\quad
+W\mid X \sim N_p\bigl(0,\ \sigma^2 \hat\Theta\,\hat\Sigma\,\hat\Theta^\top \bigr).
+$$
+
+So an approximate $100(1−\alpha)\%$ CI for $β_j$ is
+
+$$
+\tilde\beta_j \pm z_{1-\alpha/2}\ \hat\sigma\sqrt{\bigl(\hat\Theta\hat\Sigma\hat\Theta^\top\bigr)_{jj}/n}.
+$$
+
+---
+
+## Alternative debiasing: Javanmard–Montanari
+
+Rewrite debiased estimator as
+
+$$
+\tilde\beta
+=
+\hat\beta_\lambda
++
+M\,\frac{X^\top(Y-X\hat\beta_\lambda)}{n}.
+$$
+
+Here $M$ does **not** have to be a perfect estimator of $\Sigma^{-1}$.
+
+Instead, pick $M$ to balance:
+
+- small bias: $\|M\hat\Sigma - I\|_\infty$ small
+- small variance: diagonal entries of $M\hat\Sigma M^\top$ not too large
+
+
+---
+
+## Multiple testing
+
+Once we have approximate Z-scores / p-values $\{p_j\}_{j=1}^p$, we can apply standard adjustments:
+
+- **Bonferroni** for FWER control (very conservative)
+- **Benjamini–Hochberg** for FDR control (often preferred in genomics)
+
+
+
+---
+
+# Extensions (optional)
+
+## GLM and decorrelated score
+
+The same ideas extend beyond Gaussian linear models.
+
+One approach: **desparsified lasso for GLMs**
+
+$$
+\tilde\beta
+=
+\hat\beta_\lambda
++
+\hat\Theta\ \frac{X^\top\{Y - b'(X\hat\beta_\lambda)\}}{n}.
+$$
+
+Another approach: **decorrelated score** functions, which explicitly build an orthogonal score for the low-dimensional parameter.
+
+
+
+---
+
+# Simulation
+
+## Simulation design (matches common benchmarks)
+
+We’ll simulate:
+
+$$
+Y = X\beta + \varepsilon,\quad
+X \sim N(0,\Sigma),\quad
+\varepsilon\sim N(0,\sigma^2 I).
+$$
+
+Two correlation structures:
+
+- Toeplitz / AR(1): $\Sigma_{jk}=\rho^{|j-k|}$
+- Equicorrelated: $\Sigma_{jk}=\rho$ for $j\neq k$
+
+Targets:
+
+- CI coverage for null and non-null coefficients
+- type I error / FDR after BH
+
+
+---
+
+## R implementation plan
+
+1) Generate $(X,y)$ with sparse $\beta$  
+2) Fit **lasso** → $\hat\beta_\lambda$  
+3) Fit **nodewise lasso** → $\hat\Theta$  
+4) Compute **debiased** $\tilde\beta$ 
+5) Compute SEs, CIs, p-values  
+6) Repeat many times → empirical coverage / FDR
+
+
+
+---
+
+## ---- 0) Packages ----
+```{r}
+pkgs <- c("glmnet", "MASS", "Matrix")
+for (p in pkgs) {
+  if (!requireNamespace(p, quietly = TRUE)) {
+    install.packages(p, repos = "https://cloud.r-project.org")
+  }
+}
+library(glmnet)
+library(MASS)
+library(Matrix)
+
+set.seed(1)
+```
+
+
+
+---
+
+## ---- 1) Helpers: covariance + sparse truth ----
+```{r}
+toeplitz_cov <- function(p, rho = 0.7) {
+  outer(1:p, 1:p, function(i, j) rho^abs(i - j))
+}
+
+equicorr_cov <- function(p, rho = 0.5) {
+  Sigma <- matrix(rho, p, p)
+  diag(Sigma) <- 1
+  Sigma
+}
+
+make_beta <- function(p, s0 = 10, b = 1.0) {
+  beta <- rep(0, p)
+  beta[1:s0] <- b
+  beta
+}
+
+standardize_X <- function(X) {
+  Xs <- scale(X, center = TRUE, scale = TRUE)
+  # rescale columns to ||X_j||_2 = sqrt(n)
+  n <- nrow(Xs)
+  Xs <- Xs * sqrt(n) / sqrt(colSums(Xs^2))
+  Xs
+}
+```
+
+
+
+---
+
+## ---- 2) Fit initial lasso (CV) ----
+```{r}
+fit_lasso_cv <- function(X, y) {
+  # assume X,y centered; no intercept; no standardize (we already did)
+  cv <- cv.glmnet(X, y, alpha = 1, intercept = FALSE, standardize = FALSE)
+  beta <- as.vector(coef(cv, s = "lambda.min"))[-1]
+  list(beta = beta, lambda = cv$lambda.min, cv = cv)
+}
+```
+
+
+
+---
+
+## ---- 3) Nodewise lasso to estimate Theta ----
+```{r}
+nodewise_theta <- function(X, lambda_node = NULL) {
+  # returns p x p matrix Theta_hat (dense in general)
+  n <- nrow(X); p <- ncol(X)
+  if (is.null(lambda_node)) {
+    lambda_node <- 1.1 * sqrt(2 * log(p) / n)
+  }
+
+  Theta <- matrix(0, p, p)
+  for (j in 1:p) {
+    Xj <- X[, j]
+    Xmj <- X[, -j, drop = FALSE]
+
+    fit <- glmnet(Xmj, Xj, alpha = 1, lambda = lambda_node,
+                  intercept = FALSE, standardize = FALSE)
+    gamma <- as.vector(coef(fit))[-1]  # length p-1
+
+    rj <- as.vector(Xj - Xmj %*% gamma)
+
+    # tau^2 estimator commonly used in nodewise lasso:
+    tau2 <- mean(rj^2) + lambda_node * sum(abs(gamma))
+
+    Theta[j, j] <- 1 / tau2
+    Theta[j, -j] <- -gamma / tau2
+  }
+  Theta
+}
+```
+
+
+
+---
+
+## ---- 4) Debiased estimator + SEs ----
+```{r}
+debiased_lasso <- function(X, y, sigma = NULL, lambda_node = NULL) {
+  n <- nrow(X); p <- ncol(X)
+
+  # initial lasso
+  fit0 <- fit_lasso_cv(X, y)
+  beta_lasso <- fit0$beta
+
+  # variance estimate (for simulation we often use the true sigma)
+  if (is.null(sigma)) {
+    resid <- as.vector(y - X %*% beta_lasso)
+    sigma <- sqrt(mean(resid^2))
+  }
+
+  # Theta estimate
+  Theta <- nodewise_theta(X, lambda_node = lambda_node)
+
+  # debias
+  resid <- as.vector(y - X %*% beta_lasso)
+  beta_db <- beta_lasso + as.vector(Theta %*% (crossprod(X, resid) / n))
+
+  # SEs from sigma^2 * (Theta Sigma Theta^T) / n
+  Sigma_hat <- crossprod(X) / n
+  V <- Theta %*% Sigma_hat %*% t(Theta)
+  se <- sigma * sqrt(pmax(diag(V), 0) / n)
+
+  list(beta_lasso = beta_lasso, beta_db = beta_db, se = se,
+       sigma = sigma, Theta = Theta, Sigma_hat = Sigma_hat,
+       lambda_lasso = fit0$lambda)
+}
+```
+
+
+
+---
+
+## ---- 5) Single run demo: CI plot for selected coefficients ----
+```{r}
+one_run_demo <- function(n = 120, p = 300, s0 = 10, b = 1, sigma = 1,
+                         Sigma_type = c("toeplitz", "equicorr"), rho = 0.7) {
+
+  Sigma_type <- match.arg(Sigma_type)
+  Sigma <- if (Sigma_type == "toeplitz") toeplitz_cov(p, rho) else equicorr_cov(p, rho)
+
+  beta0 <- make_beta(p, s0, b)
+
+  X <- MASS::mvrnorm(n, mu = rep(0, p), Sigma = Sigma)
+  X <- standardize_X(X)
+
+  eps <- rnorm(n, 0, sigma)
+  y <- as.vector(X %*% beta0 + eps)
+  y <- scale(y, center = TRUE, scale = FALSE)
+
+  out <- debiased_lasso(X, y, sigma = sigma)
+
+  # show a handful of coefficients (signals + nulls)
+  idx <- c(1:5, (s0 + 1):(s0 + 5))
+  ci_low <- out$beta_db[idx] - 1.96 * out$se[idx]
+  ci_high <- out$beta_db[idx] + 1.96 * out$se[idx]
+
+  data.frame(
+    j = idx,
+    beta_true = beta0[idx],
+    beta_db = out$beta_db[idx],
+    se = out$se[idx],
+    ci_low = ci_low,
+    ci_high = ci_high,
+    covered = (ci_low <= beta0[idx]) & (beta0[idx] <= ci_high)
+  )
+}
+
+demo_df <- one_run_demo(n = 120, p = 300, s0 = 10, b = 1, sigma = 1,
+                        Sigma_type = "toeplitz", rho = 0.7)
+demo_df
+```
+
+
+
+---
+
+## ---- 6) Repeated simulation: empirical coverage + BH-FDR ----
+```{r, eval = F}
+sim_replicates <- function(B = 30, n = 120, p = 300, s0 = 10, b = 1, sigma = 1,
+                           Sigma_type = c("toeplitz", "equicorr"), rho = 0.7,
+                           alpha = 0.05) {
+
+  Sigma_type <- match.arg(Sigma_type)
+  Sigma <- if (Sigma_type == "toeplitz") toeplitz_cov(p, rho) else equicorr_cov(p, rho)
+  beta0 <- make_beta(p, s0, b)
+  S <- which(beta0 != 0)
+
+  cover_S <- numeric(B)
+  cover_null <- numeric(B)
+  fdr <- numeric(B)
+  power <- numeric(B)
+
+  for (bb in 1:B) {
+    X <- MASS::mvrnorm(n, mu = rep(0, p), Sigma = Sigma)
+    X <- standardize_X(X)
+
+    y <- as.vector(X %*% beta0 + rnorm(n, 0, sigma))
+    y <- scale(y, center = TRUE, scale = FALSE)
+
+    out <- debiased_lasso(X, y, sigma = sigma)
+
+    ci_low <- out$beta_db - qnorm(1 - alpha/2) * out$se
+    ci_high <- out$beta_db + qnorm(1 - alpha/2) * out$se
+
+    cover_S[bb] <- mean(ci_low[S] <= beta0[S] & beta0[S] <= ci_high[S])
+    cover_null[bb] <- mean(ci_low[-S] <= 0 & 0 <= ci_high[-S])
+
+    z <- out$beta_db / out$se
+    pval <- 2 * (1 - pnorm(abs(z)))
+
+    # BH discoveries
+    qval <- p.adjust(pval, method = "BH")
+    disc <- which(qval <= alpha)
+
+    if (length(disc) == 0) {
+      fdr[bb] <- 0
+      power[bb] <- 0
+    } else {
+      fdr[bb] <- mean(!(disc %in% S))
+      power[bb] <- mean(S %in% disc)
+    }
+  }
+
+  data.frame(
+    Sigma_type = Sigma_type,
+    n = n, p = p, s0 = s0, b = b, sigma = sigma, rho = rho, B = B,
+    cover_S_mean = mean(cover_S),
+    cover_null_mean = mean(cover_null),
+    fdr_mean = mean(fdr),
+    power_mean = mean(power)
+  )
+}
+
+res_toeplitz <- sim_replicates(B = 20, Sigma_type = "toeplitz", rho = 0.7)
+res_equicorr <- sim_replicates(B = 20, Sigma_type = "equicorr", rho = 0.5)
+
+rbind(res_toeplitz, res_equicorr)
+```
+
+
+
+---
+
+## Practical cautions (what to tell students)
+
+- **Variance estimation $\sigma$** matters (scaled lasso, refit, or other estimators)
+- **Strong correlations** can hurt: Θ estimation becomes unstable
+- Many results assume sparsity in **$\beta$** and/or in rows of **$\Theta$**
+- For genomics: always report **BH q-values** (or other error-rate control), not raw p-values
+- “Inference after feature screening” needs care (screening changes the target)
+
+
+
+---
+
+## Summary
+
+- High-dimensional inference focuses on **low-dimensional targets** with high-dimensional nuisance
+- Orthogonalization / projection yields **debiased** estimators with asymptotic normality
+- The debiased lasso is a practical one-step correction:
+
+$$
+\tilde\beta
+=
+\hat\beta_\lambda + \hat\Theta X^\top (Y - X\hat\beta_\lambda)/n
+$$
+
+- Simulation is a sanity check: **coverage** and **FDR/power**
+
+
+
+---
+
+# Suggested readings
+
+- Fan et al. 2020, Statistical Foundations of Data Science (Ch. 7, esp. 7.1, 7.2), for a comprehensive review
+- van de Geer et al. (2014), Javanmard & Montanari (2014) for foundational theory
+- Dezeure et al. (2015) for the R package `hdi` and practical comparisons
+
+
