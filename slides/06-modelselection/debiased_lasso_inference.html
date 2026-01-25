@@ -2248,12 +2248,12 @@ color: ;
   <li><a href="#simulation-design-matches-common-benchmarks" id="toc-simulation-design-matches-common-benchmarks" class="nav-link" data-scroll-target="#simulation-design-matches-common-benchmarks"><span class="header-section-number">5.1</span> Simulation design (matches common benchmarks)</a></li>
   <li><a href="#r-implementation-plan" id="toc-r-implementation-plan" class="nav-link" data-scroll-target="#r-implementation-plan"><span class="header-section-number">5.2</span> R implementation plan</a></li>
   <li><a href="#packages--" id="toc-packages--" class="nav-link" data-scroll-target="#packages--"><span class="header-section-number">5.3</span> —- 0) Packages —-</a></li>
-  <li><a href="#helpers-covariance-sparse-truth--" id="toc-helpers-covariance-sparse-truth--" class="nav-link" data-scroll-target="#helpers-covariance-sparse-truth--"><span class="header-section-number">5.4</span> —- 1) Helpers: covariance + sparse truth —-</a></li>
-  <li><a href="#fit-initial-lasso-cv--" id="toc-fit-initial-lasso-cv--" class="nav-link" data-scroll-target="#fit-initial-lasso-cv--"><span class="header-section-number">5.5</span> —- 2) Fit initial lasso (CV) —-</a></li>
-  <li><a href="#nodewise-lasso-to-estimate-theta--" id="toc-nodewise-lasso-to-estimate-theta--" class="nav-link" data-scroll-target="#nodewise-lasso-to-estimate-theta--"><span class="header-section-number">5.6</span> —- 3) Nodewise lasso to estimate Theta —-</a></li>
-  <li><a href="#debiased-estimator-ses--" id="toc-debiased-estimator-ses--" class="nav-link" data-scroll-target="#debiased-estimator-ses--"><span class="header-section-number">5.7</span> —- 4) Debiased estimator + SEs —-</a></li>
-  <li><a href="#single-run-demo-ci-plot-for-selected-coefficients--" id="toc-single-run-demo-ci-plot-for-selected-coefficients--" class="nav-link" data-scroll-target="#single-run-demo-ci-plot-for-selected-coefficients--"><span class="header-section-number">5.8</span> —- 5) Single run demo: CI plot for selected coefficients —-</a></li>
-  <li><a href="#repeated-simulation-empirical-coverage-bh-fdr--" id="toc-repeated-simulation-empirical-coverage-bh-fdr--" class="nav-link" data-scroll-target="#repeated-simulation-empirical-coverage-bh-fdr--"><span class="header-section-number">5.9</span> —- 6) Repeated simulation: empirical coverage + BH-FDR —-</a></li>
+  <li><a href="#helpers-covariance-sparse-truth" id="toc-helpers-covariance-sparse-truth" class="nav-link" data-scroll-target="#helpers-covariance-sparse-truth"><span class="header-section-number">5.4</span> Helpers: covariance + sparse truth</a></li>
+  <li><a href="#fit-initial-lasso-cv" id="toc-fit-initial-lasso-cv" class="nav-link" data-scroll-target="#fit-initial-lasso-cv"><span class="header-section-number">5.5</span> Fit initial lasso (CV)</a></li>
+  <li><a href="#nodewise-lasso-to-estimate-theta" id="toc-nodewise-lasso-to-estimate-theta" class="nav-link" data-scroll-target="#nodewise-lasso-to-estimate-theta"><span class="header-section-number">5.6</span> Nodewise lasso to estimate Theta</a></li>
+  <li><a href="#debiased-estimator-ses" id="toc-debiased-estimator-ses" class="nav-link" data-scroll-target="#debiased-estimator-ses"><span class="header-section-number">5.7</span> Debiased estimator + SEs</a></li>
+  <li><a href="#single-run-demo-ci-plot-for-selected-coefficients" id="toc-single-run-demo-ci-plot-for-selected-coefficients" class="nav-link" data-scroll-target="#single-run-demo-ci-plot-for-selected-coefficients"><span class="header-section-number">5.8</span> Single run demo: CI plot for selected coefficients</a></li>
+  <li><a href="#repeated-simulation-empirical-coverage-bh-fdr" id="toc-repeated-simulation-empirical-coverage-bh-fdr" class="nav-link" data-scroll-target="#repeated-simulation-empirical-coverage-bh-fdr"><span class="header-section-number">5.9</span> Repeated simulation: empirical coverage + BH-FDR</a></li>
   <li><a href="#practical-cautions-what-to-tell-students" id="toc-practical-cautions-what-to-tell-students" class="nav-link" data-scroll-target="#practical-cautions-what-to-tell-students"><span class="header-section-number">5.10</span> Practical cautions (what to tell students)</a></li>
   <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary"><span class="header-section-number">5.11</span> Summary</a></li>
   </ul></li>
@@ -2584,8 +2584,8 @@ X \sim N(0,\Sigma),\quad
 </div>
 <hr>
 </section>
-<section id="helpers-covariance-sparse-truth--" class="level2" data-number="5.4">
-<h2 data-number="5.4" class="anchored" data-anchor-id="helpers-covariance-sparse-truth--"><span class="header-section-number">5.4</span> —- 1) Helpers: covariance + sparse truth —-</h2>
+<section id="helpers-covariance-sparse-truth" class="level2" data-number="5.4">
+<h2 data-number="5.4" class="anchored" data-anchor-id="helpers-covariance-sparse-truth"><span class="header-section-number">5.4</span> Helpers: covariance + sparse truth</h2>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>toeplitz_cov <span class="ot">&lt;-</span> <span class="cf">function</span>(p, <span class="at">rho =</span> <span class="fl">0.7</span>) {</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">outer</span>(<span class="dv">1</span><span class="sc">:</span>p, <span class="dv">1</span><span class="sc">:</span>p, <span class="cf">function</span>(i, j) rho<span class="sc">^</span><span class="fu">abs</span>(i <span class="sc">-</span> j))</span>
@@ -2613,8 +2613,8 @@ X \sim N(0,\Sigma),\quad
 </div>
 <hr>
 </section>
-<section id="fit-initial-lasso-cv--" class="level2" data-number="5.5">
-<h2 data-number="5.5" class="anchored" data-anchor-id="fit-initial-lasso-cv--"><span class="header-section-number">5.5</span> —- 2) Fit initial lasso (CV) —-</h2>
+<section id="fit-initial-lasso-cv" class="level2" data-number="5.5">
+<h2 data-number="5.5" class="anchored" data-anchor-id="fit-initial-lasso-cv"><span class="header-section-number">5.5</span> Fit initial lasso (CV)</h2>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>fit_lasso_cv <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y) {</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># assume X,y centered; no intercept; no standardize (we already did)</span></span>
@@ -2625,8 +2625,8 @@ X \sim N(0,\Sigma),\quad
 </div>
 <hr>
 </section>
-<section id="nodewise-lasso-to-estimate-theta--" class="level2" data-number="5.6">
-<h2 data-number="5.6" class="anchored" data-anchor-id="nodewise-lasso-to-estimate-theta--"><span class="header-section-number">5.6</span> —- 3) Nodewise lasso to estimate Theta —-</h2>
+<section id="nodewise-lasso-to-estimate-theta" class="level2" data-number="5.6">
+<h2 data-number="5.6" class="anchored" data-anchor-id="nodewise-lasso-to-estimate-theta"><span class="header-section-number">5.6</span> Nodewise lasso to estimate Theta</h2>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>nodewise_theta <span class="ot">&lt;-</span> <span class="cf">function</span>(X, <span class="at">lambda_node =</span> <span class="cn">NULL</span>) {</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># returns p x p matrix Theta_hat (dense in general)</span></span>
@@ -2657,8 +2657,8 @@ X \sim N(0,\Sigma),\quad
 </div>
 <hr>
 </section>
-<section id="debiased-estimator-ses--" class="level2" data-number="5.7">
-<h2 data-number="5.7" class="anchored" data-anchor-id="debiased-estimator-ses--"><span class="header-section-number">5.7</span> —- 4) Debiased estimator + SEs —-</h2>
+<section id="debiased-estimator-ses" class="level2" data-number="5.7">
+<h2 data-number="5.7" class="anchored" data-anchor-id="debiased-estimator-ses"><span class="header-section-number">5.7</span> Debiased estimator + SEs</h2>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>debiased_lasso <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, <span class="at">sigma =</span> <span class="cn">NULL</span>, <span class="at">lambda_node =</span> <span class="cn">NULL</span>) {</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X); p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
@@ -2692,8 +2692,8 @@ X \sim N(0,\Sigma),\quad
 </div>
 <hr>
 </section>
-<section id="single-run-demo-ci-plot-for-selected-coefficients--" class="level2" data-number="5.8">
-<h2 data-number="5.8" class="anchored" data-anchor-id="single-run-demo-ci-plot-for-selected-coefficients--"><span class="header-section-number">5.8</span> —- 5) Single run demo: CI plot for selected coefficients —-</h2>
+<section id="single-run-demo-ci-plot-for-selected-coefficients" class="level2" data-number="5.8">
+<h2 data-number="5.8" class="anchored" data-anchor-id="single-run-demo-ci-plot-for-selected-coefficients"><span class="header-section-number">5.8</span> Single run demo: CI plot for selected coefficients</h2>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>one_run_demo <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">n =</span> <span class="dv">120</span>, <span class="at">p =</span> <span class="dv">300</span>, <span class="at">s0 =</span> <span class="dv">10</span>, <span class="at">b =</span> <span class="dv">1</span>, <span class="at">sigma =</span> <span class="dv">1</span>,</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">Sigma_type =</span> <span class="fu">c</span>(<span class="st">&quot;toeplitz&quot;</span>, <span class="st">&quot;equicorr&quot;</span>), <span class="at">rho =</span> <span class="fl">0.7</span>) {</span>
@@ -2747,8 +2747,8 @@ X \sim N(0,\Sigma),\quad
 </div>
 <hr>
 </section>
-<section id="repeated-simulation-empirical-coverage-bh-fdr--" class="level2" data-number="5.9">
-<h2 data-number="5.9" class="anchored" data-anchor-id="repeated-simulation-empirical-coverage-bh-fdr--"><span class="header-section-number">5.9</span> —- 6) Repeated simulation: empirical coverage + BH-FDR —-</h2>
+<section id="repeated-simulation-empirical-coverage-bh-fdr" class="level2" data-number="5.9">
+<h2 data-number="5.9" class="anchored" data-anchor-id="repeated-simulation-empirical-coverage-bh-fdr"><span class="header-section-number">5.9</span> Repeated simulation: empirical coverage + BH-FDR</h2>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>sim_replicates <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">B =</span> <span class="dv">30</span>, <span class="at">n =</span> <span class="dv">120</span>, <span class="at">p =</span> <span class="dv">300</span>, <span class="at">s0 =</span> <span class="dv">10</span>, <span class="at">b =</span> <span class="dv">1</span>, <span class="at">sigma =</span> <span class="dv">1</span>,</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                           <span class="at">Sigma_type =</span> <span class="fu">c</span>(<span class="st">&quot;toeplitz&quot;</span>, <span class="st">&quot;equicorr&quot;</span>), <span class="at">rho =</span> <span class="fl">0.7</span>,</span>

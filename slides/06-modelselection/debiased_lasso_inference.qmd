@@ -376,7 +376,7 @@ set.seed(1)
 
 ---
 
-## ---- 1) Helpers: covariance + sparse truth ----
+## Helpers: covariance + sparse truth 
 ```{r}
 toeplitz_cov <- function(p, rho = 0.7) {
   outer(1:p, 1:p, function(i, j) rho^abs(i - j))
@@ -407,7 +407,7 @@ standardize_X <- function(X) {
 
 ---
 
-## ---- 2) Fit initial lasso (CV) ----
+## Fit initial lasso (CV) 
 ```{r}
 fit_lasso_cv <- function(X, y) {
   # assume X,y centered; no intercept; no standardize (we already did)
@@ -421,7 +421,7 @@ fit_lasso_cv <- function(X, y) {
 
 ---
 
-## ---- 3) Nodewise lasso to estimate Theta ----
+## Nodewise lasso to estimate Theta 
 ```{r}
 nodewise_theta <- function(X, lambda_node = NULL) {
   # returns p x p matrix Theta_hat (dense in general)
@@ -455,7 +455,7 @@ nodewise_theta <- function(X, lambda_node = NULL) {
 
 ---
 
-## ---- 4) Debiased estimator + SEs ----
+## Debiased estimator + SEs 
 ```{r}
 debiased_lasso <- function(X, y, sigma = NULL, lambda_node = NULL) {
   n <- nrow(X); p <- ncol(X)
@@ -492,7 +492,7 @@ debiased_lasso <- function(X, y, sigma = NULL, lambda_node = NULL) {
 
 ---
 
-## ---- 5) Single run demo: CI plot for selected coefficients ----
+## Single run demo: CI plot for selected coefficients 
 ```{r}
 one_run_demo <- function(n = 120, p = 300, s0 = 10, b = 1, sigma = 1,
                          Sigma_type = c("toeplitz", "equicorr"), rho = 0.7) {
@@ -536,7 +536,7 @@ demo_df
 
 ---
 
-## ---- 6) Repeated simulation: empirical coverage + BH-FDR ----
+## Repeated simulation: empirical coverage + BH-FDR 
 ```{r, eval = F}
 sim_replicates <- function(B = 30, n = 120, p = 300, s0 = 10, b = 1, sigma = 1,
                            Sigma_type = c("toeplitz", "equicorr"), rho = 0.7,
