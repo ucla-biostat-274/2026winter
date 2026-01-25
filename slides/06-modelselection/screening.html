@@ -10,7 +10,7 @@
   <meta name="generator" content="quarto-1.8.25">
 
   <meta name="author" content="Dr.&nbsp;Jin Zhou @ UCLA">
-  <meta name="dcterms.date" content="2026-01-24">
+  <meta name="dcterms.date" content="2026-01-25">
   <title>Feature Screening</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -212,19 +212,20 @@ Dr.&nbsp;Jin Zhou @ UCLA
 </div>
 </div>
 
-  <p class="date">2026-01-24</p>
+  <p class="date">2026-01-25</p>
 </section>
 <section id="learning-goals" class="slide level2">
 <h2>Learning goals</h2>
 <ul>
 <li>Motivate feature screening in <strong>p ≫ n</strong> omics</li>
 <li>Learn the <strong>two-scale</strong> idea: <em>screen → select</em></li>
-<li>Understand the <strong>sure screening</strong> goal (informal, no proofs)</li>
-<li>Recognize when SIS fails and why ISIS / conditional SIS helps</li>
+<li>Understand the <strong>sure screening</strong> goal</li>
+<li>SIS vs Iterative SIS vs conditional SIS<br>
+</li>
 <li>Connect screening to <strong>lasso/elastic net</strong> and what guarantees they need</li>
-<li>Implement a <strong>no-leakage</strong> RNA-seq pipeline in R:
+<li>Implement a <strong>no-leakage</strong> RNA-seq pipeline in R (HW):
 <ul>
-<li>CPM filter + VST</li>
+<li>CPM filter + Variance Stabilizing Transformation</li>
 <li>variance filter</li>
 <li>limma screening (train-only)</li>
 <li>elastic net (glmnet) + outer CV + stability</li>
