@@ -84,7 +84,7 @@ When $p > n$, goals include:
 
 ## Big picture: 5 families of high-dimensional inference
 
-1) **Debiased / desparsified lasso** (today’s focus)  
+1) **Debiased / desparsified lasso** 
 2) **Low-dimensional projection / orthogonal score** approaches  
 3) **Sample splitting** / cross-fitting (easy, but lower power)  
 4) **Selective inference** (condition on selection event)  
