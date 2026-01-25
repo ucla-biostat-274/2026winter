@@ -1,0 +1,845 @@
+---
+title: "Feature Screening"
+subtitle: "Biostat 274"
+author: "Dr. Jin Zhou @ UCLA"
+date: today
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    number-sections: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    code-fold: false
+engine: knitr
+knitr:
+  opts_chunk: 
+    fig.align: 'center'
+    # fig.width: 6
+    # fig.height: 4
+    message: FALSE
+    cache: false
+---
+
+# Introduction
+
+## Learning goals
+
+- Motivate feature screening in **p ≫ n** omics
+- Learn the **two-scale** idea: *screen → select*
+- Understand the **sure screening** goal 
+- SIS vs Iterative SIS vs conditional SIS  
+- Connect screening to **lasso/elastic net** and what guarantees they need
+- Implement a **no-leakage** RNA-seq pipeline in R (HW):
+  - CPM filter + Variance Stabilizing Transformation
+  - variance filter
+  - limma screening (train-only)
+  - elastic net (glmnet) + outer CV + stability
+
+::: notes
+In this lecture we focus on the first step of modern high-dimensional pipelines: feature screening.
+The goal is practical: make large omics problems computationally feasible while keeping the true signals.
+We’ll (1) set up the statistical problem, (2) define SIS and the sure screening property, (3) discuss why
+marginal screening can fail and what iterative / conditional ideas do, (4) connect screening to sparse
+regularization like the lasso, and (5) implement an RNA-seq prediction workflow without information
+leakage using nested cross-validation.
+:::
+
+---
+
+## Why screening in RNA-seq?
+
+- Ultra-high dimensional data faces: **collinearity**, **spurious correlation**, **noise accumulation**
+- With many noise features, using *all* genes can degrade prediction (often toward random guess)
+- Screening improves:
+  - **scalability** (time/memory)
+  - **statistical efficiency** (less noise to accumulate)
+
+::: notes
+RNA-seq is a classic setting with p in the tens of thousands and n in the tens to hundreds.
+Two pathologies show up quickly: spurious correlations (some genes will look associated just by chance)
+and noise accumulation (downstream models can get overwhelmed by irrelevant features).
+Screening is a cheap first pass that reduces the feature space so that the second-stage model selection
+is both computationally feasible and statistically better behaved.
+:::
+
+---
+
+## Pipeline overview (what we’ll implement)
+
+1) **Filter low counts** (unsupervised)  
+2) **Normalize + transform** (DESeq2 size factors + **VST**)  
+3) **Variance filter** (unsupervised)  
+4) **Marginal screening score** (train-only): limma moderated t / p-value **or** |cor|  
+5) **Moderate-scale selection**: elastic net on screened genes  
+6) **Evaluate**: outer CV AUC + stability
+
+::: notes
+This is the two-scale template: cheap screening first, then a multivariate model.
+A key detail for honest evaluation is “train-only” screening inside each CV fold.
+Anything that uses the labels (t-tests, limma, correlations with y) must be computed on training data only.
+Otherwise you leak information from test to train and inflate AUC.
+:::
+
+---
+
+# Theory
+
+## Problem setup: sparse high-dimensional regression
+
+We observe $(x_i, y_i)$ for $i=1,\dots,n$ with $x_i\in\mathbb{R}^p$.
+
+A canonical model:
+
+$$
+ y = X\beta + \varepsilon, \qquad p \gg n.
+$$
+
+Assume **sparsity**:
+
+- true support $S = \{j: \beta_j \neq 0\}$
+- sparsity level $s = |S| \ll n$
+
+::: notes
+To talk clearly about screening we need notation.
+We’ll use the linear model as the core template, even if in practice we later use logistic regression
+or other losses.
+The key structural assumption is sparsity: only a small subset of genes truly drives the outcome.
+Screening tries to produce a reduced set \hat S that still contains S.
+:::
+
+---
+
+## "High-dimensional" vs "ultra-high-dimensional"
+
+A common asymptotic distinction:
+
+- **High-dimensional:** $p_n = O(n^\xi)$ (polynomial growth)
+- **Ultra-high-dimensional:** $\log p_n = O(n^\xi)$ (non-polynomial growth)
+
+RNA-seq is often closer to **ultra-high-dimensional** behavior.
+
+::: notes
+This distinction matters because the “multiple comparisons” effect explodes when p grows too quickly.
+In the ultra-high regime, even if each noise variable has tiny chance to look significant,
+with exponentially many variables you almost surely see large spurious correlations.
+Sure screening theory is designed to handle this regime.
+:::
+
+---
+
+## SIS: screening by a marginal utility
+
+Sure Independence Screening (SIS) ranks features by a **marginal utility** $U_j$.
+
+Common choices:
+
+- correlation: $U_j = |\mathrm{corr}(X_j, y)|$
+- marginal regression slope: $U_j = |\hat\beta^{(marg)}_j|$
+- two-sample t / **limma** moderated t (omics-friendly)
+
+Then keep the top $d$ features:
+$$
+\hat S = \{j: U_j \text{ is among the top } d\}.
+$$
+
+::: notes
+SIS is simple: compute a one-dimensional score for each feature independently.
+In genomics, limma’s moderated t is a popular marginal score because it stabilizes variance estimates
+across genes. In classification problems, two-sample t-tests are a special case of this marginal approach.
+The tuning parameter is d: how many features we keep for the second-stage model.
+:::
+
+---
+
+## Componentwise regression 
+
+Let $X$ be column-standardized (each gene has mean 0, variance 1).
+
+Define the **componentwise regression score**
+$$
+\omega = X^\top y, \qquad \omega_j = x_j^\top y.
+$$
+
+Interpretation:
+
+- If $x_j$ is standardized, then $\omega_j$ is proportional to **sample covariance** between $x_j$ and $y$.
+- The univariate OLS slope satisfies
+$$
+\hat\beta^{(marg)}_j = \frac{x_j^\top y}{x_j^\top x_j} \propto \omega_j.
+$$
+
+So ranking by $|\omega_j|$ is (essentially) ranking by marginal correlation.
+
+::: notes
+“Componentwise regression” just means: regress y on one predictor at a time.
+If you center and standardize each x_j, then the univariate slope is basically x_j^T y divided by a constant.
+So the vector omega = X^T y collects all marginal association scores in one matrix multiply.
+That’s why SIS is extremely fast: it’s essentially one pass over the design matrix.
+:::
+
+---
+
+## Sure screening property  
+
+Let $S$ be the true signal set and $\hat S$ the screened set.
+
+**Sure screening property:**
+$$
+\Pr(S \subseteq \hat S) \to 1 \quad (n\to\infty).
+$$
+
+Interpretation:
+
+- screening prioritizes **low false negatives**
+- false positives are tolerated; stage 2 handles them
+
+::: notes
+Sure screening is not the same as perfect selection.
+We only ask the screening step to keep the true signals with high probability.
+It may keep many extra variables—and that’s fine.
+The second-stage method (lasso/SCAD/elastic net, etc.) is where we try to remove false positives.
+:::
+
+---
+
+## What assumptions make sure screening plausible?
+
+At a high level, SIS needs:
+
+- **signal strength**: true effects are not too tiny (a “beta-min” condition)
+- **concentration**: sample correlations concentrate around population correlations
+- **not-too-extreme collinearity**: correlation structure is not adversarial
+
+Practical mental model:
+
+> True signals must stand above the **maximum spurious correlation** among noise variables.
+
+::: notes
+Theorem statements in SIS papers look technical, but the intuition is simple.
+Noise variables have correlations with y that fluctuate around 0; with huge p, the largest fluctuation
+can still be large. To not miss true signals, each true variable needs enough marginal association so
+it ranks above those spurious extremes.
+This is why screening is easiest when signals are strong and not fully masked by correlation structure.
+:::
+
+---
+
+## How big should $d$ be?
+
+Theory shows sure screening can hold even when $p$ grows very fast, with $d$ scaling like a small multiple of $n$.
+
+Conservative choices suggested in early SIS work:
+
+- $d = n - 1$
+- $d = \lfloor n / \log n \rfloor$
+
+Practice:
+
+- treat $d$ as a hyperparameter
+- tune it **inside CV** (or use a thresholding rule)
+
+::: notes
+The original SIS papers emphasize keeping d on the order of n, not on the order of p.
+This makes stage 2 feasible and also keeps the probability of retaining all true signals high.
+In practice you can pick a grid of d values like 200, 500, 1000, 2000 and tune inside CV.
+Alternatively, you can use permutation thresholding to set a cutoff.
+:::
+
+---
+
+## Permutation thresholding  
+
+Goal: choose a cutoff that reflects **spurious** marginal association.
+
+Procedure:
+
+1) Permute labels $y$ → destroys true association
+2) Recompute marginal scores $U_j^{(perm)}$
+3) Set threshold $r^*$ as the maximum (or qth percentile) of $|U_j^{(perm)}|$
+4) Screen by $\hat S = \{j: |U_j| \ge r^*\}$
+
+::: notes
+This is a clean, model-agnostic way to pick a threshold.
+The permuted data keeps the same feature distribution and the same label distribution,
+but breaks any real association.
+So the largest marginal score under permutation is a proxy for the largest “purely spurious” score.
+Keeping only features above that level is a way to control false positives at the screening stage.
+:::
+
+---
+
+## Why marginal screening can fail
+
+Two classic failure modes:
+
+1) **Proxy noise features**: a noise gene highly correlated with a true gene can rank higher than the true gene.
+2) **Marginally silent signals**: a truly important gene can have near-zero marginal correlation but be important jointly.
+
+These motivate iterative/conditional variants.
+
+::: notes
+SIS is a marginal method; it ignores the joint correlation structure.
+If a noise gene shadows a real signal gene, it can “steal” rank.
+And in multivariate settings, a variable can matter only after conditioning on others.
+This is the same reason naive marginal p-values can miss interaction or suppression effects.
+:::
+
+---
+
+## ISIS and conditional SIS (intuition)
+
+**Iterative SIS (ISIS):**
+
+- screen → fit a multivariate model on screened set → compute residuals
+- re-screen *remaining* variables against residuals
+- iterate to recruit masked signals
+
+**Conditional SIS:**
+
+- if you have a “must-include” set (batch, known covariates), screen others **conditional** on that set.
+
+::: notes
+ISIS tries to approximate a multivariate search while keeping computations cheap.
+The idea is: once you include some strong signals, the residual contains what’s left unexplained.
+Genes that were marginally weak because of masking can become strongly associated with the residual.
+Conditional SIS is the same idea but driven by prior knowledge.
+:::
+
+---
+
+## Beyond linear regression: GLM / classification screening
+
+For binary or count responses, SIS generalizes by using marginal likelihood utilities:
+
+- **marginal MLE magnitude** (fit one-variable GLM)
+- **marginal likelihood ratio statistic**
+
+These can still achieve sure screening under suitable conditions.
+
+RNA-seq prediction examples:
+
+- case/control → logistic regression screening score
+- counts outcome → Poisson/negative binomial style utilities
+
+::: notes
+In classification you often prefer screening scores based on a classification-appropriate loss.
+Fan & coauthors show that in GLMs you can screen by fitting p separate one-variable models and ranking
+by the marginal coefficient or a likelihood ratio statistic.
+In practice, many genomics pipelines still use t/limma as a strong baseline, especially after VST.
+:::
+
+---
+
+## Nonlinear + robust screening 
+
+When relationships are nonlinear or data are heavy-tailed/outlier-prone (i.e., Pearson corr is the wrong tool):
+
+- **Nonparametric independence screening (NIS):** marginal nonparametric fits, rank by fitted-function norm
+- **Robust screening:** Kendall’s $\tau$ rank correlation
+- **Model-free screening:** distance correlation
+
+::: notes
+Pearson correlation is sensitive to outliers and only measures linear association.
+For nonlinear signals, marginal nonparametric regression can pick up structure that correlation misses.
+Robust rank-based measures like Kendall’s tau are less sensitive to heavy tails.
+Distance correlation is attractive because it detects general dependence, not just linear.
+These are more advanced tools, but it’s important for students to know they exist.
+:::
+
+---
+
+## After screening, lasso/elastic net is a natural stage 2
+
+Stage 2 solves a *multivariate* sparse problem on $d$ features:
+
+$$
+\hat\beta = \arg\min_\beta \frac{1}{2}\|y - X\beta\|_2^2 + \lambda\|\beta\|_1.
+$$
+
+Key lasso facts you should know:
+
+- KKT/subgradient condition: $X^\top(y - X\hat\beta) = \lambda s$
+- **Equicorrelation set** collects variables most correlated with the residual
+- With continuous predictors, the lasso solution is typically unique
+- **Saturation:** lasso selects at most $\min(n,d)$ variables
+
+::: notes
+Screening reduces the size so that lasso/elastic net becomes fast and stable.
+The KKT condition is the core: selected variables have correlation exactly lambda with the residual.
+The equicorrelation set formalizes this.
+Saturation is an underappreciated point: with n samples, lasso can’t select more than n predictors when unique.
+This is another reason screening is helpful—if you keep d too big and n is small, you’ll hit saturation anyway.
+:::
+
+---
+
+## "Fast rates" need design conditions 
+
+Without assumptions on $X$, lasso prediction bounds can be slow.
+
+Under conditions controlling feature correlations (e.g., **compatibility** / **restricted eigenvalue**):
+
+- prediction error scales like
+$$
+\text{risk} \sim \frac{s\log d}{n}
+$$
+
+Takeaway:
+
+- screening aims to reduce $d$
+- good design / weak collinearity improves stage-2 guarantees
+
+::: notes
+The literature distinguishes slow and fast rates.
+Fast rates require that the active predictors are not too collinear and that the design matrix behaves well
+on sparse vectors.
+This is exactly what compatibility and restricted eigenvalue conditions enforce.
+From a teaching perspective: emphasize that guarantees depend on both sparsity and correlation structure.
+:::
+
+---
+
+## Practical warning: avoid information leakage
+
+If you compute supervised screening on the full dataset, you leak test labels into train.
+
+Correct approach:
+
+- within each outer CV fold:
+  - compute screening scores using **training** samples only
+  - fit the stage-2 model on training samples only
+  - evaluate on held-out samples
+
+::: notes
+This is the #1 way people accidentally get “too good to be true” AUCs.
+Any step that uses y—t-tests, limma, correlation screening, even choosing hyperparameters—must be trained
+only on training data.
+We’ll implement the full pipeline with fold-specific screening to keep the evaluation honest.
+:::
+
+---
+
+# Data + code (TCGA-BRCA via recount3)
+
+```{r, eval=F}
+## ============================================================
+## Dual-score feature screening (RNA-seq)
+## Dataset: TCGA-BRCA Tumor vs Normal via recount3 (Bioc 3.22 compatible)
+##
+## Two screening scores inside each TRAIN fold:
+##   (A) limma moderated t (rank by p-value)
+##   (B) SIS-style |corr(X_j, y)| on VST values
+##
+## Pipeline per fold:
+##   TRAIN-only CPM filter -> VST (design~1) -> TRAIN-only variance filter ->
+##   screen (limma or SIS) -> elastic net (glmnet) inner CV -> predict on test
+##
+## Outputs:
+##   - One-run outer CV AUC for limma and SIS
+##   - Repeated outer CV AUC distributions
+##   - Stability (screen frequency)
+##   - Optional permutation sanity check
+## ============================================================
+
+## ---- packages ----
+pkgs_cran <- c("tidyverse", "matrixStats", "pROC", "glmnet")
+pkgs_bioc <- c("recount3", "SummarizedExperiment", "DESeq2", "edgeR", "limma")
+
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+for (p in pkgs_cran) if (!requireNamespace(p, quietly = TRUE)) install.packages(p)
+for (p in pkgs_bioc) if (!requireNamespace(p, quietly = TRUE)) BiocManager::install(p, ask = FALSE, update = FALSE)
+
+library(tidyverse)
+library(matrixStats)
+library(pROC)
+library(glmnet)
+
+library(recount3)
+library(SummarizedExperiment)
+library(DESeq2)
+library(edgeR)
+library(limma)
+
+## ---- helper: find first matching column by regex ----
+first_col_match <- function(df, pattern) {
+  hits <- grep(pattern, colnames(df), ignore.case = TRUE, value = TRUE)
+  if (length(hits) == 0) return(NA_character_)
+  hits[1]
+}
+
+## ---- helper: stratified folds ----
+make_strat_folds <- function(y, K) {
+  fold_id <- integer(length(y))
+  for (lev in levels(y)) {
+    idx <- which(y == lev)
+    fold_id[idx] <- sample(rep(1:K, length.out = length(idx)))
+  }
+  tab <- table(fold_id, y)
+  if (any(tab == 0)) stop("A fold has a missing class. Reduce K or re-sample.")
+  fold_id
+}
+
+## ---- helper: SIS-style abs correlation screening ----
+screen_sis_abs_cor <- function(X_genes_by_samples, y_factor, top_k) {
+  y_bin <- ifelse(y_factor == levels(y_factor)[2], 1, 0)
+  y_c <- y_bin - mean(y_bin)
+  sdy <- sqrt(sum(y_c^2) / (length(y_c) - 1))
+
+  Xc <- X_genes_by_samples - rowMeans(X_genes_by_samples)
+  sdX <- sqrt(rowSums(Xc^2) / (ncol(Xc) - 1))
+
+  cov_g <- as.numeric((Xc %*% y_c) / (ncol(Xc) - 1))
+  r <- cov_g / (sdX * sdy)
+  r[!is.finite(r)] <- 0
+
+  ord <- order(abs(r), decreasing = TRUE)
+  keep <- ord[1:min(top_k, length(ord))]
+  rownames(X_genes_by_samples)[keep]
+}
+
+## ---- helper: limma screening (rank by p-value) ----
+screen_limma_p <- function(X_genes_by_samples, y_factor, top_k) {
+  design <- model.matrix(~ y_factor)
+  fit <- limma::eBayes(limma::lmFit(X_genes_by_samples, design))
+  tab <- limma::topTable(fit, coef = 2, number = Inf, sort.by = "P")
+  rownames(tab)[1:min(top_k, nrow(tab))]
+}
+
+## ---- helper: train + predict glmnet ----
+fit_predict_glmnet <- function(Xtr_genes_by_samples, Xte_genes_by_samples, y_train, alpha = 0.5) {
+  Xtr <- t(Xtr_genes_by_samples)
+  Xte <- t(Xte_genes_by_samples)
+
+  y_bin <- ifelse(y_train == levels(y_train)[2], 1, 0)
+  cvfit <- glmnet::cv.glmnet(Xtr, y_bin, family = "binomial", alpha = alpha)
+
+  prob <- as.numeric(predict(cvfit, newx = Xte, s = "lambda.min", type = "response"))
+  list(prob = prob, lambda = cvfit$lambda.min)
+}
+
+## ---- 1) Download TCGA-BRCA gene-level data via recount3 ----
+projects <- recount3::available_projects()
+brca_info <- projects %>% dplyr::filter(file_source == "tcga", project == "BRCA")
+if (nrow(brca_info) != 1) stop("Did not find a unique TCGA BRCA entry in available_projects().")
+
+rse <- recount3::create_rse(brca_info, type = "gene")
+assay(rse, "counts") <- recount3::transform_counts(rse)
+
+meta <- as.data.frame(colData(rse))
+cat("Downloaded samples:", nrow(meta), "\n")
+
+## ---- 2) Define outcome: Tumor vs Normal (robust) ----
+y_full <- NULL
+
+# (A) Try explicit sample-type-like columns
+stype_col <- first_col_match(meta, "sample.*type|tumou?r|normal|tissue.*normal|primary.*tumor")
+cat("Candidate sample-type-like column:", stype_col, "\n")
+
+if (!is.na(stype_col)) {
+  stype <- as.character(meta[[stype_col]])
+  stype_norm <- tolower(gsub("_", " ", stype))
+
+  tumor_like  <- stype_norm %in% c("primary tumor", "tumor", "primary tumour")
+  normal_like <- stype_norm %in% c("solid tissue normal", "normal", "tissue normal")
+
+  if (sum(tumor_like) == 0 || sum(normal_like) == 0) {
+    tumor_like  <- grepl("primary.*tumou?r|tumou?r", stype_norm)
+    normal_like <- grepl("solid.*tissue.*normal|tissue.*normal|\\bnormal\\b", stype_norm)
+  }
+
+  if (sum(tumor_like) >= 10 && sum(normal_like) >= 10) {
+    y_full <- rep(NA_character_, nrow(meta))
+    y_full[tumor_like]  <- "Tumor"
+    y_full[normal_like] <- "Normal"
+    y_full <- factor(y_full, levels = c("Tumor", "Normal"))
+  } else {
+    cat("Found stype_col but labels didn't map cleanly. Falling back to barcode parsing.\n")
+  }
+}
+
+# (B) Fallback: derive from TCGA barcode/sample id
+if (is.null(y_full)) {
+  barcode_col <- first_col_match(meta, "submitter|external|barcode|tcga|case.*submitter|sample.*submitter|id$")
+  cat("Candidate barcode-like column:", barcode_col, "\n")
+
+  if (is.na(barcode_col)) {
+    cat("Available metadata columns (first 80):\n")
+    print(head(colnames(meta), 80))
+    stop("Could not find a sample-type column or a barcode-like column in colData().")
+  }
+
+  barcode <- as.character(meta[[barcode_col]])
+
+  code_14_15 <- suppressWarnings(as.integer(substr(barcode, 14, 15)))
+  if (all(is.na(code_14_15))) {
+    code_14_15 <- suppressWarnings(as.integer(sub(".*-([0-9]{2}).*$", "\\1", barcode)))
+  }
+
+  is_tumor  <- !is.na(code_14_15) & code_14_15 >= 1  & code_14_15 <= 9
+  is_normal <- !is.na(code_14_15) & code_14_15 >= 10 & code_14_15 <= 19
+
+  if (sum(is_tumor) < 10 || sum(is_normal) < 10) {
+    cat("Example barcodes:\n")
+    print(head(barcode, 10))
+    cat("Parsed codes (first 10):\n")
+    print(head(code_14_15, 10))
+    stop("Could not reliably derive Tumor/Normal from barcodes.")
+  }
+
+  y_full <- rep(NA_character_, length(barcode))
+  y_full[is_tumor]  <- "Tumor"
+  y_full[is_normal] <- "Normal"
+  y_full <- factor(y_full, levels = c("Tumor", "Normal"))
+}
+
+keep_idx <- which(!is.na(y_full))
+rse2 <- rse[, keep_idx]
+y_full <- droplevels(y_full[keep_idx])
+
+cat("Tumor/Normal counts:\n")
+print(table(y_full))
+
+## ---- 3) Subsample to balanced manageable set (e.g., 200/200) ----
+set.seed(1)
+n_per_class <- 200
+
+tum_idx <- which(y_full == "Tumor")
+nor_idx <- which(y_full == "Normal")
+
+n_take <- min(n_per_class, length(tum_idx), length(nor_idx))
+sel_idx <- c(sample(tum_idx, n_take), sample(nor_idx, n_take))
+sel_idx <- sample(sel_idx)
+
+rse3 <- rse2[, sel_idx]
+y <- droplevels(y_full[sel_idx])
+print(table(y))
+
+counts <- assay(rse3, "counts")
+counts <- round(counts)
+storage.mode(counts) <- "integer"
+cat("Counts dim:", paste(dim(counts), collapse = " x "), "\n")
+
+## ---- 4) Optional global CPM filter for speed ----
+cpm_mat <- edgeR::cpm(counts)
+k_global <- 10
+keep_cpm_global <- rowSums(cpm_mat > 1) >= k_global
+counts_f <- counts[keep_cpm_global, , drop = FALSE]
+cat("Genes after global CPM filter:", nrow(counts_f), "\n")
+
+## ---- 5) One fold: dual-score screening + glmnet ----
+fit_one_fold_dual <- function(counts_train, y_train, counts_test, y_test,
+                              cpm_thresh = 1, min_samples = 10,
+                              var_quantile = 0.50,
+                              top_k = 500,
+                              alpha = 0.5) {
+
+  if (length(unique(y_train)) < 2) stop("Training fold has only one class.")
+
+  # (a) TRAIN-only CPM filter
+  cpm_tr <- edgeR::cpm(counts_train)
+  keep <- rowSums(cpm_tr > cpm_thresh) >= min_samples
+  ct_tr <- counts_train[keep, , drop = FALSE]
+  ct_te <- counts_test[rownames(ct_tr), , drop = FALSE]
+
+  # (b) VST (design ~ 1)
+  dds_tr <- DESeq2::DESeqDataSetFromMatrix(
+    countData = ct_tr,
+    colData   = data.frame(row.names = colnames(ct_tr)),
+    design    = ~ 1
+  )
+  dds_tr <- DESeq2::estimateSizeFactors(dds_tr)
+  Xtr <- assay(DESeq2::vst(dds_tr, blind = TRUE))  # genes x samples
+
+  dds_te <- DESeq2::DESeqDataSetFromMatrix(
+    countData = ct_te,
+    colData   = data.frame(row.names = colnames(ct_te)),
+    design    = ~ 1
+  )
+  dds_te <- DESeq2::estimateSizeFactors(dds_te)
+  Xte <- assay(DESeq2::vst(dds_te, blind = TRUE))
+
+  # (c) TRAIN-only variance filter
+  v <- matrixStats::rowVars(Xtr)
+  keep_v <- v >= quantile(v, var_quantile)
+  Xtr_v <- Xtr[keep_v, , drop = FALSE]
+  Xte_v <- Xte[rownames(Xtr_v), , drop = FALSE]
+
+  # (d1) limma screen
+  sel_limma <- screen_limma_p(Xtr_v, y_train, top_k = top_k)
+
+  # (d2) SIS abs-corr screen
+  sel_sis <- screen_sis_abs_cor(Xtr_v, y_train, top_k = top_k)
+
+  # (e) Fit/predict for each screened set
+  pred_limma <- fit_predict_glmnet(
+    Xtr_genes_by_samples = Xtr_v[sel_limma, , drop = FALSE],
+    Xte_genes_by_samples = Xte_v[sel_limma, , drop = FALSE],
+    y_train = y_train,
+    alpha = alpha
+  )
+
+  pred_sis <- fit_predict_glmnet(
+    Xtr_genes_by_samples = Xtr_v[sel_sis, , drop = FALSE],
+    Xte_genes_by_samples = Xte_v[sel_sis, , drop = FALSE],
+    y_train = y_train,
+    alpha = alpha
+  )
+
+  y_true <- ifelse(y_test == levels(y_test)[2], 1, 0)
+
+  list(
+    prob_limma = pred_limma$prob,
+    prob_sis   = pred_sis$prob,
+    y_true     = y_true,
+    selected_limma = sel_limma,
+    selected_sis   = sel_sis
+  )
+}
+
+## ---- 6) Outer CV runner (dual) ----
+run_one_cv_dual <- function(counts_f, y, K = 5,
+                            var_quantile = 0.50, top_k = 500, alpha = 0.5,
+                            cpm_thresh = 1, min_samples = 10) {
+
+  fold_id <- make_strat_folds(y, K)
+  n <- ncol(counts_f)
+
+  prob_limma <- rep(NA_real_, n)
+  prob_sis   <- rep(NA_real_, n)
+
+  sel_limma_list <- vector("list", K)
+  sel_sis_list   <- vector("list", K)
+
+  for (k in 1:K) {
+    test_idx <- which(fold_id == k)
+    train_idx <- setdiff(seq_len(n), test_idx)
+
+    res <- fit_one_fold_dual(
+      counts_train = counts_f[, train_idx, drop = FALSE],
+      y_train      = droplevels(y[train_idx]),
+      counts_test  = counts_f[, test_idx, drop = FALSE],
+      y_test       = droplevels(y[test_idx]),
+      cpm_thresh   = cpm_thresh,
+      min_samples  = min_samples,
+      var_quantile = var_quantile,
+      top_k        = top_k,
+      alpha        = alpha
+    )
+
+    prob_limma[test_idx] <- res$prob_limma
+    prob_sis[test_idx]   <- res$prob_sis
+
+    sel_limma_list[[k]] <- res$selected_limma
+    sel_sis_list[[k]]   <- res$selected_sis
+  }
+
+  y_true_all <- ifelse(y == levels(y)[2], 1, 0)
+
+  auc_limma <- as.numeric(pROC::auc(y_true_all, prob_limma))
+  auc_sis   <- as.numeric(pROC::auc(y_true_all, prob_sis))
+
+  list(
+    auc_limma = auc_limma,
+    auc_sis   = auc_sis,
+    prob_limma = prob_limma,
+    prob_sis   = prob_sis,
+    selected_limma = sel_limma_list,
+    selected_sis   = sel_sis_list
+  )
+}
+
+## ---- 7) Single run + ROC curves ----
+set.seed(1)
+K <- 5
+out <- run_one_cv_dual(counts_f, y, K = K, var_quantile = 0.5, top_k = 500, alpha = 0.5)
+
+cat("One-run outer CV AUC (limma):", out$auc_limma, "\n")
+cat("One-run outer CV AUC (SIS abs-corr):", out$auc_sis, "\n")
+
+y_true_all <- ifelse(y == levels(y)[2], 1, 0)
+
+roc_limma <- pROC::roc(y_true_all, out$prob_limma)
+plot(roc_limma, main = paste("ROC (limma screen), AUC =", round(out$auc_limma, 3)))
+
+roc_sis <- pROC::roc(y_true_all, out$prob_sis)
+plot(roc_sis, main = paste("ROC (SIS abs-corr screen), AUC =", round(out$auc_sis, 3)))
+
+## Stability across folds (single run)
+sel_tbl_limma <- sort(table(unlist(out$selected_limma)), decreasing = TRUE)
+sel_tbl_sis   <- sort(table(unlist(out$selected_sis)), decreasing = TRUE)
+
+cat("\nTop 20 screened genes (limma) across folds:\n")
+print(head(sel_tbl_limma, 20))
+
+cat("\nTop 20 screened genes (SIS abs-corr) across folds:\n")
+print(head(sel_tbl_sis, 20))
+
+## ---- 8) Repeated CV (recommended) ----
+set.seed(2)
+R <- 10
+aucs_limma <- numeric(R)
+aucs_sis   <- numeric(R)
+
+sel_all_limma <- vector("list", R)
+sel_all_sis   <- vector("list", R)
+
+for (r in 1:R) {
+  out_r <- run_one_cv_dual(counts_f, y, K = K, var_quantile = 0.5, top_k = 500, alpha = 0.5)
+  aucs_limma[r] <- out_r$auc_limma
+  aucs_sis[r]   <- out_r$auc_sis
+  sel_all_limma[[r]] <- out_r$selected_limma
+  sel_all_sis[[r]]   <- out_r$selected_sis
+}
+
+cat("\nRepeated outer CV AUC summary (limma):\n")
+print(summary(aucs_limma))
+hist(aucs_limma, main = "Repeated outer CV AUC (limma screen)", xlab = "AUC")
+
+cat("\nRepeated outer CV AUC summary (SIS abs-corr):\n")
+print(summary(aucs_sis))
+hist(aucs_sis, main = "Repeated outer CV AUC (SIS abs-corr screen)", xlab = "AUC")
+
+stab_limma <- sort(table(unlist(unlist(sel_all_limma, recursive = FALSE))), decreasing = TRUE)
+stab_sis   <- sort(table(unlist(unlist(sel_all_sis, recursive = FALSE))), decreasing = TRUE)
+
+cat("\nTop 20 screened genes overall (limma, repeats+folds):\n")
+print(head(stab_limma, 20))
+
+cat("\nTop 20 screened genes overall (SIS abs-corr, repeats+folds):\n")
+print(head(stab_sis, 20))
+
+## ---- 9) Optional permutation sanity check ----
+set.seed(3)
+Rperm <- 5
+perm_auc_limma <- numeric(Rperm)
+perm_auc_sis   <- numeric(Rperm)
+
+for (r in 1:Rperm) {
+  y_perm <- sample(y)
+  outp <- run_one_cv_dual(counts_f, y_perm, K = K, var_quantile = 0.5, top_k = 500, alpha = 0.5)
+  perm_auc_limma[r] <- outp$auc_limma
+  perm_auc_sis[r]   <- outp$auc_sis
+}
+
+cat("\nPermutation AUC summary (limma):\n")
+print(summary(perm_auc_limma))
+hist(perm_auc_limma, main = "Permutation AUC (limma)", xlab = "AUC")
+
+cat("\nPermutation AUC summary (SIS abs-corr):\n")
+print(summary(perm_auc_sis))
+hist(perm_auc_sis, main = "Permutation AUC (SIS abs-corr)", xlab = "AUC")
+
+
+```
+
+::: notes
+This final slide is a self-contained script that runs the complete analysis.
+When you record, you don’t need to read line-by-line. Instead, narrate the structure:
+(1) download and define labels, (2) do unsupervised filtering, (3) run fold-specific supervised screening
+using either limma or absolute correlation on VST values, (4) fit elastic net within each fold,
+(5) evaluate via outer CV AUC, and (6) summarize stability by counting how often genes are screened.
+Point out that the key methodological idea is *no leakage*: all supervised steps are computed only on
+training data inside each fold.
+:::
