@@ -122,7 +122,7 @@ sns.set(font_scale = 1.2)
 pd.set_option('display.max_columns', None)
 
 # Import Wage data
-Wage = pd.read_csv("../data/Wage.csv")
+Wage = pd.read_csv("./slides/data/Wage.csv")
 Wage.info()
 ```
 
