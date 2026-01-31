@@ -249,13 +249,13 @@ Wage %>%
   # Polynomial regression with degree 14
   geom_smooth(
     method = "lm",
-    formula = y ~ poly(x, degree = 14),
+    formula = y ~ poly(x, degree = 4),
     color = "blue"
     ) +
   # Natural cubic spline
   geom_smooth(
     method = "lm",
-    formula = y ~ ns(x, df = 14),
+    formula = y ~ ns(x, df = 4),
     color = "red"
     ) +  
   labs(
