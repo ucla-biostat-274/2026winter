@@ -70,7 +70,7 @@ library(tidyverse)
 library(tidymodels)
 library(ISLR2)
 
-Heart <- read_csv("../data/Heart.csv") 
+Heart <- read_csv("./slides/data/Heart.csv") 
 Heart <-  Heart %>% 
   # first column is patient ID, which we don't need
   select(-1) %>%

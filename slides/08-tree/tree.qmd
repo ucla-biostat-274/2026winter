@@ -290,7 +290,7 @@ It turns out that the Gini index and the cross-entropy are very similar numerica
 
 ## `Heart` data example (classification tree)
 
-[Workflow: pruning a classification tree](https://ucla-biostat-212a.github.io/2025winter/slides/08-tree/workflow_classtree.html).
+[Workflow: pruning a classification tree](https://ucla-biostat-274.github.io/2026winter/slides/08-tree/workflow_classtree.html).
 
 ## Tree versus linear models
 
@@ -315,7 +315,7 @@ Advantages:
 
 3. Trees can be displayed graphically, and are easily interpreted even by a non-expert (especially if they are small).
 
-4. Trees can easily handle qualitative predictors without the need to create dummy variables, although scikit-learn and xgboost don't allow categorical predictors yet**???**
+4. Trees can easily handle qualitative predictors without the need to create dummy variables. XGBoost (version 1.5+) can now also handle categorical variables directly.
 
 Disadvantages:
 
@@ -326,6 +326,10 @@ Disadvantages:
 **Ensemble methods** such as bagging, random forests, and boosting solve these issues.
 
 ## Bagging
+
+> Bagging is like taking a vote among many decent-but-imperfect experts.
+Instead of trusting one model that might be unstable, we train lots of models on slightly different versions of the data and average their predictions.
+The mistakes they make randomly tend to cancel out, while the real patterns show up consistently — so the final result is more reliable.
 
 - **Bootstrap aggregation**, or **bagging**, is a general-purpose procedure for reducing the variance of a statistical learning method. It is particularly useful and frequently used in the context of decision trees.
 
@@ -359,7 +363,7 @@ The test error (black and orange) is shown as a function of $B$, the number of b
 
 - There is a very straightforward way to estimate the test error of a bagged model.
 
-- Recall that the key to bagging is that trees are repeatedly fit to bootstrapped subsets of the observations. Each bagged tree makes use of around two-thirds of the observations (HW2).
+- Recall that the key to bagging is that trees are repeatedly fit to bootstrapped subsets of the observations. Each bagged tree makes use of around two-thirds of the observations (HW3).
 
 - The remaining one-third of the observations not used to fit a given bagged tree are referred to as the **out-of-bag** (OOB) observations.
 
@@ -391,11 +395,11 @@ Results from random forests for the fifteen-class gene expression data set with 
 
 ## `Baseball` example (random forest for prediction)
 
-[Workflow: random forest for regression](https://ucla-biostat-212a.github.io/2025winter/slides/08-tree/workflow_rf_reg.html).
+[Workflow: random forest for regression](https://ucla-biostat-274.github.io/2026winter/slides/08-tree/workflow_rf_reg.html).
 
 ## `Heart` example (random forest for classification)
 
-[Workflow: random forest for classification](https://ucla-biostat-212a.github.io/2025winter/slides/08-tree/workflow_rf_class.html).
+[Workflow: random forest for classification](https://ucla-biostat-274.github.io/2026winter/slides/08-tree/workflow_rf_class.html).
 
 ## Boosting
 
