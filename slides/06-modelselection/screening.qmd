@@ -423,6 +423,7 @@ We’ll implement the full pipeline with fold-specific screening to keep the eva
 
 # Data + code (TCGA-BRCA via recount3)
 
+- HW3
 ```{r, eval=F}
 ## ============================================================
 ## Dual-score feature screening (RNA-seq)
@@ -834,12 +835,4 @@ hist(perm_auc_sis, main = "Permutation AUC (SIS abs-corr)", xlab = "AUC")
 
 ```
 
-::: notes
-This final slide is a self-contained script that runs the complete analysis.
-When you record, you don’t need to read line-by-line. Instead, narrate the structure:
-(1) download and define labels, (2) do unsupervised filtering, (3) run fold-specific supervised screening
-using either limma or absolute correlation on VST values, (4) fit elastic net within each fold,
-(5) evaluate via outer CV AUC, and (6) summarize stability by counting how often genes are screened.
-Point out that the key methodological idea is *no leakage*: all supervised steps are computed only on
-training data inside each fold.
-:::
+

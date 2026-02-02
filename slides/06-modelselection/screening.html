@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Dr. Jin Zhou @ UCLA">
-<meta name="dcterms.date" content="2026-01-25">
+<meta name="dcterms.date" content="2026-02-01">
 
 <title>Feature Screening</title>
 <style>
@@ -2400,7 +2400,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">January 25, 2026</p>
+      <p class="date">February 1, 2026</p>
     </div>
   </div>
   
@@ -2725,6 +2725,9 @@ y = X\beta + \varepsilon, \qquad p \gg n.
 </section>
 <section id="data-code-tcga-brca-via-recount3" class="level1" data-number="3">
 <h1 data-number="3"><span class="header-section-number">3</span> Data + code (TCGA-BRCA via recount3)</h1>
+<ul>
+<li>HW3</li>
+</ul>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">## ============================================================</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Dual-score feature screening (RNA-seq)</span></span>
@@ -3132,9 +3135,6 @@ y = X\beta + \varepsilon, \qquad p \gg n.
 <span id="cb1-404"><a href="#cb1-404" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">Permutation AUC summary (SIS abs-corr):</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
 <span id="cb1-405"><a href="#cb1-405" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">summary</span>(perm_auc_sis))</span>
 <span id="cb1-406"><a href="#cb1-406" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(perm_auc_sis, <span class="at">main =</span> <span class="st">&quot;Permutation AUC (SIS abs-corr)&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;AUC&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="notes">
-<p>This final slide is a self-contained script that runs the complete analysis. When you record, you don’t need to read line-by-line. Instead, narrate the structure: (1) download and define labels, (2) do unsupervised filtering, (3) run fold-specific supervised screening using either limma or absolute correlation on VST values, (4) fit elastic net within each fold, (5) evaluate via outer CV AUC, and (6) summarize stability by counting how often genes are screened. Point out that the key methodological idea is <em>no leakage</em>: all supervised steps are computed only on training data inside each fold.</p>
 </div>
 </section>
 
