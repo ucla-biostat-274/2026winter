@@ -69,280 +69,330 @@ library(DESeq2)
 library(edgeR)
 library(limma)
 
-# helpers;  
-# - first_col_match()
-# - screen_sis_abs_cor()
-# - screen_limma_p()
+## ---- 1) Download TCGA-BRCA gene-level data via recount3 ----
+projects <- recount3::available_projects()
 
-## ---- helper: fold preprocessing + screening (train-only) ----
-prep_rnaseq_split <- function(split,
-                              counts_mat,              # genes x samples
-                              sample_df,               # sample_id + class
-                              screen = c("limma", "sis"),
-                              cpm_thresh = 1,
-                              min_samples = 10,
-                              var_quantile = 0.50,
-                              top_k = 500) {
+brca_info <- projects %>%
+  dplyr::filter(file_source == "tcga", project == "BRCA")
 
-  screen <- match.arg(screen)
+if (nrow(brca_info) != 1) stop("Did not find a unique TCGA BRCA entry in available_projects().")
 
-  tr <- analysis(split)
-  te <- assessment(split)
+rse <- recount3::create_rse(brca_info, type = "gene")
 
-  tr_ids <- tr$sample_id
-  te_ids <- te$sample_id
+# put counts on a usable scale
+assay(rse, "counts") <- recount3::transform_counts(rse)
 
-  # subset counts
-  counts_tr <- counts_mat[, tr_ids, drop = FALSE]
-  counts_te <- counts_mat[, te_ids, drop = FALSE]
+meta <- as.data.frame(colData(rse))
+counts <- assay(rse, "counts")
 
-  y_tr <- droplevels(tr$class)
-  y_te <- droplevels(te$class)
 
-  # (a) TRAIN-only CPM filter
-  cpm_tr <- edgeR::cpm(counts_tr)
+options(yardstick.event_first = FALSE)
+
+## ---- tidymodels helper: tune+fit glmnet via workflow ----
+fit_predict_glmnet_tm <- function(train_df,
+                                  test_df,
+                                  alpha = 0.5,
+                                  inner_v = 5,
+                                  grid_levels = 30,
+                                  seed = 1) {
+  set.seed(seed)
+
+  inner_rs <- rsample::vfold_cv(train_df, v = inner_v, strata = y)
+
+  rec <- recipes::recipe(y ~ ., data = train_df) %>%
+    recipes::step_zv(recipes::all_predictors())
+
+  mod <- parsnip::logistic_reg(
+    penalty = tune::tune(),
+    mixture = alpha
+  ) %>%
+    parsnip::set_engine("glmnet") %>%
+    parsnip::set_mode("classification")
+
+  wf <- workflows::workflow() %>%
+    workflows::add_recipe(rec) %>%
+    workflows::add_model(mod)
+
+  # penalty() is log10-scaled in dials by default:
+  # range = c(-4, 1) => 1e-4 ... 10
+  grid <- dials::grid_regular(
+    dials::penalty(range = c(-4, 1)),
+    levels = grid_levels
+  )
+
+  tuned <- tune::tune_grid(
+    wf,
+    resamples = inner_rs,
+    grid = grid,
+    metrics = yardstick::metric_set(yardstick::roc_auc),
+    control = tune::control_grid(save_pred = TRUE)
+  )
+
+  best <- tune::select_best(tuned, metric = "roc_auc")
+  wf_final <- tune::finalize_workflow(wf, best)
+
+  fit_final <- workflows::fit(wf_final, data = train_df)
+
+  # probability column names are ".pred_<level>"
+  prob_tbl <- predict(fit_final, new_data = test_df, type = "prob")
+
+  # With your levels = c("Tumor","Normal"), we want Pr(Normal)
+  prob <- prob_tbl$.pred_Normal
+
+  list(prob = prob, best = best, tuned = tuned)
+}
+
+
+## ---- fold preprocess + dual screen, returning data frames for tidymodels ----
+prep_fold_dual_for_tm <- function(counts_train, y_train,
+                                  counts_test,  y_test,
+                                  cpm_thresh = 1, min_samples = 10,
+                                  var_quantile = 0.50,
+                                  top_k = 500) {
+
+  ## (a) TRAIN-only CPM filter
+  cpm_tr <- edgeR::cpm(counts_train)
   keep <- rowSums(cpm_tr > cpm_thresh) >= min_samples
+  ct_tr <- counts_train[keep, , drop = FALSE]
+  ct_te <- counts_test[rownames(ct_tr), , drop = FALSE]
 
-  ct_tr <- counts_tr[keep, , drop = FALSE]
-  ct_te <- counts_te[rownames(ct_tr), , drop = FALSE]
-
-  # (b) VST (design ~ 1) — computed separately on train and test
-  # NOTE: This is “okay-ish” for teaching, but you can discuss what “proper”
-  # out-of-sample transforms mean in RNA-seq.
-  dds_tr <- DESeqDataSetFromMatrix(
+  ## (b) VST (same approach as your original: train and test each get VST)
+  dds_tr <- DESeq2::DESeqDataSetFromMatrix(
     countData = ct_tr,
     colData   = data.frame(row.names = colnames(ct_tr)),
     design    = ~ 1
-  ) |> estimateSizeFactors()
+  )
+  dds_tr <- DESeq2::estimateSizeFactors(dds_tr)
+  Xtr <- assay(DESeq2::vst(dds_tr, blind = TRUE))  # genes x samples
 
-  Xtr <- assay(vst(dds_tr, blind = TRUE))  # genes x samples
-
-  dds_te <- DESeqDataSetFromMatrix(
+  dds_te <- DESeq2::DESeqDataSetFromMatrix(
     countData = ct_te,
     colData   = data.frame(row.names = colnames(ct_te)),
     design    = ~ 1
-  ) |> estimateSizeFactors()
+  )
+  dds_te <- DESeq2::estimateSizeFactors(dds_te)
+  Xte <- assay(DESeq2::vst(dds_te, blind = TRUE))  # genes x samples
 
-  Xte <- assay(vst(dds_te, blind = TRUE))
-
-  # (c) TRAIN-only variance filter
+  ## (c) TRAIN-only variance filter
   v <- matrixStats::rowVars(Xtr)
   keep_v <- v >= quantile(v, var_quantile)
   Xtr_v <- Xtr[keep_v, , drop = FALSE]
   Xte_v <- Xte[rownames(Xtr_v), , drop = FALSE]
 
-  # (d) Screening
-  sel_genes <-
-    if (screen == "limma") {
-      screen_limma_p(Xtr_v, y_tr, top_k = top_k)
-    } else {
-      screen_sis_abs_cor(Xtr_v, y_tr, top_k = top_k)
-    }
+  ## (d1) limma screen
+  sel_limma <- screen_limma_p(Xtr_v, y_train, top_k = top_k)
 
-  # (e) Return train/test tibbles (samples in rows, genes in columns)
-  x_tr <- t(Xtr_v[sel_genes, , drop = FALSE]) |> as.data.frame() |> as_tibble()
-  x_te <- t(Xte_v[sel_genes, , drop = FALSE]) |> as.data.frame() |> as_tibble()
+  ## (d2) SIS abs-corr screen
+  sel_sis <- screen_sis_abs_cor(Xtr_v, y_train, top_k = top_k)
 
-  train_tbl <- bind_cols(tibble(class = y_tr), x_tr)
-  test_tbl  <- bind_cols(tibble(class = y_te), x_te)
+  ## Build tidymodels-ready data frames: rows = samples, cols = genes, plus y
+  make_df <- function(X_genes_by_samples, genes, y_vec) {
+    Xs <- t(X_genes_by_samples[genes, , drop = FALSE])  # samples x genes
+    out <- tibble::as_tibble(Xs, .name_repair = "minimal") %>%
+      dplyr::mutate(y = y_vec, .before = 1)
+    out
+  }
 
   list(
-    train = train_tbl,
-    test  = test_tbl,
-    selected_genes = sel_genes
+    train_limma = make_df(Xtr_v, sel_limma, y_train),
+    test_limma  = make_df(Xte_v, sel_limma, y_test),
+    train_sis   = make_df(Xtr_v, sel_sis, y_train),
+    test_sis    = make_df(Xte_v, sel_sis, y_test),
+    selected_limma = sel_limma,
+    selected_sis   = sel_sis
   )
 }
 
-## ---- model specs (students will compare these) ----
-spec_enet <-
-  logistic_reg(penalty = tune(), mixture = tune()) %>%
-  set_engine("glmnet") %>%
-  set_mode("classification")
 
-spec_rf <-
-  rand_forest(mtry = tune(), trees = 1000, min_n = tune()) %>%
-  set_engine("ranger", importance = "permutation") %>%
-  set_mode("classification")
+## ---- outer CV runner (dual) using rsample + workflows ----
+run_one_cv_dual_tm <- function(counts_f, y,
+                               K = 5,
+                               inner_v = 5,
+                               grid_levels = 30,
+                               var_quantile = 0.50,
+                               top_k = 500,
+                               alpha = 0.5,
+                               cpm_thresh = 1,
+                               min_samples = 10,
+                               seed = 1) {
 
-spec_xgb <-
-  boost_tree(
-    mtry = tune(),
-    trees = tune(),
-    tree_depth = tune(),
-    learn_rate = tune(),
-    min_n = tune(),
-    loss_reduction = tune(),
-    sample_size = tune()
-  ) %>%
-  set_engine("xgboost") %>%
-  set_mode("classification")
+  set.seed(seed)
 
-## ---- recipe (lightweight; selection already happened) ----
-base_rec <- function(df) {
-  recipe(class ~ ., data = df) %>%
-    step_zv(all_predictors())
-  # Optional: step_normalize(all_predictors())  # helpful for glmnet
+  # resample only sample ids + y (avoid huge gene table in splits)
+  sample_tbl <- tibble::tibble(sample_id = colnames(counts_f), y = y)
+
+  outer_rs <- rsample::vfold_cv(sample_tbl, v = K, strata = y)
+
+  all_preds <- vector("list", K)
+  sel_limma_list <- vector("list", K)
+  sel_sis_list   <- vector("list", K)
+
+  for (k in seq_len(K)) {
+    split <- outer_rs$splits[[k]]
+    tr <- rsample::analysis(split)
+    te <- rsample::assessment(split)
+
+    tr_ids <- tr$sample_id
+    te_ids <- te$sample_id
+
+    counts_tr <- counts_f[, tr_ids, drop = FALSE]
+    counts_te <- counts_f[, te_ids, drop = FALSE]
+
+    y_tr <- droplevels(tr$y)
+    y_te <- droplevels(te$y)
+
+    pp <- prep_fold_dual_for_tm(
+      counts_train = counts_tr, y_train = y_tr,
+      counts_test  = counts_te, y_test  = y_te,
+      cpm_thresh = cpm_thresh, min_samples = min_samples,
+      var_quantile = var_quantile,
+      top_k = top_k
+    )
+
+    # Fit/predict via tidymodels workflow (inner tuning)
+    fitL <- fit_predict_glmnet_tm(
+      train_df = pp$train_limma,
+      test_df  = pp$test_limma,
+      alpha = alpha,
+      inner_v = inner_v,
+      grid_levels = grid_levels,
+      seed = seed + 1000*k + 1
+    )
+
+    fitS <- fit_predict_glmnet_tm(
+      train_df = pp$train_sis,
+      test_df  = pp$test_sis,
+      alpha = alpha,
+      inner_v = inner_v,
+      grid_levels = grid_levels,
+      seed = seed + 1000*k + 2
+    )
+
+    all_preds[[k]] <- tibble::tibble(
+      sample_id = te_ids,
+      y = y_te,
+      prob_limma = fitL$prob,
+      prob_sis   = fitS$prob
+    )
+
+    sel_limma_list[[k]] <- pp$selected_limma
+    sel_sis_list[[k]]   <- pp$selected_sis
+  }
+
+  pred_df <- dplyr::bind_rows(all_preds) %>%
+    dplyr::mutate(y = factor(y, levels = levels(y))) %>%
+    dplyr::arrange(sample_id)
+
+  auc_limma <- yardstick::roc_auc_vec(
+    truth = pred_df$y,
+    estimate = pred_df$prob_limma,
+    event_level = "second"
+  )
+
+  auc_sis <- yardstick::roc_auc_vec(
+    truth = pred_df$y,
+    estimate = pred_df$prob_sis,
+    event_level = "second"
+  )
+
+  list(
+    auc_limma = as.numeric(auc_limma),
+    auc_sis   = as.numeric(auc_sis),
+    pred_df = pred_df,
+    selected_limma = sel_limma_list,
+    selected_sis   = sel_sis_list
+  )
 }
 
-## ---- tuning grids (keep small for homework runtime) ----
-grid_enet <- grid_regular(
-  penalty(range = c(-4, 0)),   # 1e-4 to 1
-  mixture(),
-  levels = c(10, 6)
+
+## ---- single run + ROC curves (tidymodels) ----
+set.seed(1)
+K <- 5
+
+out <- run_one_cv_dual_tm(
+  counts_f, y,
+  K = K,
+  inner_v = 5,
+  grid_levels = 30,
+  var_quantile = 0.5,
+  top_k = 500,
+  alpha = 0.5,
+  seed = 1
 )
 
-# These get finalized per-fold because mtry depends on #predictors
-grid_rf <- function(train_df) {
-  params <- parameters(
-    finalize(mtry(), train_df),
-    min_n()
+cat("One-run outer CV AUC (limma):", out$auc_limma, "\n")
+cat("One-run outer CV AUC (SIS abs-corr):", out$auc_sis, "\n")
+
+# ROC curves via yardstick + ggplot2
+roc_limma <- out$pred_df %>%
+  yardstick::roc_curve(truth = y, prob_limma, event_level = "second")
+
+roc_sis <- out$pred_df %>%
+  yardstick::roc_curve(truth = y, prob_sis, event_level = "second")
+
+plot(roc_limma$specificity, roc_limma$sensitivity, type = "l",
+     xlab = "Specificity", ylab = "Sensitivity",
+     main = paste("ROC (limma screen), AUC =", round(out$auc_limma, 3)))
+abline(0, 1, lty = 2)
+
+plot(roc_sis$specificity, roc_sis$sensitivity, type = "l",
+     xlab = "Specificity", ylab = "Sensitivity",
+     main = paste("ROC (SIS abs-corr screen), AUC =", round(out$auc_sis, 3)))
+abline(0, 1, lty = 2)
+
+## Stability across folds (single run)
+sel_tbl_limma <- sort(table(unlist(out$selected_limma)), decreasing = TRUE)
+sel_tbl_sis   <- sort(table(unlist(out$selected_sis)), decreasing = TRUE)
+
+cat("\nTop 20 screened genes (limma) across folds:\n")
+print(head(sel_tbl_limma, 20))
+
+cat("\nTop 20 screened genes (SIS abs-corr) across folds:\n")
+print(head(sel_tbl_sis, 20))
+
+
+## ---- repeated outer CV (recommended) ----
+set.seed(2)
+R <- 10
+aucs_limma <- numeric(R)
+aucs_sis   <- numeric(R)
+
+sel_all_limma <- vector("list", R)
+sel_all_sis   <- vector("list", R)
+
+for (r in 1:R) {
+  out_r <- run_one_cv_dual_tm(
+    counts_f, y,
+    K = K,
+    inner_v = 5,
+    grid_levels = 30,
+    var_quantile = 0.5,
+    top_k = 500,
+    alpha = 0.5,
+    seed = 100 + r
   )
-  grid_latin_hypercube(params, size = 15)
+  aucs_limma[r] <- out_r$auc_limma
+  aucs_sis[r]   <- out_r$auc_sis
+  sel_all_limma[[r]] <- out_r$selected_limma
+  sel_all_sis[[r]]   <- out_r$selected_sis
 }
 
-grid_xgb <- function(train_df) {
-  params <- parameters(
-    finalize(mtry(), train_df),
-    trees(),
-    tree_depth(),
-    learn_rate(),
-    min_n(),
-    loss_reduction(),
-    sample_size = sample_prop()
-  )
-  grid_latin_hypercube(params, size = 20)
-}
+cat("\nRepeated outer CV AUC summary (limma):\n")
+print(summary(aucs_limma))
+hist(aucs_limma, main = "Repeated outer CV AUC (limma screen)", xlab = "AUC")
 
-## ---- inner-tune + outer-test evaluation (one split, one screen, one model) ----
-fit_one_outer <- function(split,
-                          counts_mat,
-                          screen = c("limma", "sis"),
-                          model = c("enet", "rf", "xgb"),
-                          top_k = 500,
-                          v_inner = 5) {
+cat("\nRepeated outer CV AUC summary (SIS abs-corr):\n")
+print(summary(aucs_sis))
+hist(aucs_sis, main = "Repeated outer CV AUC (SIS abs-corr screen)", xlab = "AUC")
 
-  screen <- match.arg(screen)
-  model  <- match.arg(model)
+stab_limma <- sort(table(unlist(unlist(sel_all_limma, recursive = FALSE))), decreasing = TRUE)
+stab_sis   <- sort(table(unlist(unlist(sel_all_sis, recursive = FALSE))), decreasing = TRUE)
 
-  pre <- prep_rnaseq_split(
-    split = split,
-    counts_mat = counts_mat,
-    sample_df = NULL,       # not used; kept in signature if you want it later
-    screen = screen,
-    top_k = top_k
-  )
+cat("\nTop 20 screened genes overall (limma, repeats+folds):\n")
+print(head(stab_limma, 20))
 
-  train_df <- pre$train
-  test_df  <- pre$test
-
-  # inner CV for tuning
-  inner_rs <- vfold_cv(train_df, v = v_inner, strata = class)
-
-  wf <-
-    workflow() %>%
-    add_recipe(base_rec(train_df)) %>%
-    add_model(
-      switch(model,
-        enet = spec_enet,
-        rf   = spec_rf,
-        xgb  = spec_xgb
-      )
-    )
-
-  # pick grid by model
-  grid <-
-    switch(model,
-      enet = grid_enet,
-      rf   = grid_rf(train_df),
-      xgb  = grid_xgb(train_df)
-    )
-
-  metr <- metric_set(roc_auc)
-
-  tuned <- tune_grid(
-    wf,
-    resamples = inner_rs,
-    grid = grid,
-    metrics = metr,
-    control = control_grid(save_pred = FALSE, verbose = FALSE)
-  )
-
-  best <- select_best(tuned, metric = "roc_auc")
-  final_wf <- finalize_workflow(wf, best)
-
-  final_fit <- fit(final_wf, data = train_df)
-
-  # predictions on outer test fold
-  probs <- predict(final_fit, new_data = test_df, type = "prob") %>%
-    bind_cols(test_df %>% select(class))
-
-  # IMPORTANT: your factor levels are c("Tumor","Normal") so "Normal" is the 2nd level
-  auc <- roc_auc(probs, truth = class, .pred_Normal, event_level = "second") %>%
-    dplyr::pull(.estimate)
-
-  tibble(
-    screen = screen,
-    model  = model,
-    roc_auc = auc,
-    selected_genes = list(pre$selected_genes)
-  )
-}
-
-## ---- outer resampling (students should own this part) ----
-# sample_df should exist from your earlier recount3 code:
-# sample_df <- tibble(sample_id = colnames(counts_f), class = y)
-
-# NOTE: rsample splits need a data frame; we resample sample_df, then index counts by sample_id
-outer_rs <- vfold_cv(sample_df, v = 5, repeats = 3, strata = class)
-
-# Run the experiment:
-set.seed(1)
-results <-
-  crossing(
-    screen = c("limma", "sis"),
-    model  = c("enet", "rf", "xgb")
-  ) %>%
-  mutate(
-    res = pmap(
-      list(screen, model),
-      ~ map_dfr(
-        outer_rs$splits,
-        \(sp) fit_one_outer(
-          split = sp,
-          counts_mat = counts_f,
-          screen = ..1,
-          model  = ..2,
-          top_k  = 500,
-          v_inner = 5
-        )
-      )
-    )
-  ) %>%
-  unnest(res)
-
-# Summaries
-results %>%
-  group_by(screen, model) %>%
-  summarize(
-    mean_auc = mean(roc_auc),
-    sd_auc   = sd(roc_auc),
-    .groups = "drop"
-  )
-
-# Plot
-results %>%
-  ggplot(aes(x = model, y = roc_auc)) +
-  geom_boxplot() +
-  facet_wrap(~ screen)
-
-# Stability: how often selected (by screen+model)
-stab <-
-  results %>%
-  select(screen, model, selected_genes) %>%
-  unnest(selected_genes) %>%
-  count(screen, model, selected_genes, sort = TRUE)
-
-stab %>% group_by(screen, model) %>% slice_head(n = 20)
+cat("\nTop 20 screened genes overall (SIS abs-corr, repeats+folds):\n")
+print(head(stab_sis, 20))
 ```
 
 
