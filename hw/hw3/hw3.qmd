@@ -54,7 +54,7 @@ This is a self-contained script that runs the complete analysis:
 This might be a long-running script (several hours). These are pseudo-code.  You should adapt it to your own needs, e.g., by reducing the number of folds, tuning grid size, etc.
 :::
 
-```{r, eval = F}
+```{r}
 ## ============================================================
 ## Tidymodels version scaffold:
 ## - outer CV with rsample
@@ -69,21 +69,105 @@ library(DESeq2)
 library(edgeR)
 library(limma)
 
+pkgs_bioc <- c("recount3", "SummarizedExperiment", "DESeq2", "edgeR", "limma")
+
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+for (p in pkgs_bioc) if (!requireNamespace(p, quietly = TRUE)) BiocManager::install(p, ask = FALSE, update = FALSE)
+
+```
+
+```{r}
+## ---- helper: find first matching column by regex ----
+first_col_match <- function(df, pattern) {
+  hits <- grep(pattern, colnames(df), ignore.case = TRUE, value = TRUE)
+  if (length(hits) == 0) return(NA_character_)
+  hits[1]
+}
+
 ## ---- 1) Download TCGA-BRCA gene-level data via recount3 ----
 projects <- recount3::available_projects()
-
-brca_info <- projects %>%
-  dplyr::filter(file_source == "tcga", project == "BRCA")
-
+brca_info <- projects %>% dplyr::filter(file_source == "tcga", project == "BRCA")
 if (nrow(brca_info) != 1) stop("Did not find a unique TCGA BRCA entry in available_projects().")
 
 rse <- recount3::create_rse(brca_info, type = "gene")
-
-# put counts on a usable scale
 assay(rse, "counts") <- recount3::transform_counts(rse)
 
 meta <- as.data.frame(colData(rse))
-counts <- assay(rse, "counts")
+cat("Downloaded samples:", nrow(meta), "\n")
+
+## ---- 2) Define outcome: Tumor vs Normal (robust) ----
+y_full <- NULL
+
+# (A) Try explicit sample-type-like columns
+stype_col <- first_col_match(meta, "sample.*type|tumou?r|normal|tissue.*normal|primary.*tumor")
+cat("Candidate sample-type-like column:", stype_col, "\n")
+
+if (!is.na(stype_col)) {
+  stype <- as.character(meta[[stype_col]])
+  stype_norm <- tolower(gsub("_", " ", stype))
+
+  tumor_like  <- stype_norm %in% c("primary tumor", "tumor", "primary tumour")
+  normal_like <- stype_norm %in% c("solid tissue normal", "normal", "tissue normal")
+
+  if (sum(tumor_like) == 0 || sum(normal_like) == 0) {
+    tumor_like  <- grepl("primary.*tumou?r|tumou?r", stype_norm)
+    normal_like <- grepl("solid.*tissue.*normal|tissue.*normal|\\bnormal\\b", stype_norm)
+  }
+
+  if (sum(tumor_like) >= 10 && sum(normal_like) >= 10) {
+    y_full <- rep(NA_character_, nrow(meta))
+    y_full[tumor_like]  <- "Tumor"
+    y_full[normal_like] <- "Normal"
+    y_full <- factor(y_full, levels = c("Tumor", "Normal"))
+  } else {
+    cat("Found stype_col but labels didn't map cleanly. Falling back to barcode parsing.\n")
+  }
+}
+
+# (B) Fallback: derive from TCGA barcode/sample id
+if (is.null(y_full)) {
+  barcode_col <- first_col_match(meta, "submitter|external|barcode|tcga|case.*submitter|sample.*submitter|id$")
+  cat("Candidate barcode-like column:", barcode_col, "\n")
+
+  if (is.na(barcode_col)) {
+    cat("Available metadata columns (first 80):\n")
+    print(head(colnames(meta), 80))
+    stop("Could not find a sample-type column or a barcode-like column in colData().")
+  }
+
+  barcode <- as.character(meta[[barcode_col]])
+
+  code_14_15 <- suppressWarnings(as.integer(substr(barcode, 14, 15)))
+  if (all(is.na(code_14_15))) {
+    code_14_15 <- suppressWarnings(as.integer(sub(".*-([0-9]{2}).*$", "\\1", barcode)))
+  }
+
+  is_tumor  <- !is.na(code_14_15) & code_14_15 >= 1  & code_14_15 <= 9
+  is_normal <- !is.na(code_14_15) & code_14_15 >= 10 & code_14_15 <= 19
+
+  if (sum(is_tumor) < 10 || sum(is_normal) < 10) {
+    cat("Example barcodes:\n")
+    print(head(barcode, 10))
+    cat("Parsed codes (first 10):\n")
+    print(head(code_14_15, 10))
+    stop("Could not reliably derive Tumor/Normal from barcodes.")
+  }
+
+  y_full <- rep(NA_character_, length(barcode))
+  y_full[is_tumor]  <- "Tumor"
+  y_full[is_normal] <- "Normal"
+  y_full <- factor(y_full, levels = c("Tumor", "Normal"))
+}
+
+keep_idx <- which(!is.na(y_full))
+rse2 <- rse[, keep_idx]
+y_full <- droplevels(y_full[keep_idx])
+
+cat("Tumor/Normal counts:\n")
+print(table(y_full))
+```
+
+```{r, eval = F}
 
 
 options(yardstick.event_first = FALSE)
