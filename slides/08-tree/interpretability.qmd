@@ -422,6 +422,7 @@ $$
 $$
 
 where:
+
 - $\phi_0$ is a baseline (often $\mathbb E[\hat f(X)]$),
 - $\phi_j$ is the contribution of feature $j$ for this specific $x$.
 
@@ -632,7 +633,7 @@ This is different from minimal-optimal selection (keep the smallest set with goo
 
 Boruta wraps around a random forest:
 
-1. Create “shadow” variables by permuting each original feature column (destroying association with $y$).
+1. Create "shadow" variables by permuting each original feature column to destroy association with $y$.
 2. Fit a random forest and compute importance for original + shadow features.
 3. A real feature is “confirmed” only if it consistently beats the **best** shadow feature.
 
