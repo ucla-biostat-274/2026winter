@@ -45,7 +45,8 @@ This is a self-contained script that runs the complete analysis:
 - run fold-specific supervised screening using either limma or absolute correlation on VST values
 - fit within each fold
   + Ridge, lasso, elastic net (pick one)
-  + Random Forest, Boosting Trees (pick one)
+  + Random Forest
+  + Boosting Trees  
 - evaluate via outer CV AUC 
 - summarize stability by counting how often genes are screened.
 
