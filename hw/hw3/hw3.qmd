@@ -1,0 +1,348 @@
+---
+title: "Biostat 274 Homework 3"
+subtitle: "Due Feb 13, 2026 @ 11:59PM"
+author: "YOUR NAME and UID"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    number-sections: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    code-fold: false
+engine: knitr
+knitr:
+  opts_chunk: 
+    fig.align: 'center'
+    # fig.width: 6
+    # fig.height: 4
+    message: FALSE
+    cache: false
+---
+
+
+
+## ISL Exercise 5.4.2 (20pts)
+
+
+
+:::{.callout-note}
+As we learned the key to bagging is that trees are
+repeatedly fit to bootstrapped subsets of the observations. This shows
+that on average, each bagged tree makes use of around two-thirds of the
+observations.
+:::
+
+
+## TCGA-BRCA via recount3
+
+This is a self-contained script that runs the complete analysis:
+
+- download and define labels
+- do unsupervised filtering 
+- run fold-specific supervised screening using either limma or absolute correlation on VST values
+- fit within each fold
+  + Ridge, lasso, elastic net (pick one)
+  + Random Forest, Boosting Trees (pick one)
+- evaluate via outer CV AUC 
+- summarize stability by counting how often genes are screened.
+
+:::{.callout-note}
+This might be a long-running script (several hours). These are pseudo-code.  You should adapt it to your own needs, e.g., by reducing the number of folds, tuning grid size, etc.
+:::
+
+```{r, eval = F}
+## ============================================================
+## Tidymodels version scaffold:
+## - outer CV with rsample
+## - fold-specific preprocessing + screening (train-only)
+## - compare: elastic net vs random forest vs xgboost
+## ============================================================
+
+## ---- packages ----
+library(tidymodels)
+library(matrixStats)
+library(DESeq2)
+library(edgeR)
+library(limma)
+
+# helpers;  
+# - first_col_match()
+# - screen_sis_abs_cor()
+# - screen_limma_p()
+
+## ---- helper: fold preprocessing + screening (train-only) ----
+prep_rnaseq_split <- function(split,
+                              counts_mat,              # genes x samples
+                              sample_df,               # sample_id + class
+                              screen = c("limma", "sis"),
+                              cpm_thresh = 1,
+                              min_samples = 10,
+                              var_quantile = 0.50,
+                              top_k = 500) {
+
+  screen <- match.arg(screen)
+
+  tr <- analysis(split)
+  te <- assessment(split)
+
+  tr_ids <- tr$sample_id
+  te_ids <- te$sample_id
+
+  # subset counts
+  counts_tr <- counts_mat[, tr_ids, drop = FALSE]
+  counts_te <- counts_mat[, te_ids, drop = FALSE]
+
+  y_tr <- droplevels(tr$class)
+  y_te <- droplevels(te$class)
+
+  # (a) TRAIN-only CPM filter
+  cpm_tr <- edgeR::cpm(counts_tr)
+  keep <- rowSums(cpm_tr > cpm_thresh) >= min_samples
+
+  ct_tr <- counts_tr[keep, , drop = FALSE]
+  ct_te <- counts_te[rownames(ct_tr), , drop = FALSE]
+
+  # (b) VST (design ~ 1) — computed separately on train and test
+  # NOTE: This is “okay-ish” for teaching, but you can discuss what “proper”
+  # out-of-sample transforms mean in RNA-seq.
+  dds_tr <- DESeqDataSetFromMatrix(
+    countData = ct_tr,
+    colData   = data.frame(row.names = colnames(ct_tr)),
+    design    = ~ 1
+  ) |> estimateSizeFactors()
+
+  Xtr <- assay(vst(dds_tr, blind = TRUE))  # genes x samples
+
+  dds_te <- DESeqDataSetFromMatrix(
+    countData = ct_te,
+    colData   = data.frame(row.names = colnames(ct_te)),
+    design    = ~ 1
+  ) |> estimateSizeFactors()
+
+  Xte <- assay(vst(dds_te, blind = TRUE))
+
+  # (c) TRAIN-only variance filter
+  v <- matrixStats::rowVars(Xtr)
+  keep_v <- v >= quantile(v, var_quantile)
+  Xtr_v <- Xtr[keep_v, , drop = FALSE]
+  Xte_v <- Xte[rownames(Xtr_v), , drop = FALSE]
+
+  # (d) Screening
+  sel_genes <-
+    if (screen == "limma") {
+      screen_limma_p(Xtr_v, y_tr, top_k = top_k)
+    } else {
+      screen_sis_abs_cor(Xtr_v, y_tr, top_k = top_k)
+    }
+
+  # (e) Return train/test tibbles (samples in rows, genes in columns)
+  x_tr <- t(Xtr_v[sel_genes, , drop = FALSE]) |> as.data.frame() |> as_tibble()
+  x_te <- t(Xte_v[sel_genes, , drop = FALSE]) |> as.data.frame() |> as_tibble()
+
+  train_tbl <- bind_cols(tibble(class = y_tr), x_tr)
+  test_tbl  <- bind_cols(tibble(class = y_te), x_te)
+
+  list(
+    train = train_tbl,
+    test  = test_tbl,
+    selected_genes = sel_genes
+  )
+}
+
+## ---- model specs (students will compare these) ----
+spec_enet <-
+  logistic_reg(penalty = tune(), mixture = tune()) %>%
+  set_engine("glmnet") %>%
+  set_mode("classification")
+
+spec_rf <-
+  rand_forest(mtry = tune(), trees = 1000, min_n = tune()) %>%
+  set_engine("ranger", importance = "permutation") %>%
+  set_mode("classification")
+
+spec_xgb <-
+  boost_tree(
+    mtry = tune(),
+    trees = tune(),
+    tree_depth = tune(),
+    learn_rate = tune(),
+    min_n = tune(),
+    loss_reduction = tune(),
+    sample_size = tune()
+  ) %>%
+  set_engine("xgboost") %>%
+  set_mode("classification")
+
+## ---- recipe (lightweight; selection already happened) ----
+base_rec <- function(df) {
+  recipe(class ~ ., data = df) %>%
+    step_zv(all_predictors())
+  # Optional: step_normalize(all_predictors())  # helpful for glmnet
+}
+
+## ---- tuning grids (keep small for homework runtime) ----
+grid_enet <- grid_regular(
+  penalty(range = c(-4, 0)),   # 1e-4 to 1
+  mixture(),
+  levels = c(10, 6)
+)
+
+# These get finalized per-fold because mtry depends on #predictors
+grid_rf <- function(train_df) {
+  params <- parameters(
+    finalize(mtry(), train_df),
+    min_n()
+  )
+  grid_latin_hypercube(params, size = 15)
+}
+
+grid_xgb <- function(train_df) {
+  params <- parameters(
+    finalize(mtry(), train_df),
+    trees(),
+    tree_depth(),
+    learn_rate(),
+    min_n(),
+    loss_reduction(),
+    sample_size = sample_prop()
+  )
+  grid_latin_hypercube(params, size = 20)
+}
+
+## ---- inner-tune + outer-test evaluation (one split, one screen, one model) ----
+fit_one_outer <- function(split,
+                          counts_mat,
+                          screen = c("limma", "sis"),
+                          model = c("enet", "rf", "xgb"),
+                          top_k = 500,
+                          v_inner = 5) {
+
+  screen <- match.arg(screen)
+  model  <- match.arg(model)
+
+  pre <- prep_rnaseq_split(
+    split = split,
+    counts_mat = counts_mat,
+    sample_df = NULL,       # not used; kept in signature if you want it later
+    screen = screen,
+    top_k = top_k
+  )
+
+  train_df <- pre$train
+  test_df  <- pre$test
+
+  # inner CV for tuning
+  inner_rs <- vfold_cv(train_df, v = v_inner, strata = class)
+
+  wf <-
+    workflow() %>%
+    add_recipe(base_rec(train_df)) %>%
+    add_model(
+      switch(model,
+        enet = spec_enet,
+        rf   = spec_rf,
+        xgb  = spec_xgb
+      )
+    )
+
+  # pick grid by model
+  grid <-
+    switch(model,
+      enet = grid_enet,
+      rf   = grid_rf(train_df),
+      xgb  = grid_xgb(train_df)
+    )
+
+  metr <- metric_set(roc_auc)
+
+  tuned <- tune_grid(
+    wf,
+    resamples = inner_rs,
+    grid = grid,
+    metrics = metr,
+    control = control_grid(save_pred = FALSE, verbose = FALSE)
+  )
+
+  best <- select_best(tuned, metric = "roc_auc")
+  final_wf <- finalize_workflow(wf, best)
+
+  final_fit <- fit(final_wf, data = train_df)
+
+  # predictions on outer test fold
+  probs <- predict(final_fit, new_data = test_df, type = "prob") %>%
+    bind_cols(test_df %>% select(class))
+
+  # IMPORTANT: your factor levels are c("Tumor","Normal") so "Normal" is the 2nd level
+  auc <- roc_auc(probs, truth = class, .pred_Normal, event_level = "second") %>%
+    dplyr::pull(.estimate)
+
+  tibble(
+    screen = screen,
+    model  = model,
+    roc_auc = auc,
+    selected_genes = list(pre$selected_genes)
+  )
+}
+
+## ---- outer resampling (students should own this part) ----
+# sample_df should exist from your earlier recount3 code:
+# sample_df <- tibble(sample_id = colnames(counts_f), class = y)
+
+# NOTE: rsample splits need a data frame; we resample sample_df, then index counts by sample_id
+outer_rs <- vfold_cv(sample_df, v = 5, repeats = 3, strata = class)
+
+# Run the experiment:
+set.seed(1)
+results <-
+  crossing(
+    screen = c("limma", "sis"),
+    model  = c("enet", "rf", "xgb")
+  ) %>%
+  mutate(
+    res = pmap(
+      list(screen, model),
+      ~ map_dfr(
+        outer_rs$splits,
+        \(sp) fit_one_outer(
+          split = sp,
+          counts_mat = counts_f,
+          screen = ..1,
+          model  = ..2,
+          top_k  = 500,
+          v_inner = 5
+        )
+      )
+    )
+  ) %>%
+  unnest(res)
+
+# Summaries
+results %>%
+  group_by(screen, model) %>%
+  summarize(
+    mean_auc = mean(roc_auc),
+    sd_auc   = sd(roc_auc),
+    .groups = "drop"
+  )
+
+# Plot
+results %>%
+  ggplot(aes(x = model, y = roc_auc)) +
+  geom_boxplot() +
+  facet_wrap(~ screen)
+
+# Stability: how often selected (by screen+model)
+stab <-
+  results %>%
+  select(screen, model, selected_genes) %>%
+  unnest(selected_genes) %>%
+  count(screen, model, selected_genes, sort = TRUE)
+
+stab %>% group_by(screen, model) %>% slice_head(n = 20)
+```
+
+
+
