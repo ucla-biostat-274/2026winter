@@ -1,0 +1,821 @@
+---
+title: "Interpretability for Tree Ensembles"
+subtitle: "Biostat 274"
+author: "Dr. Jin Zhou @ UCLA"
+date: today
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    number-sections: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    code-fold: false
+engine: knitr
+knitr:
+  opts_chunk: 
+    fig.align: 'center'
+    # fig.width: 6
+    # fig.height: 4
+    message: FALSE
+    cache: false
+
+---
+
+Credit: This note builds on tree/ensemble material from [_An Introduction to Statistical Learning: with Applications in R_](https://www.statlearning.com/) (ISL2) and [_Elements of Statistical Learning_](https://hastie.su.domains/ElemStatLearn/) (ESL2), and introduces modern interpretability + feature selection tools including **permutation importance**, **Shapley/SHAP**, and **Boruta**.
+
+Display system information for reproducibility.
+
+::: {.panel-tabset}
+## R
+
+```{r}
+sessionInfo()
+```
+
+## Python
+
+```{python}
+import IPython
+print(IPython.sys_info())
+```
+
+:::
+
+# Why interpretability after trees?
+
+- A **single** decision tree is often interpretable: you can read off splitting rules and explain predictions with a small number of paths.
+
+- But the most accurate tree-based predictors in practice are often **ensembles**:
+  - **Bagging / Random Forests**: average many (deep) trees.
+  - **Boosted trees**: add many small trees sequentially.
+
+- Ensembles improve accuracy *but* can become **black-box-ish**.
+  We therefore need post-hoc tools for:
+  1. **Interpretability / explanation** (What drives predictions?)
+  2. **Variable importance** (Which predictors matter most?)
+  3. **Variable selection** (Which predictors are *reliably* useful?)
+
+::: {.callout-note appearance="minimal"}
+### Global vs. local interpretability
+
+- **Global**: summarize the model as a whole  
+  (e.g., *which* variables are important overall?)
+
+- **Local**: explain *one* prediction  
+  (e.g., *why* did this patient get a high risk score?)
+
+Variable importance is usually **global**. SHAP can do **local + global**.  
+Boruta is a **selection** procedure (all-relevant feature selection).
+:::
+
+# Variable importance
+
+## What does “importance” mean?
+
+Importance is *not* a single concept. Two common notions:
+
+1. **Model-usage importance**: how often / how strongly the model uses a variable  
+   (e.g., total loss reduction from splits on that variable).
+
+2. **Predictive importance**: how much predictive performance drops when a variable is destroyed  
+   (e.g., permute a variable and re-score the model).
+
+These can disagree, especially with correlated predictors.
+
+::: {.callout-note appearance="minimal"}
+### Importance is not causality
+
+A variable can be “important” to a predictive model because it is correlated with the outcome, correlated with a true cause, or even due to data leakage.
+Variable-importance tools answer:
+
+> “Does the trained model rely on this variable to predict well?”
+
+They do **not** answer:
+
+> “Does this variable cause the outcome?”
+:::
+
+## Split / impurity importance (tree-specific)
+
+For a tree, each internal node $t$ splits the data into left/right children.
+Let $I(t)$ be an **impurity** measure at node $t$:
+
+- Regression: $I(t)$ can be $RSS(t)$ or $MSE(t)$.
+- Classification: $I(t)$ can be **Gini** or **entropy**.
+
+If node $t$ splits into children $t_L,t_R$, define the impurity decrease (a “gain”)
+
+$$
+\Delta I(t)
+=
+I(t)
+-
+\frac{n_{L}}{n_t} I(t_L)
+-
+\frac{n_{R}}{n_t} I(t_R),
+$$
+
+where $n_t$ is the number of training samples reaching node $t$.
+
+If feature $j$ is used at node $t$, its (tree) importance is typically
+
+$$
+VI_j
+=
+\sum_{t: v(t)=j} \Delta I(t).
+$$
+
+For **random forests / bagging**, average $VI_j$ across trees.
+
+### Pros / cons
+
+Pros:
+
+- Computed “for free” during training.
+- Available in most tree software.
+
+Cons / pitfalls:
+
+- Can be biased toward variables with **many possible split points** (continuous features, high-cardinality categories).
+- With **correlated predictors**, importance is often “shared” and can be unstable.
+
+## Permutation importance (model-agnostic)
+
+Permutation importance measures predictive importance:
+
+1. Evaluate a trained model on a validation set (or OOB samples) to get a baseline score.
+2. For feature $j$, randomly permute its values (break its association with $y$ but keep marginal distribution).
+3. Re-score the model; importance is the score drop.
+
+If $M(\cdot)$ is a metric where larger is better (e.g., accuracy, $R^2$), then
+
+$$
+PI_j = M(\text{original}) - M(\text{permuted } j).
+$$
+
+::: {.callout-note appearance="minimal"}
+### Permutation importance (typical algorithm)
+
+Given trained model $\hat f$ and evaluation set $\mathcal D$:
+
+1. Compute baseline metric: $m_0 \leftarrow M(\hat f, \mathcal D)$.
+2. For each feature $j=1,\dots,p$:
+   1. Create a permuted copy $\mathcal D^{\pi(j)}$ by shuffling column $j$.
+   2. Compute $m_j \leftarrow M(\hat f, \mathcal D^{\pi(j)})$.
+   3. Set importance $PI_j \leftarrow m_0 - m_j$.
+3. (Optional) Repeat permutations several times and average.
+
+Using **OOB samples** in random forests gives a built-in evaluation set without extra CV.
+:::
+
+### Pros / cons
+
+Pros:
+- Works for **any** model and any performance metric.
+- Typically less biased than split/impurity importance.
+
+Cons / pitfalls:
+- With **correlated / redundant** predictors, permutation importance can be misleading:
+  - If $X_j$ is redundant with $X_k$, permuting $X_j$ might not hurt because $X_k$ “substitutes”.
+  - Or permuting $X_j$ can break dependence structure and create unrealistic inputs.
+- Importance depends on the **chosen metric** and **evaluation distribution**.
+
+## Importance in boosted trees (XGBoost / LightGBM style)
+
+Many boosting libraries report importance summaries such as:
+
+- **Gain**: total loss reduction attributed to splits on a feature.
+- **Frequency**: number of times a feature is used in splits.
+- **Cover**: number of observations affected by splits (library-dependent definition).
+
+These are fast and convenient, but:
+
+- they are still “model-usage” measures (not performance-drop),
+- they may behave oddly with correlated predictors or different hyperparameters.
+
+A good workflow is:
+
+- report **both** (gain/split importance *and* permutation importance),
+- then use **SHAP** for detailed interpretation.
+
+# Worked example data: `Hitters` (salary regression)
+
+We reuse the baseball salary data (`Hitters`) from the tree lecture.  
+Goal: predict `Salary` from player statistics.
+
+::: {.panel-tabset}
+
+#### R
+```{r}
+library(tidymodels)
+library(ISLR2)
+
+# Remove missing Salary rows for supervised learning
+Hitters2 <- Hitters %>% drop_na(Salary)
+
+# A simple train/test split (used throughout)
+set.seed(1)
+hitters_split <- initial_split(Hitters2, prop = 0.7)
+hitters_train <- training(hitters_split)
+hitters_test  <- testing(hitters_split)
+
+Hitters2 %>%
+  summarise(
+    n = n(),
+    p = ncol(.),
+    salary_min = min(Salary),
+    salary_median = median(Salary),
+    salary_max = max(Salary)
+  )
+```
+
+#### Python
+Load `Hitters` data (adapt path to your course repo if needed):
+
+```{python}
+import pandas as pd
+import numpy as np
+
+# If you already used this path in the tree lecture, keep it consistent.
+# Hitters = pd.read_csv("./slides/data/Hitters.csv")
+# For standalone demos, change to wherever your Hitters.csv lives.
+Hitters = pd.read_csv("./slides/data/Hitters.csv")
+
+# Drop missing Salary
+Hitters2 = Hitters.dropna(subset=["Salary"]).copy()
+Hitters2.shape
+```
+
+:::
+
+# Variable importance in random forests
+
+## Random forest: split vs permutation importance
+
+- Split/impurity importance answers: “Which variables reduce impurity most often?”
+- Permutation importance answers: “Which variables, when destroyed, hurt prediction most?”
+
+In practice, compare the two.
+
+::: {.panel-tabset}
+
+#### R (tidymodels + ranger)
+```{r}
+# install.packages(c("tidymodels","vip","ranger"))
+library(tidymodels)
+library(vip)
+
+set.seed(1)
+
+# Model specs: same algorithm, different importance definitions
+rf_perm_spec <-
+  rand_forest(trees = 1000) %>%
+  set_engine("ranger", importance = "permutation") %>%
+  set_mode("regression")
+
+rf_impurity_spec <-
+  rand_forest(trees = 1000) %>%
+  set_engine("ranger", importance = "impurity") %>%
+  set_mode("regression")
+
+rf_perm_wf <-
+  workflow() %>%
+  add_model(rf_perm_spec) %>%
+  add_formula(Salary ~ .)
+
+rf_impurity_wf <- rf_perm_wf %>%
+  update_model(rf_impurity_spec)
+
+rf_perm_fit <- fit(rf_perm_wf, data = hitters_train)
+rf_impurity_fit <- fit(rf_impurity_wf, data = hitters_train)
+
+# Test set performance (tidymodels + yardstick)
+rf_test <-
+  hitters_test %>%
+  select(Salary) %>%
+  bind_cols(predict(rf_perm_fit, hitters_test))
+
+metric_set(rmse, rsq)(rf_test, truth = Salary, estimate = .pred)
+
+# --- Variable importance plots ---
+# Split/impurity importance
+vip(extract_fit_engine(rf_impurity_fit), num_features = 15) +
+  ggtitle("Split/impurity importance (ranger)")
+
+# Permutation importance (OOB, computed by ranger)
+vip(extract_fit_engine(rf_perm_fit), num_features = 15) +
+  ggtitle("Permutation importance (OOB, ranger)")
+```
+
+#### Python (sklearn permutation_importance)
+```{python}
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import r2_score
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.inspection import permutation_importance
+
+# Features / outcome
+y = Hitters2["Salary"].values
+X = Hitters2.drop(columns=["Salary"])
+
+# Identify categorical columns (object / category)
+cat_cols = X.select_dtypes(include=["object", "category"]).columns.tolist()
+num_cols = [c for c in X.columns if c not in cat_cols]
+
+preprocess = ColumnTransformer(
+    transformers=[
+        ("num", "passthrough", num_cols),
+        ("cat", OneHotEncoder(handle_unknown="ignore"), cat_cols),
+    ]
+)
+
+rf = RandomForestRegressor(
+    n_estimators=1000,
+    random_state=1,
+    n_jobs=-1
+)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=1
+)
+
+pipe = Pipeline(steps=[("prep", preprocess), ("model", rf)])
+pipe.fit(X_train, y_train)
+
+yhat = pipe.predict(X_test)
+print("Test R^2:", r2_score(y_test, yhat))
+
+# Permutation importance on the test set (model-agnostic)
+perm = permutation_importance(
+    pipe, X_test, y_test,
+    n_repeats=10,
+    random_state=1,
+    n_jobs=-1
+)
+
+# Show top features (note: one-hot expands categories)
+importances = perm.importances_mean
+feat_names = pipe.named_steps["prep"].get_feature_names_out()
+top_idx = np.argsort(importances)[::-1][:15]
+
+list(zip(feat_names[top_idx], importances[top_idx]))
+```
+
+:::
+
+::: {.callout-tip appearance="minimal"}
+### Stability check (recommended)
+
+Variable importance can be noisy. For a more reliable ranking:
+
+- compute permutation importance with multiple random seeds,
+- or bootstrap the training data, refit the model many times, and summarize importance variability.
+
+If importance is unstable across resamples, be cautious about “top-1/top-2” claims.
+:::
+
+# Shapley values and SHAP
+
+## Shapley values (game theory)
+
+- Suppose a “game” has $p$ players.
+
+- The game produces a payoff $v(S)$ for any coalition (subset) $S$ of players.
+- The **Shapley value** assigns each player $j$ a fair contribution $\phi_j$.
+
+For a feature-attribution view:
+
+- players = features,
+- payoff = model prediction (relative to a baseline).
+
+The Shapley value for feature $j$ is
+
+$$
+\phi_j
+=
+\sum_{S\subseteq F\setminus\{j\}}
+\frac{|S|!(p-|S|-1)!}{p!}
+\left[ v(S\cup\{j\}) - v(S) \right].
+$$
+
+Key properties:
+
+- **Efficiency**: contributions sum to total payoff.
+- **Symmetry**: identical players get equal credit.
+- **Dummy**: irrelevant player gets zero.
+- **Additivity**: for combined games, contributions add.
+
+## SHAP in ML: local explanations that add up
+
+SHAP (SHapley Additive exPlanations) is a family of methods that uses Shapley values
+to explain individual predictions.
+
+For an observation $x$:
+
+$$
+\hat f(x) = \phi_0 + \sum_{j=1}^p \phi_j,
+$$
+
+where:
+- $\phi_0$ is a baseline (often $\mathbb E[\hat f(X)]$),
+- $\phi_j$ is the contribution of feature $j$ for this specific $x$.
+
+### Global importance from SHAP
+
+A common global ranking is:
+
+$$
+\text{SHAP-Importance}_j = \mathbb E\left[ |\phi_j| \right],
+$$
+
+estimated by the sample mean of $|\phi_j|$ over observations.
+
+::: {.callout-note appearance="minimal"}
+### TreeSHAP
+
+For tree-based models, SHAP values can be computed efficiently using **TreeSHAP**,
+which exploits the tree structure rather than enumerating all $2^p$ coalitions.
+
+Takeaway:
+
+- SHAP is practical for random forests and boosted trees.
+:::
+
+## Interpreting SHAP plots (common patterns)
+
+- **Bar plot (mean |SHAP|)**: global importance ranking.
+- **Beeswarm / summary plot**: each dot is one observation; color shows feature value.
+- **Dependence plot**: SHAP value vs. feature value; reveals nonlinearity + interactions.
+- **Waterfall / force plot**: a single observation explanation.
+
+::: {.callout-note appearance="minimal"}
+### Classification caveat: units of SHAP values
+
+For classification, SHAP values can be in:
+
+- **log-odds** (common for many tree models),
+- or **probability space** (sometimes available depending on implementation).
+
+Always check the explainer settings and interpret units accordingly.
+:::
+
+# SHAP example (boosted trees)
+
+We illustrate SHAP for a boosted-tree regressor on `Hitters`.
+
+::: {.panel-tabset}
+
+#### R (tidymodels + xgboost + shapviz)
+```{r}
+# install.packages(c("tidymodels","xgboost","shapviz"))
+library(tidymodels)
+library(shapviz)
+
+set.seed(1)
+
+# Recipe: xgboost needs numeric predictors -> one-hot encode factors
+hitters_xgb_rec <-
+  recipe(Salary ~ ., data = hitters_train) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_zv(all_predictors())
+
+# Prep once so we can (1) choose mtry ~ 80% of columns and (2) reuse baked data for SHAP
+hitters_xgb_prep <- prep(hitters_xgb_rec)
+
+p <- juice(hitters_xgb_prep) %>% select(-Salary) %>% ncol()
+mtry_val <- max(1, floor(0.8 * p))
+
+xgb_spec <-
+  boost_tree(
+    trees = 500,
+    tree_depth = 3,
+    learn_rate = 0.05,
+    sample_size = 0.8,
+    mtry = mtry_val
+  ) %>%
+  set_engine("xgboost") %>%
+  set_mode("regression")
+
+xgb_wf <-
+  workflow() %>%
+  add_recipe(hitters_xgb_rec) %>%
+  add_model(xgb_spec)
+
+xgb_fit <- fit(xgb_wf, data = hitters_train)
+
+# SHAP needs the xgboost engine + the baked predictor matrix
+xgb_engine <- extract_fit_engine(xgb_fit)
+
+X_train <-
+  bake(hitters_xgb_prep, new_data = hitters_train) %>%
+  select(-Salary) %>%
+  as.matrix()
+
+sv <- shapviz(xgb_engine, X_pred = X_train)
+
+# Global importance (mean |SHAP|)
+sv_importance(sv, kind = "bar")
+
+# Beeswarm summary plot
+sv_importance(sv, kind = "beeswarm")
+```
+
+#### Python (sklearn GradientBoosting + shap)
+```{python}
+# If you see ModuleNotFoundError for shap, install it into THIS Python:
+#   python -m pip install shap
+# (Optional auto-install)
+try:
+    import shap
+except ImportError:
+    import sys, subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "shap"])
+    import shap
+
+import pandas as pd
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.ensemble import GradientBoostingRegressor
+
+# --- Data (make this chunk self-contained) ---
+# If Hitters2 was created earlier, reuse it; otherwise load it here.
+if "Hitters2" not in globals():
+    Hitters = pd.read_csv("./slides/data/Hitters.csv")
+    Hitters2 = Hitters.dropna(subset=["Salary"]).copy()
+
+y = Hitters2["Salary"].values
+X = Hitters2.drop(columns=["Salary"])
+
+# Identify categorical vs numeric columns
+cat_cols = X.select_dtypes(include=["object", "category"]).columns.tolist()
+num_cols = [c for c in X.columns if c not in cat_cols]
+
+# OneHotEncoder dense output across scikit-learn versions
+try:
+    ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+except TypeError:
+    ohe = OneHotEncoder(handle_unknown="ignore", sparse=False)
+
+preprocess = ColumnTransformer(
+    transformers=[
+        ("num", Pipeline([("impute", SimpleImputer(strategy="median"))]), num_cols),
+        ("cat", Pipeline([
+            ("impute", SimpleImputer(strategy="most_frequent")),
+            ("onehot", ohe)
+        ]), cat_cols),
+    ],
+    remainder="drop",
+    verbose_feature_names_out=False
+)
+
+gbr = GradientBoostingRegressor(random_state=1)
+
+# Pipeline: preprocess -> model
+pipe_gbr = Pipeline(steps=[("preprocess", preprocess), ("model", gbr)])
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=1
+)
+
+pipe_gbr.fit(X_train, y_train)
+
+# --- SHAP in the transformed feature space ---
+X_train_trans = pipe_gbr.named_steps["preprocess"].transform(X_train)
+X_test_trans  = pipe_gbr.named_steps["preprocess"].transform(X_test)
+
+feat_names = pipe_gbr.named_steps["preprocess"].get_feature_names_out()
+
+X_train_shap = pd.DataFrame(X_train_trans, columns=feat_names)
+X_test_shap  = pd.DataFrame(X_test_trans,  columns=feat_names)
+
+model = pipe_gbr.named_steps["model"]
+
+# TreeSHAP (fast for tree ensembles)
+explainer = shap.Explainer(model, X_train_shap)
+shap_values = explainer(X_test_shap)
+
+# Beeswarm summary plot
+shap.plots.beeswarm(shap_values, max_display=15)
+
+# (Optional) global bar plot
+# shap.plots.bar(shap_values, max_display=15)
+
+```
+
+
+:::
+
+# Boruta: all-relevant variable selection
+
+## Variable selection vs. variable importance
+
+- **Importance**: rank variables by some score (often continuous).
+- **Selection**: decide a set of variables to keep (a discrete decision).
+
+Boruta is designed for **all-relevant** selection:
+
+> Keep *every* variable that has evidence of being useful, even if redundant with others.
+
+This is different from minimal-optimal selection (keep the smallest set with good accuracy).
+
+## Boruta idea: compare to “shadow” features
+
+Boruta wraps around a random forest:
+
+1. Create “shadow” variables by permuting each original feature column (destroying association with $y$).
+2. Fit a random forest and compute importance for original + shadow features.
+3. A real feature is “confirmed” only if it consistently beats the **best** shadow feature.
+
+::: {.callout-note appearance="minimal"}
+### Boruta algorithm (high level)
+
+Repeat for $r=1,\dots,R$:
+
+1. Create shadow features: for each $j$, make $X_j^{shadow}$ by permuting $X_j$.
+2. Fit RF on $[X, X^{shadow}]$ and compute importance scores.
+3. Let $M_r = \max_j \text{Imp}(X_j^{shadow})$ (the strongest shadow).
+4. For each real feature $j$:
+   - if $\text{Imp}(X_j) > M_r$ consistently → **Confirmed**
+   - if $\text{Imp}(X_j) < M_r$ consistently → **Rejected**
+   - otherwise → **Tentative**
+
+Stop when all features are decided or max iterations reached.
+:::
+
+### Practical notes
+
+- Boruta is computationally heavier than just computing importance once.
+- It is **random forest-based**, so results depend on RF settings (trees, mtry, etc.).
+- With strong collinearity, Boruta may confirm multiple redundant predictors (this is expected under “all-relevant” philosophy).
+
+# Boruta example: selecting predictors for `Salary`
+
+::: {.panel-tabset}
+
+#### R (Boruta + tidymodels split)
+```{r}
+# install.packages(c("tidymodels","Boruta"))
+library(tidymodels)
+library(Boruta)
+
+set.seed(1)
+
+# Run Boruta on the training set only (avoid peeking at the test set)
+# Use default ranger RF settings; increase maxRuns for more stability
+bor_fit <- Boruta(
+  Salary ~ .,
+  data = hitters_train,
+  doTrace = 1,
+  maxRuns = 200
+)
+
+# Resolve tentative attributes (common practical step)
+bor_fix <- TentativeRoughFix(bor_fit)
+
+# Tidy summary of decisions
+bor_tbl <-
+  attStats(bor_fix) %>%
+  as_tibble(rownames = "feature") %>%
+  arrange(desc(meanImp))
+
+bor_tbl
+
+# Selected variables
+bor_tbl %>%
+  filter(decision == "Confirmed") %>%
+  pull(feature)
+
+# Visualization
+plot(bor_fix, las = 2, cex.axis = 0.7)
+```
+
+#### Python (BorutaPy)
+```{python}
+# If you see ModuleNotFoundError for boruta, install it into THIS Python:
+#   python -m pip install boruta
+# (Optional auto-install)
+try:
+    from boruta import BorutaPy
+except ImportError:
+    import sys, subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "boruta"])
+    from boruta import BorutaPy
+
+import pandas as pd
+import numpy as np
+
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.ensemble import RandomForestRegressor
+
+# --- Data (make this chunk self-contained) ---
+if "Hitters2" not in globals():
+    Hitters = pd.read_csv("./slides/data/Hitters.csv")
+    Hitters2 = Hitters.dropna(subset=["Salary"]).copy()
+
+X_all = Hitters2.drop(columns=["Salary"])
+y_all = Hitters2["Salary"].values
+
+cat_cols = X_all.select_dtypes(include=["object", "category"]).columns.tolist()
+num_cols = [c for c in X_all.columns if c not in cat_cols]
+
+# OneHotEncoder dense output across scikit-learn versions
+try:
+    ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+except TypeError:
+    ohe = OneHotEncoder(handle_unknown="ignore", sparse=False)
+
+preprocess_b = ColumnTransformer(
+    transformers=[
+        ("num", Pipeline([("impute", SimpleImputer(strategy="median"))]), num_cols),
+        ("cat", Pipeline([
+            ("impute", SimpleImputer(strategy="most_frequent")),
+            ("onehot", ohe)
+        ]), cat_cols),
+    ],
+    remainder="drop",
+    verbose_feature_names_out=False
+)
+
+X_all_trans = preprocess_b.fit_transform(X_all)
+feat_names = preprocess_b.get_feature_names_out()
+
+rf_for_boruta = RandomForestRegressor(
+    n_estimators=2000,
+    random_state=1,
+    n_jobs=-1
+)
+
+boruta = BorutaPy(
+    estimator=rf_for_boruta,
+    n_estimators="auto",
+    random_state=1,
+    verbose=2
+)
+
+boruta.fit(X_all_trans, y_all)
+
+selected = feat_names[boruta.support_]
+tentative = feat_names[boruta.support_weak_]
+
+print("Confirmed:", len(selected))
+print("Tentative:", len(tentative))
+print("Top confirmed:", selected[:20])
+print("Top tentative:", tentative[:20])
+
+```
+
+
+:::
+
+::: {.callout-tip appearance="minimal"}
+### When to use Boruta (and when not)
+
+Use Boruta when you want:
+
+- a **robust, conservative** set of relevant predictors,
+- to guard against spurious “importance” due to RF randomness.
+
+Avoid (or be cautious) when:
+
+- $p$ is extremely large (computational cost),
+- features are extremely correlated and you want a *minimal* subset,
+- data leakage is possible (Boruta will happily “select” leaked variables).
+:::
+
+# Summary: choosing a tool
+
+- **Split / gain importance**
+  - Fast, model-specific, good first look.
+  - May be biased; not a performance-drop measure.
+
+- **Permutation importance**
+  - Model-agnostic, tied to a chosen metric.
+  - Sensitive to correlation / dependence structure.
+
+- **SHAP**
+  - Local explanations that add up; also yields global rankings.
+  - Great for tree ensembles; be careful with correlated features and classification units.
+
+- **Boruta**
+  - Wrapper feature selection for “all-relevant” variables.
+  - Conservative; may select redundant predictors (by design).
+
+A practical post-ensemble workflow:
+
+1. Fit your best-performing tree ensemble (RF or boosting).
+2. Report **permutation importance** (with uncertainty / stability).
+3. Use **SHAP** to explain top variables (global + a few representative observations).
+4. If you need a selected feature set, run **Boruta** (then refit and re-evaluate).
