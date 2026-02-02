@@ -464,6 +464,11 @@ Results from random forests for the fifteen-class gene expression data set with 
 
 [Workflow: random forest for classification](https://ucla-biostat-274.github.io/2026winter/slides/08-tree/workflow_rf_class.html).
 
+## Many extensions of random forests
+- Random forests can be adapted to survival analysis ([random survival forests](https://projecteuclid.org/journals/annals-of-applied-statistics/volume-2/issue-3/Random-survival-forests/10.1214/08-AOAS169.full)).
+- [Individualized treatment rules (ITR)](https://hua-zhou.github.io/media/pdf/DoubledayZhouFuZhou18IndividualizedTreatmentTrees.pdf) via classification forests.
+- [Causal forests](https://grf-labs.github.io/grf/reference/causal_forest.html) for estimating heterogeneous treatment effects.
+
 # Boosting
 
 ## Introduction to boosting
