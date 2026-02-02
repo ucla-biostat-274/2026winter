@@ -20,6 +20,9 @@ knitr:
     # fig.height: 4
     message: FALSE
     cache: false
+header-includes:
+  - \usepackage{algorithm}
+  - \usepackage{algpseudocode}
 ---
 
 Credit: This note heavily uses material from the books [_An Introduction to Statistical Learning: with Applications in R_](https://www.statlearning.com/) (ISL2) and [_Elements of Statistical Learning: Data Mining, Inference, and Prediction_](https://hastie.su.domains/ElemStatLearn/) (ESL2).
@@ -42,7 +45,7 @@ print(IPython.sys_info())
 
 :::
 
-## Overview
+# Decision trees 
 
 - In this lecture, we describe **tree-based** methods for regression and classification.
 
@@ -50,7 +53,8 @@ print(IPython.sys_info())
 
 - Since the set of splitting rules used to segment the predictor space can be summarized in a tree, these types of approaches are known as **decision-tree** methods.
 
-### Pros and cons of decision tree
+ 
+## Pros and cons of decision tree
 
 - Tree-based methods are simple and useful for interpretation.
 
@@ -199,6 +203,65 @@ so as to minimize the RSS. The process continues until a
 stopping criterion is reached; for instance, we may continue
 until no region contains more than five observations.
 
+
+
+
+::: {.callout-note appearance="minimal"}
+### Goal
+Partition the predictor space into rectangular regions (boxes) and predict each region by the **mean response**.
+
+### Notation
+- $S$: index set of points in the current region  
+- $\hat{y}_S = \frac{1}{|S|}\sum_{i\in S} y_i$: mean response in region $S$  
+- $RSS(S) = \sum_{i\in S}(y_i-\hat{y}_S)^2$: residual sum of squares in region $S$
+
+### Algorithm
+1. **TrainTree($X, y, \Theta$)**
+   1. $S \leftarrow \{1,2,\dots,n\}$
+   2. return **GrowNode($S$, depth = 0)**
+
+2. **GrowNode($S$, depth)**
+   1. $\hat{y}_S \leftarrow \frac{1}{|S|}\sum_{i\in S} y_i$ *(leaf prediction)*
+   2. If **Stop($S$, depth, $\Theta$)**, return **Leaf(pred = $\hat{y}_S$)**
+   3. $(j^*, s^*, S_L, S_R, \Delta) \leftarrow$ **BestSplit($S$)**
+   4. If **no valid split** (or $\Delta$ too small), return **Leaf(pred = $\hat{y}_S$)**
+   5. Create **DecisionNode(feature = $j^*$, threshold = $s^*$)**
+   6. node.left  $\leftarrow$ **GrowNode($S_L$, depth+1)**
+   7. node.right $\leftarrow$ **GrowNode($S_R$, depth+1)**
+   8. return node
+
+3. **BestSplit($S$)**
+   1. Compute $RSS(S)$
+   2. For each feature $j \in \{1,\dots,p\}$:
+      1. For each candidate cutpoint $s$ from feature $j$ values in $S$:
+         1. $S_L = \{i\in S : x_{ij} < s\}$, $S_R = \{i\in S : x_{ij} \ge s\}$
+         2. Skip if $S_L$ or $S_R$ is empty
+         3. Compute $\hat{y}_{S_L}$, $\hat{y}_{S_R}$
+         4. $RSS_{\text{split}} =
+            \sum_{i\in S_L}(y_i-\hat{y}_{S_L})^2 +
+            \sum_{i\in S_R}(y_i-\hat{y}_{S_R})^2$
+         5. Keep the split with smallest $RSS_{\text{split}}$
+   3. Return the best $(j^*, s^*, S_L, S_R)$ and
+      $\Delta = RSS(S) - RSS_{\text{best split}}$
+
+4. **Stop($S$, depth, $\Theta$)** *(example stopping rules)*
+   - return TRUE if any:
+     - depth $\ge \Theta.\text{maxDepth}$
+     - $|S| < \Theta.\text{minSamplesSplit}$
+     - $\mathrm{Var}(\{y_i:i\in S\}) = 0$
+     - best decrease $\Delta < \Theta.\text{minRssDecrease}$
+     - $|S_L| < \Theta.\text{minSamplesLeaf}$ or $|S_R| < \Theta.\text{minSamplesLeaf}$
+:::
+
+```{=html}
+<style>
+.callout-note ol { margin-left: 1.1rem; }
+.callout-note ol ol { margin-left: 1.4rem; }
+.callout-note li { margin: 0.25rem 0; }
+</style>
+```
+
+
 ## Predictions
 
 - We predict the response for a given test observation using the mean of the training observations in the region to which that test observation belongs.
@@ -325,7 +388,7 @@ Disadvantages:
 
 **Ensemble methods** such as bagging, random forests, and boosting solve these issues.
 
-## Bagging
+# Bagging
 
 > Bagging is like taking a vote among many decent-but-imperfect experts.
 Instead of trusting one model that might be unstable, we train lots of models on slightly different versions of the data and average their predictions.
@@ -371,7 +434,7 @@ The test error (black and orange) is shown as a function of $B$, the number of b
 
 - This estimate is essentially the LOO cross-validation error for bagging, if $B$ is large.
 
-## Random forests
+# Random forests
 
 - **Random forests** provide an improvement over bagging by a small tweak that **decorrelates** the trees. This reduces the variance when we average the trees.
 
@@ -401,97 +464,215 @@ Results from random forests for the fifteen-class gene expression data set with 
 
 [Workflow: random forest for classification](https://ucla-biostat-274.github.io/2026winter/slides/08-tree/workflow_rf_class.html).
 
-## Boosting
+# Boosting
 
-- Like bagging, boosting is a general approach that can be applied to many statistical learning methods for regression
-or classification. We only discuss boosting for decision trees.
+## Introduction to boosting
 
-- Recall that bagging involves creating multiple copies of the original training data set using the bootstrap, fitting a separate decision tree to each copy, and then combining all of the trees in order to create a single predictive model.
+- Suggested reading, Schapire, R. E. and Y. Freund (2012). [Boosting: Foundations and Algorithms](https://direct.mit.edu/books/oa-monograph/5342/BoostingFoundations-and-Algorithms). MIT Press.
 
-- Notably, each tree is built on a bootstrap data set,
-independent of the other trees.
+- **Boosting** is an ensemble method that builds a strong predictor by combining many **weak learners** (for trees: usually **small/shallow trees**) in a **sequential** way.
 
-- Boosting works in a similar way, except that the trees are
-grown **sequentially**: each tree is grown using information
-from previously grown trees.
+- Compared with bagging / random forests:
 
-- Boosting algorithm for regression trees
+  - **Bagging / RF:** trees are trained (approximately) **independently** and then averaged/voted → mainly reduces **variance**.
 
-    1. Set $\hat f(x) = 0$ and $r_i = y_i$ for all $i$ in the training set.  
-    2. For $b=1,2,\ldots,B$, repeat:  
-        2.1 Fit a tree $\hat f^b$ with $d$ splits ($d+1$ terminal nodes) to the training data $(X, r)$.  
-        2.2 Update $\hat f$ by adding in a shrunken version of the new tree:
-        $$
-        \hat f(x) \leftarrow \hat f(x) + \lambda \hat f^b(x).
-        $$
-        2.3 Update the residuals,
-        $$
-        r_i \leftarrow r_i - \lambda \hat f^b(x_i).
-        $$
-    3. Output the boosted model,
-    $$
-    \hat f(x) = \sum_{b=1}^B \lambda \hat f^b(x).
-    $$
+  - **Boosting:** trees are trained **one after another**, each correcting the mistakes of the current ensemble → mainly reduces **bias** (and can also reduce variance with regularization).
 
-- Unlike fitting a single large decision tree to the data, which amounts to fitting the data hard and potentially overfitting, the boosting approach instead **learns slowly**.
+- In tree boosting, we build an additive model
+  $$
+  \hat f(x) = \sum_{b=1}^B \nu \, h_b(x),
+  $$
+  where each $h_b$ is a **small regression tree**, and $\nu \in (0,1]$ is the **learning rate** (shrinkage).
 
-- Given the current model, we fit a decision tree to the residuals from the model. We then add this new decision
-tree into the fitted function in order to update the residuals.
+## Why boosting tends to work well
 
-- Each of these trees can be rather small, with just a few terminal nodes, determined by the parameter $d$ in the algorithm.
+- Each new tree focuses on what the current model is still getting wrong:
 
-- By fitting **small trees** to the residuals, we slowly improve $\hat f$ in areas where it does not perform well. The shrinkage parameter $\lambda$ slows the process down even further, allowing more and different shaped trees to attack the residuals.
+  - For **squared error regression**, “what’s wrong” = **residuals**.
 
-## Boosting for classification
+  - For general losses, “what’s wrong” = **negative gradient** of the loss (see Gradient Boosting below).
 
-See ESL Chapter 10.
+- Boosting is powerful because:
 
-Gene expression example (continued).
+  - It builds complex functions by **adding simple pieces** (small trees).
 
-::: {#fig-boosting-gene-expression}
+  - It learns **slowly** (with shrinkage and early stopping), which often generalizes well.
 
-<p align="center">
-![](ISL_fig_8_11.pdf){width=500px height=500px}
-</p>
+- The cost: boosting is less interpretable than a single tree, and can overfit if not regularized (but typically **overfits slowly**).
 
-Results from performing boosting and random forests on the fifteen-class gene expression data set in order to predict **cancer** versus **normal**. The test error is displayed as a function of the number of trees. For the two boosted models, $\lambda=0.01$. Depth-1 trees slightly outperform depth-2 trees, and both outperform the random forest, although the standard errors are around 0.02, making none of these differences significant. The test error rate for a single tree is 24\%.
+## AdaBoost (classification boosting idea)
 
+- AdaBoost is historically important and gives great intuition: “re-weight the hard cases.”
+
+- We maintain weights $w_i$ over training points. After each weak learner, misclassified points get **higher weight** so the next learner focuses on them.
+
+- Final prediction is a **weighted vote** of the weak learners.
+
+::: {.callout-note appearance="minimal"}
+### AdaBoost (binary classification) — concept-level algorithm
+
+1. Initialize weights: $w_i \leftarrow 1/n$.
+2. For $b=1,\dots,B$:
+   1. Fit a weak classifier $g_b(x)$ using weights $w_i$.
+   2. Compute weighted error: $\epsilon_b = \sum_i w_i \mathbf{1}\{g_b(x_i)\ne y_i\}$.
+   3. Set learner weight: $\alpha_b = \frac{1}{2}\log\left(\frac{1-\epsilon_b}{\epsilon_b}\right)$.
+   4. Update weights: $w_i \leftarrow w_i \exp\left(\alpha_b \mathbf{1}\{g_b(x_i)\ne y_i\}\right)$, then renormalize so $\sum_i w_i=1$.
+3. Output: $\mathrm{sign}\left(\sum_{b=1}^B \alpha_b g_b(x)\right)$.
 :::
 
-## Tuning parameters for boosting
+- Modern “tree boosting” is usually presented as **gradient boosting** (next section), which generalizes AdaBoost and works for many loss functions.
 
-1. The **number of trees** $B$. Unlike bagging and random forests, boosting can overfit if $B$ is too large, although this overfitting tends to occur slowly if at all. We use
-cross-validation to select $B$.
+## Gradient Boosting Trees (GBT)
 
-2. The **shrinkage parameter** or **learning rate** $\lambda$, a small positive number. This controls the rate at which boosting learns. Typical values are 0.01 or 0.001, and the right choice can depend on the problem. Very small $\lambda$ can require using a very large value of $B$ in order to achieve good performance.
+- **Gradient boosting** views learning as minimizing an empirical risk:
+  $$
+  \min_f \sum_{i=1}^n L(y_i, f(x_i)),
+  $$
+  where $L$ is a loss function (squared error, logistic loss, etc.).
 
-3. The **number of splits** $d$ in each tree, which controls the complexity of the boosted ensemble. Often $d = 1$ or 2 works well, in which case each tree is a stump, consisting of a single split and resulting in an additive model. More generally $d$ is the interaction depth, and controls the interaction order of the boosted model, since $d$ splits can involve at most $d$ variables.
+- It performs a kind of **gradient descent in function space**, where each step adds a new weak learner (tree) in the direction that most decreases the loss.
 
-## Variable importance (VI) measure
+### Regression boosting as a special case (squared error)
 
-- For bagged/RF regression trees, we record the total amount that the RSS is decreased due to splits over a given predictor, averaged over all $B$ trees. A large value indicates an important predictor.
+- If $L(y, f)=\frac12(y-f)^2$, then the negative gradient equals the residual:
+  $$
+  -\frac{\partial L}{\partial f}(y_i, f(x_i)) = y_i - f(x_i).
+  $$
 
-- Similarly, for bagged/RF classification trees, we add up the total amount that the Gini index is decreased by splits over a given predictor, averaged over all $B$ trees.
+- Therefore, gradient boosting reduces to “fit a small tree to the residuals, add it to the model.”
 
-::: {#fig-boosting-gene-expression}
+::: {.callout-note appearance="minimal"}
+### Boosting for regression trees (squared error)
 
-<p align="center">
-![](ISL_fig_8_9.pdf){width=500px height=600px}
-</p>
-
-Variable importance plot for the `Heart` data.
-
+1. Initialize $\hat f_0(x)=\bar y$.
+2. For $b=1,\dots,B$:
+   1. Compute residuals: $r_{ib} = y_i - \hat f_{b-1}(x_i)$.
+   2. Fit a tree $h_b$ (with depth / splits controlled) to $(X, r_b)$.
+   3. Update: $\hat f_b(x) \leftarrow \hat f_{b-1}(x) + \nu \, h_b(x)$.
+3. Output: $\hat f_B(x)$.
 :::
 
-## Baseball example (boosting for regression)
+### General Gradient Boosting (any differentiable loss)
 
-[Workflow: boosting for regression](https://ucla-biostat-212a.github.io/2024winter/slides/08-tree/workflow_boosting_reg.html).
+- For a general loss $L$, we compute the **pseudo-residuals** (negative gradients):
+  $$
+  r_{ib} = -\left.\frac{\partial L(y_i, f(x_i))}{\partial f(x_i)}\right|_{f=\hat f_{b-1}}.
+  $$
 
-## Heart example (boosting for classification)
+- Then we fit a tree to these pseudo-residuals and add it to the model (with shrinkage).
 
-[Workflow: boosting for classification](https://ucla-biostat-212a.github.io/2024winter/slides/08-tree/workflow_boosting_class.html).
+::: {.callout-note appearance="minimal"}
+### Gradient Boosting Trees (generic loss) — algorithm
 
-## Summary
+1. Initialize:
+   $$
+   \hat f_0(x) = \arg\min_c \sum_{i=1}^n L(y_i, c).
+   $$
+2. For $b=1,\dots,B$:
+   1. Compute pseudo-residuals:
+      $$
+      r_{ib} = -\left.\frac{\partial L(y_i, f(x_i))}{\partial f(x_i)}\right|_{f=\hat f_{b-1}}.
+      $$
+   2. Fit a regression tree $h_b(x)$ to $(X, r_b)$ with controlled depth/leaf size.
+   3. (Optional line search) Choose step size:
+      $$
+      \gamma_b = \arg\min_\gamma \sum_{i=1}^n L\big(y_i, \hat f_{b-1}(x_i) + \gamma\, h_b(x_i)\big).
+      $$
+   4. Update:
+      $$
+      \hat f_b(x) \leftarrow \hat f_{b-1}(x) + \nu\, \gamma_b\, h_b(x).
+      $$
+3. Output: $\hat f_B(x)$.
+:::
+
+## Boosting for classification (logistic loss)
+
+- For binary classification, a standard choice is **logistic loss**, which yields boosting that resembles fitting an additive logistic regression model.
+
+- The model outputs a score $\hat f(x)$; probabilities come from:
+  $$
+  \hat p(x) = \frac{1}{1+\exp(-\hat f(x))}.
+  $$
+
+- In practice: we still fit trees to pseudo-residuals (gradients of logistic loss) and update iteratively.
+
+## Stochastic Gradient Boosting (a key regularization)
+
+- **Stochastic gradient boosting** adds randomness: at each iteration, fit the tree on a **subsample** of the data (without replacement), e.g., 50–80%.
+
+- Benefits:
+  - reduces variance,
+  - speeds up training,
+  - often improves generalization.
+
+## Tuning parameters and regularization (practical guide)
+
+1. **Number of trees** $B$  
+   - Larger $B$ increases flexibility.
+   - Use **validation / cross-validation** or **early stopping** to choose $B$.
+
+2. **Learning rate (shrinkage)** $\nu$  
+   - Smaller $\nu$ usually improves generalization but needs larger $B$.
+   - Typical values: $\nu \in \{0.1, 0.05, 0.01\}$.
+
+3. **Tree complexity** (depth / splits / leaves)  
+   - Depth-1 trees = **stumps** → additive model (no interactions).
+   - Depth 2–4 often works well in practice.
+   - Depth controls the highest interaction order the model can represent.
+
+4. **Subsampling** (stochastic boosting)  
+   - `subsample` in $[0.5, 0.8]$ is common.
+
+5. **Other regularization knobs**
+   - minimum leaf size / minimum samples split
+   - L2 penalties on leaf weights (in modern implementations)
+   - feature subsampling (`colsample_bytree`-style)
+
+::: {.callout-tip appearance="minimal"}
+### Rule-of-thumb defaults (good starting points)
+
+- Depth: 2–4  
+- Learning rate: $\nu = 0.05$ or $0.1$  
+- Trees: start with $B=500$–$2000$ and use **early stopping**  
+- Subsample: 0.7–0.8  
+- Always monitor validation loss (or CV) as $B$ increases.
+:::
+
+
+## Modern boosted-tree implementations
+
+- Practical boosting today is often done with optimized libraries:
+  - **XGBoost**: strong regularization, efficient training, handles sparse data well.
+  - **LightGBM**: histogram-based splits, efficient on large tabular data, “leaf-wise” growth strategy.
+  - **CatBoost**: strong handling of categorical variables, ordered boosting to reduce target leakage.
+
+- Conceptually, they are still gradient boosting trees, but with:
+  - better optimization,
+  - stronger regularization,
+  - more engineering features (missing values, categorical handling, etc.).
+
+## When to use boosting vs random forests
+
+- Boosting often wins when:
+  - you have **tabular** data,
+  - complex nonlinearities / interactions matter,
+  - you can tune / validate carefully.
+
+- Random forests often win when:
+  - you want a strong, robust baseline with minimal tuning,
+  - you want less sensitivity to hyperparameters.
+
+## Examples
+### Baseball example (boosting for regression)
+
+[Workflow: boosting for regression](https://ucla-biostat-274.github.io/2026winter/slides/08-tree/workflow_boosting_reg.html).
+
+### Heart example (boosting for classification)
+
+[Workflow: boosting for classification](https://ucla-biostat-274.github.io/2026winter/slides/08-tree/workflow_boosting_class.html).
+
+
+# Summary
 
 - Decision trees are simple and interpretable models for regression and classification.
 
