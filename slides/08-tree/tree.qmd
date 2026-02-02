@@ -320,7 +320,7 @@ $k = 1,\ldots,K$:
 
 ## `Baseball` example (regression tree)
 
-[Workflow: pruning a regression tree](https://ucla-biostat-212a.github.io/2025winter/slides/08-tree/workflow_regtree.html).
+[Workflow: pruning a regression tree](https://ucla-biostat-274.github.io/2026winter/slides/08-tree/workflow_regtree.html).
 
 ## Classification trees
 
