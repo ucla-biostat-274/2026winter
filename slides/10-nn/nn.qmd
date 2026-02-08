@@ -50,6 +50,8 @@ Credit: This note heavily uses material from
 
 - Much of the credit goes to three pioneers and their students: Yann LeCun, Geoffrey Hinton, and Yoshua Bengio, who received the [2018 ACM Turing Award](https://awards.acm.org/about/2018-turing) for their work in Neural Networks.
 
+- Geoffrey Hinton was awarded the [2024 Nobel Prize in Physics](https://www.nobelprize.org/prizes/physics/2024/press-release/), jointly with John Hopfield, for foundational discoveries that enable machine learning with artificial neural networks.
+
 ## History and recent surge
 
 From [Wang and Raj (2017)](https://arxiv.org/pdf/1702.07800.pdf):
