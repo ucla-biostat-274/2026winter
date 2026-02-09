@@ -79,7 +79,7 @@ Hyperplane in 2 dimensions.
 
 - The vector $\beta = (\beta_1, \ldots, \beta_p)$ is called the normal vector. It points in a direction orthogonal to the surface of hyperplane. That is
 $$
-\beta^T (x_1 - x_2) = 0
+\beta^T (x_1 - x_2) = （-\beta_0) - (-\beta_0) = 0
 $$
 for any two points $x_1, x_2$ in the hyperplane.
 
@@ -163,7 +163,7 @@ $$ {#eq-svm-primal-stationary-condition}
 $$
 0 = \sum_{i=1}^n \alpha_i y_i,
 $$
-and substituting these to the $L_p$ we obtained the dual
+and substituting these to the $L_P$ we obtained the dual
 \begin{eqnarray*} 
 \max_{\alpha_1,\ldots,\alpha_n} & & L_D = \sum_{i=1}^n \alpha_i - \frac 12 \sum_{i=1}^n \sum_{i'=1}^n \alpha_i \alpha_{i'} y_i y_{i'} x_i^T x_{i'} \\
 \text{subject to} & & \alpha_i \ge 0, \sum_{i=1}^n \alpha_i y_i = 0.
@@ -180,7 +180,7 @@ Hence the solution $\beta$ only depends on the support vectors with $\alpha_i > 
 
 ## Support vector classifier (soft margin classifier)
 
-- Non-separable data. Sometimes the data are not separable by a linear boundary. This if often the case, unless $N < p$.
+- Non-separable data. Sometimes the data are not separable by a linear boundary. This is often the case, unless $N < p$.
 
 ::: {#fig-non-separable-data}
 
@@ -316,13 +316,13 @@ $\mathcal{S}$ is the **support set** of indices $i$ such that $\alpha_i > 0$.
 $$
 K(x_i, x_{i'}) = \left(1 + \sum_{j=1}^p x_{ij} x_{i'j} \right)^d
 $$
-computes the inner products needed for $d$-dimensional polynomials. **Note** Kernel Functions in `kernlab`: <https://rdrr.io/cran/kernlab/man/dots.html> and The `scale_factor` is the `scale` parameter in Polynomial kernel $k(x,x') = (scale <x, x'> + offset)^{degree}$: The scaling parameter of the polynomial and tangent kernel is a convenient way of normalizing patterns without the need to modify the data itself.  
+computes the inner products needed for $d$-degree polynomials. **Note** In `kernlab`: <https://rdrr.io/cran/kernlab/man/dots.html>, the `scale_factor` is the `scale` parameter in Polynomial kernel $k(x,x') = (\text{scale} <x, x'> + \text{offset})^{\text{degree}}$: The scaling parameter of the polynomial and tangent kernel is a convenient way of normalizing patterns without the need to modify the data itself.  
 
     For example, for degree $d=2$ and $p=2$ features, 
 \begin{eqnarray*}
 K(x, x') &=& (1 + \langle x, x' \rangle)^2 \\
 &=& 1 + 2x_1x_1' + 2 x_2 x_2' + (x_1x_1)^2 + (x_2x_2')^2 + 2x_1x_1'x_2x_2' \\
-&=& \langle \begin{pmatrix} 1 \\ \sqrt{2} x_1 \\ \sqrt{2} x_2 \\ x_1^2 \\ x_2^2 \\ \sqrt{2} x_1 x_2 \end{pmatrix}, \begin{pmatrix} 1 \\ \sqrt{2} x_1' \\ \sqrt{2} x_2' \\ x_1^{'2} \\ x_2^{'2} \\ \sqrt{2} x_1' x_2' \end{pmatrix} \rangle
+&=& \left\langle \begin{pmatrix} 1 \\ \sqrt{2} x_1 \\ \sqrt{2} x_2 \\ x_1^2 \\ x_2^2 \\ \sqrt{2} x_1 x_2 \end{pmatrix}, \begin{pmatrix} 1 \\ \sqrt{2} x_1' \\ \sqrt{2} x_2' \\ x_1^{'2} \\ x_2^{'2} \\ \sqrt{2} x_1' x_2' \end{pmatrix} \right\rangle
 \end{eqnarray*}
 is equivalent to inner product in a $M=6$ dimensional feature space.
 

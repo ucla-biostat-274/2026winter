@@ -2,12 +2,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.25">
+<meta name="generator" content="quarto-1.8.26">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Dr. Jin Zhou @ UCLA">
-<meta name="dcterms.date" content="2026-02-07">
+<meta name="dcterms.date" content="2026-02-09">
 
 <title>Support Vector Machines (ISL 9)</title>
 <style>
@@ -2384,7 +2384,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">February 7, 2026</p>
+      <p class="date">February 9, 2026</p>
     </div>
   </div>
   
@@ -2407,7 +2407,7 @@ window.Quarto = {
 <div class="cell-output cell-output-stdout">
 <pre><code>R version 4.5.2 (2025-10-31)
 Platform: aarch64-apple-darwin20
-Running under: macOS Sequoia 15.7.3
+Running under: macOS Tahoe 26.2
 
 Matrix products: default
 BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib 
@@ -2424,9 +2424,9 @@ attached base packages:
 
 loaded via a namespace (and not attached):
  [1] htmlwidgets_1.6.4 compiler_4.5.2    fastmap_1.2.0     cli_3.6.5        
- [5] tools_4.5.2       htmltools_0.5.8.1 rstudioapi_0.17.1 yaml_2.3.10      
- [9] rmarkdown_2.29    knitr_1.50        jsonlite_2.0.0    xfun_0.56        
-[13] digest_0.6.37     rlang_1.1.6       evaluate_1.0.5   </code></pre>
+ [5] tools_4.5.2       htmltools_0.5.9   otel_0.2.0        rstudioapi_0.17.1
+ [9] yaml_2.3.12       rmarkdown_2.30    knitr_1.51        jsonlite_2.0.0   
+[13] xfun_0.55         digest_0.6.39     rlang_1.1.7       evaluate_1.0.5   </code></pre>
 </div>
 </div>
 </div>
@@ -2435,17 +2435,17 @@ loaded via a namespace (and not attached):
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> IPython</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(IPython.sys_info())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>{&#39;commit_hash&#39;: &#39;5ed988a91&#39;,
+<pre><code>{&#39;commit_hash&#39;: &#39;49914f938&#39;,
  &#39;commit_source&#39;: &#39;installation&#39;,
  &#39;default_encoding&#39;: &#39;utf-8&#39;,
- &#39;ipython_path&#39;: &#39;/Users/jinjinzhou/.virtualenvs/r-tensorflow/lib/python3.10/site-packages/IPython&#39;,
- &#39;ipython_version&#39;: &#39;8.33.0&#39;,
+ &#39;ipython_path&#39;: &#39;/Users/huazhou/Library/Python/3.9/lib/python/site-packages/IPython&#39;,
+ &#39;ipython_version&#39;: &#39;8.18.1&#39;,
  &#39;os_name&#39;: &#39;posix&#39;,
- &#39;platform&#39;: &#39;macOS-15.7.3-arm64-arm-64bit&#39;,
- &#39;sys_executable&#39;: &#39;/Users/jinjinzhou/.virtualenvs/r-tensorflow/bin/python&#39;,
+ &#39;platform&#39;: &#39;macOS-26.2-arm64-arm-64bit&#39;,
+ &#39;sys_executable&#39;: &#39;/Library/Developer/CommandLineTools/usr/bin/python3&#39;,
  &#39;sys_platform&#39;: &#39;darwin&#39;,
- &#39;sys_version&#39;: &#39;3.10.16 (main, Mar  3 2025, 20:01:33) [Clang 16.0.0 &#39;
-                &#39;(clang-1600.0.26.6)]&#39;}</code></pre>
+ &#39;sys_version&#39;: &#39;3.9.6 (default, Dec  2 2025, 07:27:58) \n&#39;
+                &#39;[Clang 17.0.0 (clang-1700.6.3.2)]&#39;}</code></pre>
 </div>
 </div>
 </div>
@@ -2491,7 +2491,7 @@ Figure 1: Hyperplane in 2 dimensions.
 <ul>
 <li><p>If <span class="math inline">\(\beta_0 = 0\)</span>, the hyperplane goes through the origin, otherwise not.</p></li>
 <li><p>The vector <span class="math inline">\(\beta = (\beta_1, \ldots, \beta_p)\)</span> is called the normal vector. It points in a direction orthogonal to the surface of hyperplane. That is <span class="math display">\[
-\beta^T (x_1 - x_2) = 0
+\beta^T (x_1 - x_2) = （-\beta_0) - (-\beta_0) = 0
 \]</span> for any two points <span class="math inline">\(x_1, x_2\)</span> in the hyperplane.</p></li>
 <li><p>If <span class="math display">\[
 f(X) = \beta_0 + \beta_1 X_1 + \cdots + \beta_p X_p = \beta_0 + \beta^T X,
@@ -2555,7 +2555,7 @@ L_P = \frac 12 \|\beta\|^2 - \sum_{i=1}^n \alpha_i [y_i (x_i^T \beta + \beta_0) 
 \beta = \sum_{i=1}^n \alpha_i y_i x_i
 \tag{1}\]</span></span> <span class="math display">\[
 0 = \sum_{i=1}^n \alpha_i y_i,
-\]</span> and substituting these to the <span class="math inline">\(L_p\)</span> we obtained the dual <span class="math display">\[\begin{eqnarray*}
+\]</span> and substituting these to the <span class="math inline">\(L_P\)</span> we obtained the dual <span class="math display">\[\begin{eqnarray*}
 \max_{\alpha_1,\ldots,\alpha_n} &amp; &amp; L_D = \sum_{i=1}^n \alpha_i - \frac 12 \sum_{i=1}^n \sum_{i&#39;=1}^n \alpha_i \alpha_{i&#39;} y_i y_{i&#39;} x_i^T x_{i&#39;} \\
 \text{subject to} &amp; &amp; \alpha_i \ge 0, \sum_{i=1}^n \alpha_i y_i = 0.
 \end{eqnarray*}\]</span></p>
@@ -2572,7 +2572,7 @@ L_P = \frac 12 \|\beta\|^2 - \sum_{i=1}^n \alpha_i [y_i (x_i^T \beta + \beta_0) 
 <section id="support-vector-classifier-soft-margin-classifier" class="level2" data-number="4">
 <h2 data-number="4" class="anchored" data-anchor-id="support-vector-classifier-soft-margin-classifier"><span class="header-section-number">4</span> Support vector classifier (soft margin classifier)</h2>
 <ul>
-<li>Non-separable data. Sometimes the data are not separable by a linear boundary. This if often the case, unless <span class="math inline">\(N &lt; p\)</span>.</li>
+<li>Non-separable data. Sometimes the data are not separable by a linear boundary. This is often the case, unless <span class="math inline">\(N &lt; p\)</span>.</li>
 </ul>
 <div id="fig-non-separable-data" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
@@ -2708,11 +2708,11 @@ f(x) = \beta_0 + \sum_{i=1}^n \alpha_i y_i \langle x, x_i \rangle.
 <li><p>If we can compute inner products between observations, we can fit a SV classifier.</p></li>
 <li><p>Some special kernel functions can do this for us. E.g. the <strong>polynomial kernel</strong> of degree <span class="math inline">\(d\)</span> <span class="math display">\[
 K(x_i, x_{i&#39;}) = \left(1 + \sum_{j=1}^p x_{ij} x_{i&#39;j} \right)^d
-\]</span> computes the inner products needed for <span class="math inline">\(d\)</span>-dimensional polynomials. <strong>Note</strong> Kernel Functions in <code>kernlab</code>: <a href="https://rdrr.io/cran/kernlab/man/dots.html" class="uri">https://rdrr.io/cran/kernlab/man/dots.html</a> and The <code>scale_factor</code> is the <code>scale</code> parameter in Polynomial kernel <span class="math inline">\(k(x,x&#39;) = (scale &lt;x, x&#39;&gt; + offset)^{degree}\)</span>: The scaling parameter of the polynomial and tangent kernel is a convenient way of normalizing patterns without the need to modify the data itself.</p>
+\]</span> computes the inner products needed for <span class="math inline">\(d\)</span>-degree polynomials. <strong>Note</strong> In <code>kernlab</code>: <a href="https://rdrr.io/cran/kernlab/man/dots.html" class="uri">https://rdrr.io/cran/kernlab/man/dots.html</a>, the <code>scale_factor</code> is the <code>scale</code> parameter in Polynomial kernel <span class="math inline">\(k(x,x&#39;) = (\text{scale} &lt;x, x&#39;&gt; + \text{offset})^{\text{degree}}\)</span>: The scaling parameter of the polynomial and tangent kernel is a convenient way of normalizing patterns without the need to modify the data itself.</p>
 <p>For example, for degree <span class="math inline">\(d=2\)</span> and <span class="math inline">\(p=2\)</span> features, <span class="math display">\[\begin{eqnarray*}
 K(x, x&#39;) &amp;=&amp; (1 + \langle x, x&#39; \rangle)^2 \\
 &amp;=&amp; 1 + 2x_1x_1&#39; + 2 x_2 x_2&#39; + (x_1x_1)^2 + (x_2x_2&#39;)^2 + 2x_1x_1&#39;x_2x_2&#39; \\
-&amp;=&amp; \langle \begin{pmatrix} 1 \\ \sqrt{2} x_1 \\ \sqrt{2} x_2 \\ x_1^2 \\ x_2^2 \\ \sqrt{2} x_1 x_2 \end{pmatrix}, \begin{pmatrix} 1 \\ \sqrt{2} x_1&#39; \\ \sqrt{2} x_2&#39; \\ x_1^{&#39;2} \\ x_2^{&#39;2} \\ \sqrt{2} x_1&#39; x_2&#39; \end{pmatrix} \rangle
+&amp;=&amp; \left\langle \begin{pmatrix} 1 \\ \sqrt{2} x_1 \\ \sqrt{2} x_2 \\ x_1^2 \\ x_2^2 \\ \sqrt{2} x_1 x_2 \end{pmatrix}, \begin{pmatrix} 1 \\ \sqrt{2} x_1&#39; \\ \sqrt{2} x_2&#39; \\ x_1^{&#39;2} \\ x_2^{&#39;2} \\ \sqrt{2} x_1&#39; x_2&#39; \end{pmatrix} \right\rangle
 \end{eqnarray*}\]</span> is equivalent to inner product in a <span class="math inline">\(M=6\)</span> dimensional feature space.</p></li>
 <li><p>The solution has the form <span class="math display">\[
 \hat f(x) = \hat \beta_0 + \sum_{i \in \mathcal{S}} \hat{\alpha}_i y_i K(x, x_i).

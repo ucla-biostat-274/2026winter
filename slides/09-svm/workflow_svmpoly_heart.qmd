@@ -235,7 +235,7 @@ svm_fit %>%
   collect_metrics() %>%
   print(width = Inf) %>%
   filter(.metric == "roc_auc" ) %>%
-  ggplot(mapping = aes(x = degree, y = mean)) +
+  ggplot(mapping = aes(x = cost, y = mean, color = factor(degree))) +
   geom_point() +
   geom_line() +
   labs(x = "Cost", y = "CV AUC") +
