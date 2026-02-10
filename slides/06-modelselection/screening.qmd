@@ -423,7 +423,7 @@ We’ll implement the full pipeline with fold-specific screening to keep the eva
 
 # Data + code (TCGA-BRCA via recount3)
 
-- HW3
+- HW3: implement dual-score screening + elastic net pipeline
 ```{r, eval=F}
 ## ============================================================
 ## Dual-score feature screening (RNA-seq)
