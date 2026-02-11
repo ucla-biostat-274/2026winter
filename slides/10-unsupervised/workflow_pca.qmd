@@ -1,6 +1,6 @@
 ---
 title: "PCA and UMAP Analysis Workflow"
-subtitle: "Biostat 212A"
+subtitle: "Biostat 274"
 author: "Dr. Jin Zhou @ UCLA"
 date: today
 format:
@@ -45,7 +45,7 @@ library(tidytext)
 The goal is to evaluate whether gene expression can separate three disease types.
 
 ```{r}
-expression <- read_csv("expression.csv")
+expression <- read_csv("./slides/10-unsupervised/expression.csv")
 ```
 
 
