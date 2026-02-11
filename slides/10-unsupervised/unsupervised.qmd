@@ -1,6 +1,6 @@
 ---
 title: "Unsupervised Learning (ISL 12)"
-subtitle: "Biotat 212A"
+subtitle: "Biotat 274"
 author: "Dr. Jin Zhou @ UCLA"
 date: today
 format:
@@ -37,6 +37,7 @@ sessionInfo()
 library(recipes)
 library(ggplot2)
 library(embed)
+library(tidyverse)
 library(tidymodels)
 library(ISLR2)
 
@@ -458,6 +459,90 @@ juice(umap_prep) %>%
 - Then, UMAP optimizes a low-dimensional graph to be as structurally similar as possible by controlling the number of edges and their weights.
 
 - The second parameter we’ll investigate is `min_dist`, or the minimum distance between points in low-dimensional space. This parameter controls how tightly UMAP clumps points together, with low values leading to more tightly packed embeddings. Larger values of min_dist will make UMAP pack points together more loosely, focusing instead on the preservation of the broad topological structure.
+
+#### Key math (what UMAP is *doing*)
+
+UMAP can be summarized as:
+
+1. Build a **weighted $k$NN graph** in the original space (a *fuzzy simplicial set*; in practice we only use the 1-skeleton, i.e., weighted edges).
+2. Find low-dimensional points $\{y_i\}_{i=1}^n \in \mathbb{R}^d$ whose induced weighted graph matches the high-dimensional one, by minimizing a **fuzzy-set cross entropy**.
+
+Below are the most important equations (in simplified form) that connect the intuition to the implementation.
+
+##### Step 1: from distances to a *fuzzy* $k$NN graph
+
+Let $x_1,\ldots,x_n$ be the observations in the original feature space, and let $d(x_i,x_j)$ be a chosen distance/metric.
+
+- Compute the $k$ nearest neighbors of each point (UMAP parameter `n_neighbors = k`). Denote the neighbor list for $x_i$ as $\mathcal{N}_k(i)$.
+
+- Define a **local connectivity offset** $\rho_i$ (distance to the nearest *non-identical* neighbor):
+$$
+\rho_i = \min\{ d(x_i, x_{ij})\,|\, 1 \le j \le k,\ d(x_i, x_{ij})>0\}.
+$$
+
+- Define a **local scale** $\sigma_i>0$ by solving (via binary search) the equation
+$$
+\sum_{j=1}^{k} \exp\left(-\frac{\max\{0,\ d(x_i,x_{ij})-\rho_i\}}{\sigma_i}\right) = \log_2(k).
+$$
+
+- Convert each neighbor relation into a **directed membership strength** (a fuzzy edge probability)
+$$
+v_{j\mid i} =
+\begin{cases}
+\exp\left(-\frac{\max\{0,\ d(x_i,x_j)-\rho_i\}}{\sigma_i}\right), & j \in \mathcal{N}_k(i),\\
+0, & \text{otherwise.}
+\end{cases}
+$$
+
+- Symmetrize to get an undirected weighted graph via a fuzzy union (probabilistic $t$-conorm):
+$$
+v_{ij} = v_{j\mid i} + v_{i\mid j} - v_{j\mid i}\,v_{i\mid j}.
+$$
+
+Intuition: $\rho_i$ forces each point to have (at least) one strong neighbor connection, and $\sigma_i$ adapts distances so that *"$k$ neighbors"* means something comparable across sparse vs dense regions.
+
+##### (Optional) spectral initialization
+
+UMAP implementations often start the optimization from a **spectral embedding** of the weighted graph $\{v_{ij}\}$.
+Let $A=(v_{ij})$ be the weighted adjacency matrix and $D$ be the diagonal degree matrix with $D_{ii}=\sum_j A_{ij}$. The (symmetric) normalized graph Laplacian is
+$$
+L = D^{-1/2}(D-A)D^{-1/2}.
+$$
+The initial coordinates are taken from the eigenvectors of $L$ corresponding to the smallest non-trivial eigenvalues (dropping the constant eigenvector).
+
+##### Step 2: define the low-dimensional similarity function
+
+Given embedded points $y_1,\ldots,y_n \in \mathbb{R}^d$, UMAP uses a smooth, heavy-tailed function to convert distances into membership strengths:
+$$
+w_{ij} = \Phi(y_i,y_j) = \left(1 + a\,\|y_i-y_j\|_2^{2b}\right)^{-1}.
+$$
+The constants $(a,b)$ are chosen (internally) so that $\Phi$ approximates a desired curve controlled by `min_dist`:
+$$
+\Psi(y_i,y_j)=
+\begin{cases}
+1, & \|y_i-y_j\|_2 \le \texttt{min\_dist},\\
+\exp\big(- (\|y_i-y_j\|_2-\texttt{min\_dist})\big), & \text{otherwise.}
+\end{cases}
+$$
+
+##### Step 3: optimize a fuzzy-set cross entropy (attractive + repulsive terms)
+
+UMAP chooses $\{y_i\}$ to make low-dimensional weights $w_{ij}$ match high-dimensional weights $v_{ij}$.
+Using fuzzy-set cross entropy, the objective (up to constants) can be written as
+$$
+\mathcal{L}(Y)
+= -\sum_{i<j}\Big[ v_{ij}\,\log(w_{ij}) + (1-v_{ij})\,\log(1-w_{ij})\Big].
+$$
+
+- The **attractive term** $v_{ij}\log(w_{ij})$ pulls neighbors (large $v_{ij}$) together.
+- The **repulsive term** $(1-v_{ij})\log(1-w_{ij})$ pushes non-neighbors apart.
+
+In practice, the repulsive term is approximated efficiently via **negative sampling**, and $Y$ is optimized with (stochastic) gradient descent.
+
+##### Where the two main knobs enter
+
+- `n_neighbors = k`: determines the neighborhood size used to build $\mathcal{N}_k(i)$ (and thus the edge set/weights). Larger $k$ emphasizes more global structure; smaller $k$ emphasizes local structure.
+- `min_dist`: changes the target curve $\Psi$ (and thus $(a,b)$), controlling how tightly points can pack in the embedding.
 
 #### Try UMAP with different `n_neighbors` and `min_dist`
 - Let's try: <https://pair-code.github.io/understanding-umap/>
