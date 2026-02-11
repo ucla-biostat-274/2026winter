@@ -133,6 +133,25 @@ for $i=1,\ldots,n$ that has largest sample variance, subject to the constraint t
 $$
 \max_{\phi_{11},\ldots,\phi_{p1}} \frac{1}{n} \sum_{i=1}^n \left( \sum_{j=1}^p \phi_{j1} x_{ij} \right)^2 \text{ subject to } \sum_{j=1}^p \phi_{j1}^2 = 1.
 $$
+    matrix form: 
+$$
+\max_{\phi_1} \frac{1}{n} \|\boldsymbol{X} \phi_1\|^2 = \max_{\phi_1} \frac{1}{n} \phi_1^T \boldsymbol{X}^T \boldsymbol{X} \phi_1
+$$ 
+    subject to $\|\phi_1\|^2 = \phi_1^T \phi_1 = 1$.
+
+    To solve this problem, we can use the method of Lagrange multipliers, i.e., 
+$$
+\mathcal{L}(\phi_1, \lambda) = \frac{1}{n} \phi_1^T \boldsymbol{X}^T \boldsymbol{X} \phi_1 - \lambda (\phi_1^T \phi_1 - 1).
+$$
+    Then the first order condition for a maximum is
+$$
+\frac{\partial \mathcal{L}}{\partial \phi_1} = \frac{2}{n} \boldsymbol{X}^T \boldsymbol{X} \phi_1 - 2\lambda \phi_1 = 0,
+$$
+    which can be rearranged to give
+$$
+\boldsymbol{X}^T \boldsymbol{X} \phi_1 = n \lambda \phi_1.
+$$
+
 
 - This problem can be solved via a [singular-value decomposition (SVD)](https://en.wikipedia.org/wiki/Singular_value_decomposition#:~:text=In%20linear%20algebra%2C%20the%20singular,matrix.) of the matrix $\boldsymbol{X}$, a standard technique in linear algebra.
 

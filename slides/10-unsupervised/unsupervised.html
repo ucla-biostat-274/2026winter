@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Dr. Jin Zhou @ UCLA">
-<meta name="dcterms.date" content="2026-02-10">
+<meta name="dcterms.date" content="2026-02-11">
 
 <title>Unsupervised Learning (ISL 12)</title>
 <style>
@@ -2413,7 +2413,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">February 10, 2026</p>
+      <p class="date">February 11, 2026</p>
     </div>
   </div>
   
@@ -2565,6 +2565,15 @@ z_{i1} = \phi_{11} x_{i1} + \phi_{21} x_{i2} + \cdots + \phi_{p1} x_{ip}
 <li><p>Since each of the <span class="math inline">\(x_{ij}\)</span> has mean zero, then so does <span class="math inline">\(z_{i1}\)</span> (for any values of <span class="math inline">\(\phi_{j1}\)</span>). Hence the sample variance of the <span class="math inline">\(z_{i1}\)</span> can be written as <span class="math inline">\(\frac{1}{n} \sum_{i=1}^n z_{i1}^2\)</span>.</p></li>
 <li><p>Plugging in (<a href="#eq-pc-1" class="quarto-xref">Equation 1</a>) the first principal component loading vector solves the optimization problem <span class="math display">\[
 \max_{\phi_{11},\ldots,\phi_{p1}} \frac{1}{n} \sum_{i=1}^n \left( \sum_{j=1}^p \phi_{j1} x_{ij} \right)^2 \text{ subject to } \sum_{j=1}^p \phi_{j1}^2 = 1.
+\]</span> matrix form: <span class="math display">\[
+\max_{\phi_1} \frac{1}{n} \|\boldsymbol{X} \phi_1\|^2 = \max_{\phi_1} \frac{1}{n} \phi_1^T \boldsymbol{X}^T \boldsymbol{X} \phi_1
+\]</span> subject to <span class="math inline">\(\|\phi_1\|^2 = \phi_1^T \phi_1 = 1\)</span>.</p>
+<p>To solve this problem, we can use the method of Lagrange multipliers, i.e., <span class="math display">\[
+\mathcal{L}(\phi_1, \lambda) = \frac{1}{n} \phi_1^T \boldsymbol{X}^T \boldsymbol{X} \phi_1 - \lambda (\phi_1^T \phi_1 - 1).
+\]</span> Then the first order condition for a maximum is <span class="math display">\[
+\frac{\partial \mathcal{L}}{\partial \phi_1} = \frac{2}{n} \boldsymbol{X}^T \boldsymbol{X} \phi_1 - 2\lambda \phi_1 = 0,
+\]</span> which can be rearranged to give <span class="math display">\[
+\boldsymbol{X}^T \boldsymbol{X} \phi_1 = n \lambda \phi_1.
 \]</span></p></li>
 <li><p>This problem can be solved via a <a href="https://en.wikipedia.org/wiki/Singular_value_decomposition#:~:text=In%20linear%20algebra%2C%20the%20singular,matrix.">singular-value decomposition (SVD)</a> of the matrix <span class="math inline">\(\boldsymbol{X}\)</span>, a standard technique in linear algebra.</p></li>
 <li><p>We refer to <span class="math inline">\(Z_1\)</span> as the first principal component, with realized values <span class="math inline">\(z_{11}, \ldots, z_{n1}\)</span>.</p></li>
