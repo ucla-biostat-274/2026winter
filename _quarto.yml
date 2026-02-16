@@ -6,11 +6,9 @@ execute:
   echo: true
   warning: false
   message: false
+  freeze: auto 
 
 format:
   html:
     toc: true
     theme: cosmo
-    
-execute:
-  freeze: auto 
