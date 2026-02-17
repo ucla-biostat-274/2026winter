@@ -125,6 +125,16 @@ f(X) &=& \beta_0 + \sum_{k=1}^K \beta_k h_k(X) \\
 &=& \beta_0 + \sum_{k=1}^K \beta_k g(w_{k0} + \sum_{j=1}^p w_{kj} X_j).
 \end{eqnarray*}
 
+::: {.callout-note title="Connection to classical regression models"}
+If we remove the hidden layer, neural networks reduce to familiar models:
+
+- Identity output + squared loss  → **linear regression**
+- Sigmoid output + cross-entropy  → **logistic regression**
+- Softmax output + cross-entropy  → **multinomial logistic regression**
+
+So a deep network can be viewed as “logistic regression on learned features.”
+:::
+
 ### Activation functions
 
 - **Activations** in the **hidden layer**:
@@ -462,6 +472,16 @@ Architecture of a deep CNN for the CIFAR100 classification task. Convolution lay
 Classification of six photographs using the resnet50 CNN
 trained on the ImageNet corpus.
 
+:::
+
+::: {.callout-note title="Why pretrained CNNs are popular in biomed"}
+In practice, we often use **transfer learning**:
+
+- start from an ImageNet-pretrained backbone (e.g., ResNet50),
+- replace the final classification head for the biomedical labels,
+- then fine-tune (sometimes freezing early layers first).
+
+This is useful because biomedical labeled datasets are often much smaller than ImageNet.
 :::
 
 ## Popular architectures for image classification
