@@ -394,7 +394,8 @@ model %>% evaluate(x_test, y_test)
 ```
 Generate predictions on new data:
 ```{r}
-model %>% predict(x_test) %>% k_argmax()
+pred <- predict(model, x_test)
+class_id <- max.col(pred)  # 1-based
 ```
 
 :::
@@ -446,7 +447,8 @@ mlogit %>% evaluate(x_test, y_test)
 ```
 Generate predictions on new data:
 ```{r}
-mlogit %>% predict(x_test) %>% k_argmax()
+pred <- predict(model, x_test)                 # (n_samples, n_classes)
+class_id <- as.array(op_argmax(pred, axis = 2))  # 1-based indices
 ```
 
 :::

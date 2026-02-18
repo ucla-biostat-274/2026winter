@@ -199,10 +199,3 @@ Following are selected examples from the collection of [Keras code examples](htt
 
 - [Warm-start using pre-trained embedding in TF Hub](https://ucla-biostat-274.github.io/2026winter/slides/11-nn/imdb/imdb_tfhub.html)
 
-## Example: Generate Artificial Faces with GAN
-
-- [Generate Artificial Faces with CelebA Progressive GAN Model](https://ucla-biostat-274.github.io/2026winter/slides/11-nn/progan/progan.html)
-
-## Example: Neural style transfer
-
-- [Neural style transfer](https://ucla-biostat-274.github.io/2026winter/slides/11-nn/style_transfer/style_transfer.html)
