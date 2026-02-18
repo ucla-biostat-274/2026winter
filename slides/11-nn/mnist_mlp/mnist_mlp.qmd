@@ -70,7 +70,7 @@ from tensorflow.keras import layers
 #### R
 
 ```{r}
-library(keras)
+library(keras3)
 ```
 
 :::
@@ -126,6 +126,7 @@ Training set:
 dim(x_train)
 dim(y_train)
 ```
+
 ```{r}
 image(
   t(x_train[1, 28:1,]), 
@@ -135,6 +136,7 @@ image(
   )
 y_train[1]
 ```
+
 Testing set:
 ```{r}
 dim(x_test)

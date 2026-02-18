@@ -62,6 +62,10 @@ From [Wang and Raj (2017)](https://arxiv.org/pdf/1702.07800.pdf):
 
 The current AI wave came in 2012 when AlexNet (60 million parameters) cuts the error rate of ImageNet competition (classify 1.2 million natural images) by half.
 
+<p align="center">
+![](./imagenet_lsvrc_graph.png){width=600px}
+</p>
+
 ## Canonical datasets for computer vision tasks
 
 - [MNIST](http://yann.lecun.com/exdb/mnist/)
@@ -596,6 +600,207 @@ Accuracy of the lasso and a two-hidden-layer neural network on the IMDB data. Fo
 
 :::
 
+## Fitting neural networks
+
+<p align="center">
+![](ISL_fig_10_1.png){width=400px height=400px}
+</p>
+
+$$
+\min_{w_1,\ldots,w_K,\beta} \quad \frac 12 \sum_{i=1}^n (y_i - f(x_i))^2,
+$$
+where
+$$
+f(x_i) = \beta_0 + \sum_{k=1}^K \beta_k g(w_{k0} + \sum_{j=1}^p w_{kj} x_{ij}).
+$$
+
+- This problem is difficult because the objective is **non-convex**.
+
+- Despite this, effective algorithms have evolved that can optimize complex neural network problems efficiently.
+
+### Gradient descent
+
+::: {#fig-gd}
+
+<p align="center">
+![](ISL_fig_10_17.pdf){width=600px height=450px}
+</p>
+
+Illustration of gradient descent for one-dimensional $\theta$. The objective function $R(\theta)$ is not convex, and has two minima, one at $\theta = −0.46$ (local), the other at $\theta = 1.02$ (global). Starting at some value $\theta^0$ (typically randomly chosen), each step in $\theta$ moves downhill - against the gradient - until it cannot go down any further. Here gradient descent reached the global minimum in 7 steps.
+
+:::
+
+- Let
+$$
+R(\theta) = \frac 12 \sum_{i=1}^n (y_i - f_\theta(x_i))^2
+$$
+with $\theta = (w_1,\ldots,w_K,\beta)$.
+
+    1. Start with a guess $\theta_0$ for all the parameters in $\theta$, and set $t = 0$.  
+    
+    2. Iterate until the objective $R(\theta)$ fails to decrease:  
+    
+        (a). Find a vector $\delta$ that reflects a small change in $\theta$ such that $\theta^{t+1} = \theta^t + \delta$ reduces the objective; i.e. $R(\theta^{t+1}) < R(\theta^t)$.  
+        
+        (b). Set $t \gets t+1$.
+        
+- In this simple example we reached the **global minimum**.
+
+- If we had started a little to the left of $\theta^0$ we would have gone in the other direction, and ended up in a local minimum.
+
+- Although $\theta$ is multi-dimensional, we have depicted the process as one-dimensional. It is much harder to identify whether one is in a local minimum in high dimensions.
+
+- How to find a direction $\delta$ that points downhill? We compute the gradient vector
+$$
+\nabla R(\theta^t) = \frac{\partial R(\theta)}{\partial \theta} \mid_{\theta = \theta^t}
+$$
+and set
+$$
+\theta^{t+1} \gets \theta^t - \rho \nabla R(\theta^t),
+$$
+where $\rho$ is the **learning rate** (typically small, e.g., $\rho=0.001$).
+
+- Since $R(\theta) = \sum_{i=1}^n R_i(\theta)$ is a sum, so gradient is sum of gradients.
+$$
+R_i(\theta) = \frac 12 (y_i - f_\theta(x_i))^2 = \frac 12 (y_i - \beta_0 - \sum_{k=1}^K \beta_k g(w_{k0} + \sum_{j=1}^p w_{kj} x_{ij}))^2.
+$$
+For ease of notation, let
+$$
+z_{ik} = w_{k0} + \sum_{j=1}^p w_{kj} x_{ij}.
+$$
+
+- **Backpropagation** uses the chain rule for differentiation:
+\begin{eqnarray*}
+\frac{\partial R_i(\theta)}{\partial \beta_k} &=& \frac{\partial R_i(\theta)}{\partial f_\theta(x_i)} \cdot \frac{\partial f_\theta(x_i)}{\partial \beta_k} \\
+&=& - (y_i - f_\theta(x_i)) \cdot g(z_{ik}) \\
+\frac{\partial R_i(\theta)}{\partial w_{kj}} &=& \frac{\partial R_i(\theta)}{\partial f_\theta(x_i)} \cdot \frac{\partial f_\theta(x_i)}{\partial g(z_{ik})} \cdot \frac{\partial g(z_{ik})}{\partial z_{ik}} \cdot \frac{\partial z_{ik}}{\partial w_{kj}} \\
+&=& - (y_i - f_\theta(x_i)) \cdot \beta_k \cdot g'(z_{ik}) \cdot x_{ij}.
+\end{eqnarray*}
+
+- Two-pass updates:
+\begin{eqnarray*}
+    & & \text{initialization} \to z_{ik} \to g(z_{ik}) \to \widehat{f}_{\theta}(x_i) \quad \quad \quad \text{(forward pass)}   \\
+    &\to& y_i - f_\theta(x_i) \to \frac{\partial R_i(\theta)}{\partial \beta_k}, \frac{\partial R_i(\theta)}{\partial w_{kj}} \to \widehat{\beta}_{k} \text{ and } \widehat{w}_{kj} \quad \quad \text{(backward pass)}.
+\end{eqnarray*}
+
+- Advantages: each hidden unit passes and receives information only to and from units that share a connection; can be implemented efficiently on a parallel architecture computer.
+
+- Tricks of the trade
+
+    - **Slow learning**. Gradient descent is slow, and a small learning rate $\rho$ slows it even further. With **early stopping**, this is a form of regularization.  
+    
+    - **Stochastic gradient descent**. Rather than compute the gradient using all the data, use a small **minibatch** drawn at random at each step. E.g. for `MNIST` data, with n = 60K, we use minibatches of 128 observations.
+    
+    - An **epoch** is a count of iterations and amounts to the number of minibatch updates such that $n$ samples in total have been processed; i.e. $60,000/128 \approx 469$ minibatches for `MNIST`.
+    
+    - **Regularization**. Ridge and lasso regularization can be used to shrink the weights at each layer. Two other popular forms of regularization are **dropout** and **augmentation**.
+    
+### Dropout learning
+
+::: {#fig-dropout}
+
+<p align="center">
+![](ISL_fig_10_19.png){width=600px}
+</p>
+
+Dropout Learning. Left: a fully connected network. Right: network with dropout in the input and hidden layer. The nodes in grey are selected at random, and ignored in an instance of training.
+
+:::
+
+- At each SGD update, randomly remove units with probability $\phi$, and scale up the weights of those retained by $1/(1-\phi)$ to compensate.
+
+- In simple scenarios like linear regression, a version of this process can be shown to be equivalent to ridge regularization.
+
+- As in ridge, the other units **stand** in for those temporarily removed, and their weights are drawn closer together.
+
+- Similar to randomly omitting variables when growing trees in random forests.
+
+### Ridge and data augmentation
+
+- Make many copies of each $(x_i, y_i)$ and add a small amount of Gaussian noise to the $x_i$, a little cloud around each
+observation, but leave the copies of $y_i$ alone!
+
+- This makes the fit robust to small perturbations in $x_i$, and is equivalent to ridge regularization in an OLS setting.
+
+- Data augmentation is especially effective with SGD. Natural transformations are made of each training image when it is sampled by SGD, thus ultimately making a cloud of images around each original training image.
+
+- The label is left unchanged, in each case still `tiger`.
+
+- Improves performance of CNN and is similar to ridge.
+
+<p align="center">
+![](ISL_fig_10_9.jpg){width=600px}
+</p>
+
+## Double descent
+
+- With neural networks, it seems better to have too many hidden units than too few.
+
+- Likewise more hidden layers better than few.
+
+- Running stochastic gradient descent till zero training error often gives good out-of-sample error.
+
+- Increasing the number of units or layers and again training till zero error sometimes gives **even better** out-of-sample error.
+
+- What happened to overfitting and the usual bias-variance trade-off?
+
+Belkin, Hsu, Ma and Mandal (2018) _Reconciling Modern Machine Learning and the Bias-Variance Trade-off_. [arXiv](https://arxiv.org/abs/1812.11118)
+
+### Simulation study
+
+- Model:
+$$
+y= \sin(x) + \epsilon
+$$
+with $x \sim$ Uniform(-5, 5) and $\epsilon$ is Gaussian with sd=0.3.
+
+- Training set $n=20$, test set very large (10K).
+
+- We fit a natural spline to the data with $d$ degrees of freedom, i.e., a linear regression onto $d$ basis functions
+$$
+\hat y_i = \hat \beta_1 N_1(x_i) + \hat \beta_2 N_2(x_i) + \cdots + \hat \beta_d N_d(x_i).
+$$
+
+- When $d = 20$ we fit the training data exactly, and get all residuals equal to zero.
+
+- When $d > 20$, we still fit the data exactly, but the solution is not unique. Among the zero-residual solutions, we pick the one with **minimum norm**, i.e. the zero-residual solution with smallest $\sum_{j=1}^d \hat \beta_j^2$.
+
+::: {#fig-double-descent}
+
+<p align="center">
+![](ISL_fig_10_20.pdf){width=600px height=400px}
+</p>
+
+Double descent phenomenon, illustrated using error plots for a one-dimensional natural spline example. The horizontal axis refers to the number of spline basis functions on the log scale. The training error hits zero when the degrees of freedom coincides with the sample size $n = 20$, the "interpolation threshold", and remains zero thereafter. The test error increases dramatically at this threshold, but then descends again to a reasonable value before finally increasing again.
+
+:::
+
+- When $d \le 20$, model is OLS, and we see usual bias-variance trade-off.
+
+- When $d > 20$, we revert to minimum-norm solution. As $d$ increases above 20, $\sum_{j=1}^d \hat \beta_j^2$ **decreases** since it is easier to achieve zero error, and hence less wiggly solutions.
+
+::: {#fig-double-descent}
+
+<p align="center">
+![](ISL_fig_10_21.pdf){width=600px height=400px}
+</p>
+
+To achieve a zero-residual solution with $d = 20$ is a real stretch! Easier for larger $d$.
+
+:::
+
+- Some facts.
+
+    - In a wide linear model ($p \gg n$) fit by least squares, SGD with a small step size leads to a **minimum norm** zero-residual solution.
+    
+    - Stochastic gradient  **flow**, i.e. the entire path of SGD solutions, is somewhat similar to ridge path.
+    
+    - By analogy, deep and wide neural networks fit by SGD down to zero training error often give good solutions that generalize well.
+    
+    - In particular cases with high **signal-to-noise ratio**, e.g., image recognition, are less prone to overfitting; the zero-error solution is mostly signal!
+    
+
+
 ## Recurrent neural network (RNN)
 
 - Data often arise as sequences:
@@ -802,202 +1007,3 @@ $$
     
 - We endorse the **Occam's razor** principal. We prefer simpler models if they work as well. More interpretable! 
 
-## Fitting neural networks
-
-<p align="center">
-![](ISL_fig_10_1.png){width=400px height=400px}
-</p>
-
-$$
-\min_{w_1,\ldots,w_K,\beta} \quad \frac 12 \sum_{i=1}^n (y_i - f(x_i))^2,
-$$
-where
-$$
-f(x_i) = \beta_0 + \sum_{k=1}^K \beta_k g(w_{k0} + \sum_{j=1}^p w_{kj} x_{ij}).
-$$
-
-- This problem is difficult because the objective is **non-convex**.
-
-- Despite this, effective algorithms have evolved that can optimize complex neural network problems efficiently.
-
-### Gradient descent
-
-::: {#fig-gd}
-
-<p align="center">
-![](ISL_fig_10_17.pdf){width=600px height=450px}
-</p>
-
-Illustration of gradient descent for one-dimensional $\theta$. The objective function $R(\theta)$ is not convex, and has two minima, one at $\theta = −0.46$ (local), the other at $\theta = 1.02$ (global). Starting at some value $\theta^0$ (typically randomly chosen), each step in $\theta$ moves downhill - against the gradient - until it cannot go down any further. Here gradient descent reached the global minimum in 7 steps.
-
-:::
-
-- Let
-$$
-R(\theta) = \frac 12 \sum_{i=1}^n (y_i - f_\theta(x_i))^2
-$$
-with $\theta = (w_1,\ldots,w_K,\beta)$.
-
-    1. Start with a guess $\theta_0$ for all the parameters in $\theta$, and set $t = 0$.  
-    
-    2. Iterate until the objective $R(\theta)$ fails to decrease:  
-    
-        (a). Find a vector $\delta$ that reflects a small change in $\theta$ such that $\theta^{t+1} = \theta^t + \delta$ reduces the objective; i.e. $R(\theta^{t+1}) < R(\theta^t)$.  
-        
-        (b). Set $t \gets t+1$.
-        
-- In this simple example we reached the **global minimum**.
-
-- If we had started a little to the left of $\theta^0$ we would have gone in the other direction, and ended up in a local minimum.
-
-- Although $\theta$ is multi-dimensional, we have depicted the process as one-dimensional. It is much harder to identify whether one is in a local minimum in high dimensions.
-
-- How to find a direction $\delta$ that points downhill? We compute the gradient vector
-$$
-\nabla R(\theta^t) = \frac{\partial R(\theta)}{\partial \theta} \mid_{\theta = \theta^t}
-$$
-and set
-$$
-\theta^{t+1} \gets \theta^t - \rho \nabla R(\theta^t),
-$$
-where $\rho$ is the **learning rate** (typically small, e.g., $\rho=0.001$).
-
-- Since $R(\theta) = \sum_{i=1}^n R_i(\theta)$ is a sum, so gradient is sum of gradients.
-$$
-R_i(\theta) = \frac 12 (y_i - f_\theta(x_i))^2 = \frac 12 (y_i - \beta_0 - \sum_{k=1}^K \beta_k g(w_{k0} + \sum_{j=1}^p w_{kj} x_{ij}))^2.
-$$
-For ease of notation, let
-$$
-z_{ik} = w_{k0} + \sum_{j=1}^p w_{kj} x_{ij}.
-$$
-
-- **Backpropagation** uses the chain rule for differentiation:
-\begin{eqnarray*}
-\frac{\partial R_i(\theta)}{\partial \beta_k} &=& \frac{\partial R_i(\theta)}{\partial f_\theta(x_i)} \cdot \frac{\partial f_\theta(x_i)}{\partial \beta_k} \\
-&=& - (y_i - f_\theta(x_i)) \cdot g(z_{ik}) \\
-\frac{\partial R_i(\theta)}{\partial w_{kj}} &=& \frac{\partial R_i(\theta)}{\partial f_\theta(x_i)} \cdot \frac{\partial f_\theta(x_i)}{\partial g(z_{ik})} \cdot \frac{\partial g(z_{ik})}{\partial z_{ik}} \cdot \frac{\partial z_{ik}}{\partial w_{kj}} \\
-&=& - (y_i - f_\theta(x_i)) \cdot \beta_k \cdot g'(z_{ik}) \cdot x_{ij}.
-\end{eqnarray*}
-
-- Two-pass updates:
-\begin{eqnarray*}
-    & & \text{initialization} \to z_{ik} \to g(z_{ik}) \to \widehat{f}_{\theta}(x_i) \quad \quad \quad \text{(forward pass)}   \\
-    &\to& y_i - f_\theta(x_i) \to \frac{\partial R_i(\theta)}{\partial \beta_k}, \frac{\partial R_i(\theta)}{\partial w_{kj}} \to \widehat{\beta}_{k} \text{ and } \widehat{w}_{kj} \quad \quad \text{(backward pass)}.
-\end{eqnarray*}
-
-- Advantages: each hidden unit passes and receives information only to and from units that share a connection; can be implemented efficiently on a parallel architecture computer.
-
-- Tricks of the trade
-
-    - **Slow learning**. Gradient descent is slow, and a small learning rate $\rho$ slows it even further. With **early stopping**, this is a form of regularization.  
-    
-    - **Stochastic gradient descent**. Rather than compute the gradient using all the data, use a small **minibatch** drawn at random at each step. E.g. for `MNIST` data, with n = 60K, we use minibatches of 128 observations.
-    
-    - An **epoch** is a count of iterations and amounts to the number of minibatch updates such that $n$ samples in total have been processed; i.e. $60,000/128 \approx 469$ minibatches for `MNIST`.
-    
-    - **Regularization**. Ridge and lasso regularization can be used to shrink the weights at each layer. Two other popular forms of regularization are **dropout** and **augmentation**.
-    
-### Dropout learning
-
-::: {#fig-dropout}
-
-<p align="center">
-![](ISL_fig_10_19.png){width=600px}
-</p>
-
-Dropout Learning. Left: a fully connected network. Right: network with dropout in the input and hidden layer. The nodes in grey are selected at random, and ignored in an instance of training.
-
-:::
-
-- At each SGD update, randomly remove units with probability $\phi$, and scale up the weights of those retained by $1/(1-\phi)$ to compensate.
-
-- In simple scenarios like linear regression, a version of this process can be shown to be equivalent to ridge regularization.
-
-- As in ridge, the other units **stand** in for those temporarily removed, and their weights are drawn closer together.
-
-- Similar to randomly omitting variables when growing trees in random forests.
-
-### Ridge and data augmentation
-
-- Make many copies of each $(x_i, y_i)$ and add a small amount of Gaussian noise to the $x_i$, a little cloud around each
-observation, but leave the copies of $y_i$ alone!
-
-- This makes the fit robust to small perturbations in $x_i$, and is equivalent to ridge regularization in an OLS setting.
-
-- Data augmentation is especially effective with SGD. Natural transformations are made of each training image when it is sampled by SGD, thus ultimately making a cloud of images around each original training image.
-
-- The label is left unchanged, in each case still `tiger`.
-
-- Improves performance of CNN and is similar to ridge.
-
-<p align="center">
-![](ISL_fig_10_9.jpg){width=600px}
-</p>
-
-## Double descent
-
-- With neural networks, it seems better to have too many hidden units than too few.
-
-- Likewise more hidden layers better than few.
-
-- Running stochastic gradient descent till zero training error often gives good out-of-sample error.
-
-- Increasing the number of units or layers and again training till zero error sometimes gives **even better** out-of-sample error.
-
-- What happened to overfitting and the usual bias-variance trade-off?
-
-Belkin, Hsu, Ma and Mandal (2018) _Reconciling Modern Machine Learning and the Bias-Variance Trade-off_. [arXiv](https://arxiv.org/abs/1812.11118)
-
-### Simulation study
-
-- Model:
-$$
-y= \sin(x) + \epsilon
-$$
-with $x \sim$ Uniform(-5, 5) and $\epsilon$ is Gaussian with sd=0.3.
-
-- Training set $n=20$, test set very large (10K).
-
-- We fit a natural spline to the data with $d$ degrees of freedom, i.e., a linear regression onto $d$ basis functions
-$$
-\hat y_i = \hat \beta_1 N_1(x_i) + \hat \beta_2 N_2(x_i) + \cdots + \hat \beta_d N_d(x_i).
-$$
-
-- When $d = 20$ we fit the training data exactly, and get all residuals equal to zero.
-
-- When $d > 20$, we still fit the data exactly, but the solution is not unique. Among the zero-residual solutions, we pick the one with **minimum norm**, i.e. the zero-residual solution with smallest $\sum_{j=1}^d \hat \beta_j^2$.
-
-::: {#fig-double-descent}
-
-<p align="center">
-![](ISL_fig_10_20.pdf){width=600px height=400px}
-</p>
-
-Double descent phenomenon, illustrated using error plots for a one-dimensional natural spline example. The horizontal axis refers to the number of spline basis functions on the log scale. The training error hits zero when the degrees of freedom coincides with the sample size $n = 20$, the "interpolation threshold", and remains zero thereafter. The test error increases dramatically at this threshold, but then descends again to a reasonable value before finally increasing again.
-
-:::
-
-- When $d \le 20$, model is OLS, and we see usual bias-variance trade-off.
-
-- When $d > 20$, we revert to minimum-norm solution. As $d$ increases above 20, $\sum_{j=1}^d \hat \beta_j^2$ **decreases** since it is easier to achieve zero error, and hence less wiggly solutions.
-
-::: {#fig-double-descent}
-
-<p align="center">
-![](ISL_fig_10_21.pdf){width=600px height=400px}
-</p>
-
-To achieve a zero-residual solution with $d = 20$ is a real stretch! Easier for larger $d$.
-
-:::
-
-- Some facts.
-
-    - In a wide linear model ($p \gg n$) fit by least squares, SGD with a small step size leads to a **minimum norm** zero-residual solution.
-    
-    - Stochastic gradient  **flow**, i.e. the entire path of SGD solutions, is somewhat similar to ridge path.
-    
-    - By analogy, deep and wide neural networks fit by SGD down to zero training error often give good solutions that generalize well.
-    
-    - In particular cases with high **signal-to-noise ratio**, e.g., image recognition, are less prone to overfitting; the zero-error solution is mostly signal!
-    
