@@ -1,6 +1,6 @@
 ---
 title: "Machine Learning Workflow: Multi-Layer Perceptron (Heart Data) Usng scikit-learn"
-subtitle: "Biostat 212A"
+subtitle: "Biostat 274"
 author: "Dr. Jin Zhou @ UCLA"
 date: today
 format:
@@ -74,7 +74,7 @@ sns.set(font_scale = 1.2)
 # Display all columns
 pd.set_option('display.max_columns', None)
 
-Heart = pd.read_csv("../../data/Heart.csv")
+Heart = pd.read_csv("/slides/data/Heart.csv")
 Heart
 ```
 

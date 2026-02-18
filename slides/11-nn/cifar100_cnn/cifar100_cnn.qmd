@@ -1,6 +1,6 @@
 ---
 title: "CNN on the CIFAR100 Data"
-subtitle: "Biostat 212A"
+subtitle: "Biostat 274"
 author: "Dr. Jin Zhou @ UCLA"
 date: today
 format:
@@ -37,6 +37,12 @@ print(IPython.sys_info())
 
 ```{r}
 sessionInfo()
+
+#| label: setup
+#| include: false
+library(reticulate)
+use_python("/Users/jinjinzhou/.virtualenvs/r-tensorflow/bin/python", required = TRUE)
+py_config()
 ```
 
 :::
@@ -49,6 +55,7 @@ Load some libraries.
 #### Python
 
 ```{python}
+
 # Load the pandas library
 import pandas as pd
 # Load numpy for array manipulation
@@ -66,12 +73,14 @@ pd.set_option('display.max_columns', None)
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+
+
 ```
 
 #### R
 
 ```{r}
-library(keras)
+library(keras3)
 library(jpeg)
 ```
 

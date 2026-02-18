@@ -1,6 +1,6 @@
 ---
 title: "IMDB Sentiment Analysis (Warm-Start From Pretrained Embedding)"
-subtitle: "Biostat 212A"
+subtitle: "Biostat 274"
 author: "Dr. Jin Zhou @ UCLA"
 date: today
 format:

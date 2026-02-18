@@ -1,8 +1,8 @@
 ---
 title: "Neural Style Transfer"
-subtitle: "Econ 425T / Biostat 203B"
-author: "Dr. Hua Zhou @ UCLA"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
+subtitle: "Biostat 274"
+author: "Dr. Jin Zhou @ UCLA"
+date: today
 format:
   html:
     theme: cosmo
