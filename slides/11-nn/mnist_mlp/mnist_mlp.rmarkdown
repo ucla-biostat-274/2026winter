@@ -1,12 +1,11 @@
 ---
-title: "CNN on the CIFAR100 Data"
+title: "MLP on the MNIST Digit Data"
 subtitle: "Biostat 274"
 author: "Dr. Jin Zhou @ UCLA"
 date: today
 format:
   html:
     theme: cosmo
-    embed-resources: true
     number-sections: true
     toc: true
     toc-depth: 4
@@ -37,12 +36,6 @@ print(IPython.sys_info())
 
 ```{r}
 sessionInfo()
-
-#| label: setup
-#| include: false
-library(reticulate)
-use_python("/Users/jinjinzhou/.virtualenvs/r-tensorflow/bin/python", required = TRUE)
-py_config()
 ```
 
 :::
@@ -55,7 +48,6 @@ Load some libraries.
 #### Python
 
 ```{python}
-
 # Load the pandas library
 import pandas as pd
 # Load numpy for array manipulation
@@ -73,24 +65,21 @@ pd.set_option('display.max_columns', None)
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-
-
 ```
 
 #### R
 
 ```{r}
 library(keras3)
-library(jpeg)
 ```
 
 :::
 
-In this example, we train a CNN (convolution neural network) on the [CIFAR100](https://www.cs.toronto.edu/~kriz/cifar.html) data set. Achieve testing accuracy 44.5% after 30 epochs. Random guess would have an accuracy of about 1%.
+In this example, we train an MLP (multi-layer perceptron) on the [MNIST](https://en.wikipedia.org/wiki/MNIST_database) data set. Achieve testing accuracy 98.11% after 30 epochs.
 
-- The **CIFAR100** database is a large database of $32 \times 32$ color images that is commonly used for training and testing machine learning algorithms.
+- The **MNIST** database (Modified National Institute of Standards and Technology database) is a large database of handwritten digits ($28 \times 28$) that is commonly used for training and testing machine learning algorithms.
 
-- 50,000 training images, 10,000 testing images. 
+- 60,000 training images, 10,000 testing images. 
 
 ## Prepare data
 
@@ -102,7 +91,7 @@ Acquire data:
 
 ```{python}
 # Load the data and split it between train and test sets
-(x_train, y_train), (x_test, y_test) = keras.datasets.cifar100.load_data()
+(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 # Training set
 x_train.shape
 y_train.shape
@@ -110,40 +99,62 @@ y_train.shape
 x_test.shape
 y_test.shape
 ```
+Display the first training instance and its label:
+```{python}
+import matplotlib.pyplot as plt
 
+# Feature: digit
+plt.figure()
+plt.gray()
+plt.imshow(x_train[0]);
+plt.show()
+# Label
+y_train[0]
+```
 
 #### R
 
 ```{r}
-cifar100 <- dataset_cifar100()
-x_train <- cifar100$train$x
-y_train <- cifar100$train$y
-x_test <- cifar100$test$x
-y_test <- cifar100$test$y
+mnist <- dataset_mnist()
+x_train <- mnist$train$x
+y_train <- mnist$train$y
+x_test <- mnist$test$x
+y_test <- mnist$test$y
 ```
-
 Training set:
 ```{r}
 dim(x_train)
 dim(y_train)
 ```
 
+```{r}
+image(
+  t(x_train[1, 28:1,]), 
+  useRaster = TRUE, 
+  axes = FALSE, 
+  col = grey(seq(0, 1, length = 256))
+  )
+y_train[1]
+```
 
 Testing set:
 ```{r}
-dim(y_train)
+dim(x_test)
 dim(y_test)
 ```
 
 :::
 
-For CNN, we keep the $32 \times 32 \times 3$ tensor structure, instead of vectorizing into a long vector.
+Vectorize $28 \times 28$ images into $784$-vectors and scale entries to [0, 1]:
 
 ::: {.panel-tabset}
 
 #### Python
 
 ```{python}
+# Reshape
+x_train = np.reshape(x_train, [x_train.shape[0], 784])
+x_test = np.reshape(x_test, [x_test.shape[0], 784])
 # Rescale
 x_train = x_train / 255
 x_test = x_test / 255
@@ -156,6 +167,9 @@ x_test.shape
 #### R
 
 ```{r}
+# reshape
+x_train <- array_reshape(x_train, c(nrow(x_train), 784))
+x_test <- array_reshape(x_test, c(nrow(x_test), 784))
 # rescale
 x_train <- x_train / 255
 x_test <- x_test / 255
@@ -172,8 +186,8 @@ Encode $y$ as binary class matrix:
 #### Python
 
 ```{python}
-y_train = keras.utils.to_categorical(y_train, 100)
-y_test = keras.utils.to_categorical(y_test, 100)
+y_train = keras.utils.to_categorical(y_train, 10)
+y_test = keras.utils.to_categorical(y_test, 10)
 # Train
 y_train.shape
 # Test
@@ -185,37 +199,11 @@ y_train[0]
 #### R
 
 ```{r}
-y_train <- to_categorical(y_train, 100)
-y_test <- to_categorical(y_test, 100)
+y_train <- to_categorical(y_train, 10)
+y_test <- to_categorical(y_test, 10)
 dim(y_train)
 dim(y_test)
-# head(y_train)
-```
-
-:::
-
-Show a few images:
-
-::: {.panel-tabset}
-
-#### Python
-
-```{python}
-import matplotlib.pyplot as plt
-
-# Feature: 32x32 color image
-for i in range(25):
-  plt.figure()
-  plt.imshow(x_train[i]);
-  plt.show()
-```
-
-#### R
-
-```{r}
-par(mar = c(0, 0, 0, 0), mfrow = c(5, 5))
-index <- sample(seq(50000), 25)
-for (i in index) plot(as.raster(x_train[i,,, ]))
+head(y_train)
 ```
 
 :::
@@ -231,40 +219,12 @@ Define a **sequential model** (a linear stack of layers) with 2 fully-connected 
 ```{python}
 model = keras.Sequential(
   [
-    keras.Input(shape = (32, 32, 3)),
-    layers.Conv2D(
-      filters = 32, 
-      kernel_size = (3, 3),
-      padding = 'same',
-      activation = 'relu',
-      # input_shape = (32, 32, 3)
-      ),
-    layers.MaxPooling2D(pool_size = (2, 2)),
-    layers.Conv2D(
-      filters = 64, 
-      kernel_size = (3, 3),
-      padding = 'same',
-      activation = 'relu'
-      ),
-    layers.MaxPooling2D(pool_size = (2, 2)),
-    layers.Conv2D(
-      filters = 128, 
-      kernel_size = (3, 3),
-      padding = 'same',
-      activation = 'relu'
-      ),
-    layers.MaxPooling2D(pool_size = (2, 2)),
-    layers.Conv2D(
-      filters = 256, 
-      kernel_size = (3, 3),
-      padding = 'same',
-      activation = 'relu'
-      ),
-    layers.MaxPooling2D(pool_size = (2, 2)),
-    layers.Flatten(),
-    layers.Dropout(rate = 0.5),
-    layers.Dense(units = 512, activation = 'relu'),
-    layers.Dense(units = 100, activation = 'softmax')
+    keras.Input(shape = (784,)),
+    layers.Dense(units = 256, activation = 'relu'),
+    layers.Dropout(rate = 0.4),
+    layers.Dense(units = 128, activation = 'relu'),
+    layers.Dropout(rate = 0.3),
+    layers.Dense(units = 10, activation = 'softmax')
 ]
 )
 
@@ -294,41 +254,13 @@ tf.keras.utils.plot_model(
 #### R
 
 ```{r}
-model <- keras_model_sequential()  %>% 
-  layer_conv_2d(
-    filters = 32, 
-    kernel_size = c(3, 3),
-    padding = "same", 
-    activation = "relu",
-    input_shape = c(32, 32, 3)
-    ) %>%
-  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_conv_2d(
-    filters = 64, 
-    kernel_size = c(3, 3),
-    padding = "same", 
-    activation = "relu"
-    ) %>%
-  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_conv_2d(
-    filters = 128, 
-    kernel_size = c(3, 3),
-    padding = "same", 
-    activation = "relu"
-    ) %>%
-  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_conv_2d(
-    filters = 256, 
-    kernel_size = c(3, 3),
-    padding = "same", 
-    activation = "relu"
-    ) %>%
-  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_flatten() %>%
-  layer_dropout(rate = 0.5) %>%
-  layer_dense(units = 512, activation = "relu") %>%
-  layer_dense(units = 100, activation = "softmax")
-  
+model <- keras_model_sequential() 
+model %>% 
+  layer_dense(units = 256, activation = 'relu', input_shape = c(784)) %>% 
+  layer_dropout(rate = 0.4) %>% 
+  layer_dense(units = 128, activation = 'relu') %>%
+  layer_dropout(rate = 0.3) %>%
+  layer_dense(units = 10, activation = 'softmax')
 summary(model)
 ```
 
@@ -362,7 +294,7 @@ model %>% compile(
 
 ## Training and validation
 
-80%/20% split for the train/validation set. On my laptop, each epoch takes about half minute.
+80%/20% split for the train/validation set.
 
 ::: {.panel-tabset}
 
@@ -461,11 +393,65 @@ print("Test accuracy:", score[1])
 model %>% evaluate(x_test, y_test)
 ```
 Generate predictions on new data:
-
 ```{r}
-predictions <- model %>% predict(x_test)
-head(predictions)
+pred <- predict(model, x_test)
+class_id <- max.col(pred)  # 1-based
 ```
 
 :::
+
+## Exercise
+
+Suppose we want to fit a multinomial-logit model and use it as a baseline method to neural networks. How to do that? Of course we can use `mlogit` or other packages. Instead we can fit the same model using keras, since multinomial-logit is just an MLP with (1) one input layer with linear activation and (2) one output layer with softmax link function.
+
+::: {.panel-tabset}
+
+#### Python
+
+#### R
+
+```{r}
+# set up model
+library(keras)
+mlogit <- keras_model_sequential() 
+mlogit %>% 
+#  layer_dense(units = 256, activation = 'linear', input_shape = c(784)) %>% 
+#  layer_dropout(rate = 0.4) %>% 
+  layer_dense(units = 10, activation = 'softmax', input_shape = c(784))
+summary(mlogit)
+```
+```{r}
+# compile model
+mlogit %>% compile(
+  loss = 'categorical_crossentropy',
+  optimizer = optimizer_rmsprop(),
+  metrics = c('accuracy')
+)
+mlogit
+```
+```{r}
+# fit model
+mlogit_history <- mlogit %>% 
+  fit(
+    x_train, 
+    y_train, 
+    epochs = 20, 
+    batch_size = 128, 
+    validation_split = 0.2
+  )
+```
+
+```{r}
+# Evaluate model performance on the test data:
+mlogit %>% evaluate(x_test, y_test)
+```
+Generate predictions on new data:
+```{r}
+pred <- predict(model, x_test)                 # (n_samples, n_classes)
+class_id <- as.array(op_argmax(pred, axis = 2))  # 1-based indices
+```
+
+:::
+
+Experiment: Change the `linear` activation to `relu` in the multinomial-logit model and see the change in classification accuracy.
 
