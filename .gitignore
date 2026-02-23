@@ -1,6 +1,8 @@
 /.quarto/
 .Rproj.user
+.Renviron
 
 **/*.quarto_ipynb
 
 .DS_Store
+

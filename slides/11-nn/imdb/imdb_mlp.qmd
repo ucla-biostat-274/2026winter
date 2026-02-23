@@ -63,7 +63,7 @@ from tensorflow.keras import layers
 #### R
 
 ```{r}
-library(keras)
+library(keras3)
 ```
 
 :::
@@ -217,10 +217,10 @@ dim(y_test)
 
 ```{python}
 model = keras.Sequential([
-  keras.Input(shape = (max_features,)),
-  layers.Dense(units = 16, activation = 'ReLU'),
-  layers.Dense(units = 16, activation = 'ReLU'),
-  layers.Dense(units = 2, activation = 'softmax')
+  keras.Input(shape=(max_features,)),
+  layers.Dense(16, activation="relu"),
+  layers.Dense(16, activation="relu"),
+  layers.Dense(2, activation="softmax")
 ])
 
 model.summary()
@@ -240,16 +240,16 @@ model.compile(
 
 ```{r}
 model <- keras_model_sequential() %>%
-  layer_dense(units = 16, activation = "ReLU", input_shape = max_features) %>% 
-  layer_dense(units = 16, activation = "ReLU") %>% 
-  layer_dense(units = 2, activation = 'softmax')
+  layer_dense(units = 16, activation = "relu", input_shape = c(max_features)) %>%
+  layer_dense(units = 16, activation = "relu") %>%
+  layer_dense(units = 1, activation = "sigmoid")
 
-# Try using different optimizers and different optimizer configs
 model %>% compile(
-  loss = 'binary_crossentropy',
-  optimizer = 'adam',
-  metrics = c('accuracy')
+  loss = "binary_crossentropy",
+  optimizer = "adam",
+  metrics = "accuracy"
 )
+
 summary(model)
 ```
 
@@ -294,18 +294,17 @@ plt.show()
 #### R
 
 ```{r}
-batch_size <- 32
 
-cat('Train...\n')
-system.time({
 history <- model %>% fit(
   x_train_1h, y_train,
-  batch_size = batch_size,
+  batch_size = 32,
   epochs = 20,
-  validation_data = list(x_test_1h, y_test),
+  validation_split = 0.2,
   verbose = 2
 )
-})
+
+# only evaluate on test at the end
+model %>% evaluate(x_test_1h, y_test)
 ```
 
 Visualize training process:

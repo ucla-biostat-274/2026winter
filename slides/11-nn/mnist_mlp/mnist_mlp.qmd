@@ -415,9 +415,15 @@ Suppose we want to fit a multinomial-logit model and use it as a baseline method
 library(keras)
 mlogit <- keras_model_sequential() 
 mlogit %>% 
+# no need for hidden layers, since multinomial-logit is a linear model
 #  layer_dense(units = 256, activation = 'linear', input_shape = c(784)) %>% 
 #  layer_dropout(rate = 0.4) %>% 
   layer_dense(units = 10, activation = 'softmax', input_shape = c(784))
+# L2 regularization  
+# layer_dense(
+#    units = 10, activation = "softmax", input_shape = c(784),
+#    kernel_regularizer = regularizer_l2(1e-4)
+#  )
 summary(mlogit)
 ```
 ```{r}
