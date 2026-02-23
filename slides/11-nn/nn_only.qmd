@@ -738,21 +738,6 @@ At **test time**, we use the full network without masking (i.e. replace $\tilde 
 
 - Interpretation: each minibatch update trains a different "thinned" subnetwork; prediction with the full network approximates averaging an ensemble of many subnetworks (a form of **model averaging**).
 
-- **Connection to ridge (a simple derivation).** Consider linear regression
-$$
-f_\beta(x)=\beta_0+\sum_{j=1}^p \beta_j x_j
-$$
-with squared loss. Apply dropout to the inputs:
-$$
-\tilde x_{ij}=\frac{m_{ij}}{q}x_{ij},\qquad m_{ij}\sim\text{Bernoulli}(q)\ \text{independently}.
-$$
-Then for a fixed $x_i$,
-$$
-\mathbb{E}_m\Big[(y_i - f_\beta(\tilde x_i))^2\Big]
-= (y_i - f_\beta(x_i))^2 + \frac{\phi}{q}\sum_{j=1}^p \beta_j^2 x_{ij}^2.
-$$
-Summing over $i$ yields a ridge-like penalty on $\beta$ (and if predictors are standardized so that $\sum_i x_{ij}^2\approx n$, this is approximately $\lambda\sum_j \beta_j^2$ with $\lambda\propto n\,\phi/q$).
-
 - More broadly, dropout injects **multiplicative Bernoulli noise** and often behaves like an $\ell_2$-type shrinkage of weights; the exact equivalence is cleanest for squared-loss linear models (as above), while for deep nets it is better viewed as regularization via model averaging and reduced co-adaptation.
 
 - As in ridge, the other units **stand** in for those temporarily removed, and their weights are drawn closer together.

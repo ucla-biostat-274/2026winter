@@ -3079,14 +3079,6 @@ Figure 13: Dropout Learning. Left: a fully connected network. Right: network wi
 \mathbb{E}[\tilde a^{(\ell)}] = a^{(\ell)}.
 \]</span> At <strong>test time</strong>, we use the full network without masking (i.e. replace <span class="math inline">\(\tilde a^{(\ell)}\)</span> by <span class="math inline">\(a^{(\ell)}\)</span>).</p></li>
 <li><p>Interpretation: each minibatch update trains a different “thinned” subnetwork; prediction with the full network approximates averaging an ensemble of many subnetworks (a form of <strong>model averaging</strong>).</p></li>
-<li><p><strong>Connection to ridge (a simple derivation).</strong> Consider linear regression <span class="math display">\[
-f_\beta(x)=\beta_0+\sum_{j=1}^p \beta_j x_j
-\]</span> with squared loss. Apply dropout to the inputs: <span class="math display">\[
-\tilde x_{ij}=\frac{m_{ij}}{q}x_{ij},\qquad m_{ij}\sim\text{Bernoulli}(q)\ \text{independently}.
-\]</span> Then for a fixed <span class="math inline">\(x_i\)</span>, <span class="math display">\[
-\mathbb{E}_m\Big[(y_i - f_\beta(\tilde x_i))^2\Big]
-= (y_i - f_\beta(x_i))^2 + \frac{\phi}{q}\sum_{j=1}^p \beta_j^2 x_{ij}^2.
-\]</span> Summing over <span class="math inline">\(i\)</span> yields a ridge-like penalty on <span class="math inline">\(\beta\)</span> (and if predictors are standardized so that <span class="math inline">\(\sum_i x_{ij}^2\approx n\)</span>, this is approximately <span class="math inline">\(\lambda\sum_j \beta_j^2\)</span> with <span class="math inline">\(\lambda\propto n\,\phi/q\)</span>).</p></li>
 <li><p>More broadly, dropout injects <strong>multiplicative Bernoulli noise</strong> and often behaves like an <span class="math inline">\(\ell_2\)</span>-type shrinkage of weights; the exact equivalence is cleanest for squared-loss linear models (as above), while for deep nets it is better viewed as regularization via model averaging and reduced co-adaptation.</p></li>
 <li><p>As in ridge, the other units <strong>stand</strong> in for those temporarily removed, and their weights are drawn closer together.</p></li>
 <li><p>Similar to randomly omitting variables when growing trees in random forests.</p></li>
