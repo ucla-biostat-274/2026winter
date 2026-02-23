@@ -248,7 +248,7 @@ tf.keras.utils.plot_model(
 ```
 
 <p align="center">
-![](./model.png){width=500px}
+![](./model.png){width=200px}
 </p>
 
 #### R
