@@ -1,0 +1,491 @@
+---
+title: "Biostat 274 Homework 4"
+subtitle: "Due Mar 16, 2024 @ 11:59PM"
+author: "YOUR NAME and UID"
+date: today
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    number-sections: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    code-fold: false
+engine: knitr
+knitr:
+  opts_chunk: 
+    fig.align: 'center'
+    # fig.width: 6
+    # fig.height: 4
+    message: FALSE
+    cache: false
+---
+
+
+## Support vector machines (SVMs) on the `Carseats` data set (30pts)
+
+Follow the machine learning workflow to train support vector classifier (same as SVM with linear kernel), SVM with polynomial kernel (tune the degree and regularization parameter $C$), and SVM with radial kernel (tune the scale parameter $\gamma$ and regularization parameter $C$) for classifying `Sales<=8` versus `Sales>8`. Use the same seed as in your HW4 for the initial test/train split and compare the final test AUC and accuracy to those methods you tried in HW4.
+
+## Signed distance
+
+Let
+$$
+f(X) = \beta_0 + \beta_1 X_1 + \cdots + \beta_p X_p = \beta_0 + \beta^T X. 
+$$
+Then $f(X)=0$ defines a hyperplane in $\mathbb{R}^p$. Show that $f(x)$ is proportional to the signed distance of a point $x$ to the hyperplane $f(X) = 0$. 
+
+## Dropout learning 
+
+Let $(x_i, y_i)$ for $i=1,\dots,n$ with $x_i \in \mathbb{R}^p$ and $y_i \in \mathbb{R}$.
+Consider a linear predictor
+$$
+f_\beta(x) = x^\top \beta
+$$
+
+and squared loss
+$$
+\ell(y, f) = \tfrac12 (y-f)^2.
+$$
+
+Let $\phi \in (0,1)$ be the **drop probability** and $q = 1-\phi$ the **keep probability**.
+Define inverted dropout on the input features via an i.i.d. Bernoulli mask
+$$
+m_i \in \{0,1\}^p,\qquad m_{ij}\sim \text{Bernoulli}(q),
+$$
+
+and the dropped input
+$$
+\tilde x_i = \frac{m_i}{q}\odot x_i,
+$$
+where $\odot$ denotes elementwise product.
+
+
+
+### (a) Scaling.
+
+Show that $\mathbb{E}[\tilde x_i]=x_i$ (expectation over the dropout mask).
+$$
+\mathbb{E}[\tilde x_i] = \mathbb{E}\left[\frac{m_i}{q}\odot x_i\right] = \frac{1}{q} \odot x_i \odot \mathbb{E}[m_i] = x_i.
+$$
+
+### (b) Expected dropout objective. 
+
+Define
+$$
+\mathcal{L}_{\text{drop}}(\beta) = \sum_{i=1}^n \mathbb{E}_{m_i}\left[\tfrac12\left(y_i - \tilde x_i^\top \beta\right)^2\right].
+$$
+
+Show that
+$$
+\mathcal{L}_{\text{drop}}(\beta)
+=
+\sum_{i=1}^n \tfrac12\left(y_i - x_i^\top \beta\right)^2
++
+\frac{\phi}{2(1-\phi)}\sum_{i=1}^n \sum_{j=1}^p \beta_j^2 x_{ij}^2.
+$$
+
+
+
+**Hint:** expand $\left(y_i - \tilde x_i^\top \beta\right)^2$ and use $\mathbb{E}[\tilde x_i]=x_i$ plus $\mathrm{Var}(\tilde x_{ij}) = x_{ij}^2\,\mathrm{Var}(m_{ij}/q)$.
+
+
+### (c) When does it look like ridge?
+
+Suppose features are standardized so that $\frac{1}{n}\sum_{i=1}^n x_{ij}^2 \approx 1$ for each $j$.
+Explain why the extra term in (b) is approximately proportional to $\|\beta\|_2^2$ and identify an “effective” ridge strength in terms of $\phi$ (up to your convention for sum vs mean loss).
+
+
+
+### (d) Short interpretation.
+
+Explain why “dropout $\approx$ ridge” is only an analogy in deep networks, but why dropout still tends to reduce reliance on any single unit/feature.
+
+
+---
+
+## Ridge and data augmentation
+
+Again consider $f_\beta(x)=x^\top\beta$ and squared loss.
+Define a **Gaussian augmentation** of covariates:
+$$
+x_i^\star = x_i + \epsilon_i,\qquad \epsilon_i\sim N(0, \tau^2 I_p),\qquad y_i^\star = y_i.
+$$
+
+
+
+### (a) Augmentation implies ridge.
+Show:
+$$
+\sum_{i=1}^n \mathbb{E}_{\epsilon_i}\Big[\tfrac12\left(y_i - (x_i^\star)^\top\beta\right)^2\Big]
+=
+\sum_{i=1}^n \tfrac12\left(y_i - x_i^\top\beta\right)^2
++
+\frac{n\tau^2}{2}\|\beta\|_2^2.
+$$
+
+### (b) General covariance.
+If $\epsilon_i\sim N(0,\Sigma)$, what penalty replaces $\|\beta\|_2^2$? (Write the penalty in a compact matrix form.)
+$$
+\sum_{i=1}^n \mathbb{E}_{\epsilon_i}\Big[\tfrac12\left(y_i - (x_i^\star)^\top\beta\right)^2\Big]
+=
+\sum_{i=1}^n \tfrac12\left(y_i - x_i^\top\beta\right)^2
++
+\frac{n}{2}\beta^\top \Sigma \beta.
+$$
+
+## Pretain, finetune, regularize: CIFAR-10 cats vs dogs  
+
+### Data
+Use CIFAR-10 and keep only the two classes:
+
+- **cat = 3**, **dog = 5** (Keras label IDs).
+
+### Model
+- Base: `MobileNetV2(weights="imagenet", include_top=FALSE)` (frozen).
+- Head: `GlobalAveragePooling2D` + optional Dense(hidden) + Dropout + Dense(1, sigmoid).
+- Resize from $32\times32$ to $96\times96$ inside the model using `layer_resizing()`.
+
+---
+
+### Setup
+
+- Load Keras and set random seed (adjust if needed for your setup):
+
+```{r}
+# Install once if needed:
+# install.packages("keras3")
+# keras3::install_keras()   # installs Python env + TensorFlow (once)
+
+library(keras3)
+use_backend("tensorflow")
+set_random_seed(1)
+```
+
+- Load CIFAR-10, keep cats vs dogs, create splits
+
+```{r}
+cifar <- dataset_cifar10(convert = TRUE)
+
+x_train <- cifar$train$x
+y_train <- as.integer(cifar$train$y[,1])
+
+x_test  <- cifar$test$x
+y_test  <- as.integer(cifar$test$y[,1])
+
+# Convert to channels_last if needed: (n, 3, 32, 32) -> (n, 32, 32, 3)
+if (length(dim(x_train)) == 4 && dim(x_train)[2] == 3) {
+  x_train <- aperm(x_train, c(1,3,4,2))
+  x_test  <- aperm(x_test,  c(1,3,4,2))
+}
+
+# Keep cat=3 and dog=5
+cls_cat <- 3L
+cls_dog <- 5L
+
+keep_tr <- y_train %in% c(cls_cat, cls_dog)
+keep_te <- y_test  %in% c(cls_cat, cls_dog)
+
+
+
+x_train <- x_train[keep_tr,,,,drop=FALSE]
+y_train <- y_train[keep_tr]
+
+x_test  <- x_test[keep_te,,,,drop=FALSE]
+y_test  <- y_test[keep_te]
+
+# Map labels: cat->0, dog->1
+y_train <- ifelse(y_train == cls_dog, 1, 0)
+y_test  <- ifelse(y_test  == cls_dog, 1, 0)
+
+balanced_subsample <- function(x, y, n_per_class) {
+  # ensure y is a vector, not an (n,1) matrix
+  if (is.matrix(y)) y <- y[,1]
+  y <- as.integer(y)
+
+  i0 <- which(y == 0)
+  i1 <- which(y == 1)
+
+  stopifnot(length(i0) >= n_per_class, length(i1) >= n_per_class)
+
+  i0 <- sample(i0, n_per_class)
+  i1 <- sample(i1, n_per_class)
+  idx <- sample(c(i0, i1))
+
+  list(
+    x = x[idx, , , , drop = FALSE],   # <-- 4D slice
+    y = y[idx]
+  )
+}
+
+# CPU-friendly default sizes (adjust if needed)
+train_small <- balanced_subsample(x_train, y_train, n_per_class = 1000)
+test_small  <- balanced_subsample(x_test,  y_test,  n_per_class = 500)
+
+x <- train_small$x; y <- train_small$y
+x_te <- test_small$x; y_te <- test_small$y
+
+# Train/val split
+set.seed(1)
+n <- dim(x)[1]
+val_n <- floor(0.2 * n)
+val_idx <- sample(seq_len(n), val_n)
+tr_idx  <- setdiff(seq_len(n), val_idx)
+
+x_tr <- x[tr_idx,,,,drop=FALSE]; y_tr <- y[tr_idx]
+x_va <- x[val_idx,,,,drop=FALSE]; y_va <- y[val_idx]
+
+c(n_train = dim(x_tr)[1], n_val = dim(x_va)[1], n_test = dim(x_te)[1])
+```
+
+
+— Build a pretrained model (MobileNetV2 frozen + head)
+- Example code to build a model with optional hidden layer, dropout, L2, and augmentation.
+
+```{r}
+build_model <- function(img = 96L,
+                        hidden = 0L,
+                        dropout_rate = 0,
+                        l2 = 0,
+                        augment = FALSE) {
+
+  base <- application_mobilenet_v2(
+    input_shape = c(img, img, 3),
+    include_top = FALSE,
+    weights = "imagenet"
+  )
+  base$trainable <- FALSE  # freeze base
+
+  inputs <- keras_input(shape = c(32, 32, 3))
+
+  x <- inputs |>
+    layer_resizing(height = img, width = img) |>
+    # MobileNetV2-style scaling to [-1,1]
+    layer_rescaling(scale = 1/127.5, offset = -1)
+
+  if (augment) {
+    x <- x |>
+      layer_random_flip("horizontal") |>
+      layer_random_translation(height_factor = 0.05, width_factor = 0.05)
+  }
+
+  # Run frozen base in inference mode (BatchNorm stability)
+  x <- x |>
+    base(training = FALSE) |>
+    layer_global_average_pooling_2d()
+
+  if (hidden > 0) {
+    x <- x |>
+      layer_dense(
+        units = hidden,
+        activation = "relu",
+        kernel_regularizer = if (l2 > 0) regularizer_l2(l2) else NULL
+      )
+  }
+
+  if (dropout_rate > 0) {
+    x <- x |> layer_dropout(rate = dropout_rate)
+  }
+
+  outputs <- x |>
+    layer_dense(
+      units = 1,
+      activation = "sigmoid",
+      kernel_regularizer = if (l2 > 0) regularizer_l2(l2) else NULL
+    )
+
+  model <- keras_model(inputs, outputs)
+
+  model |> compile(
+    optimizer = optimizer_adam(learning_rate = 1e-3),
+    loss = loss_binary_crossentropy(from_logits = FALSE),
+    metrics = list(
+      metric_binary_accuracy(name = "acc"),
+      metric_auc(name = "auc", from_logits = FALSE)
+    )
+  )
+
+  model
+}
+```
+
+— Baseline run (no dropout, no L2, no augmentation)
+
+```{r}
+model0 <- build_model(hidden = 0L, dropout_rate = 0, l2 = 0, augment = FALSE)
+
+hist0 <- model0 |> fit(
+  x_tr, y_tr,
+  validation_data = list(x_va, y_va),
+  epochs = 10,
+  batch_size = 32,
+  callbacks = list(callback_early_stopping(patience = 2, restore_best_weights = TRUE)),
+  verbose = 2
+)
+
+eval0 <- model0 |> evaluate(x_te, y_te, verbose = 0)
+eval0
+```
+
+- Baseline model: learning curves
+
+```{r}
+plot(hist0)
+```
+
+
+— Baseline model: Brier score + calibration curve 
+
+```{r}
+# predicted probabilities on test set
+p_te <- as.numeric(model0 |> predict(x_te, verbose = 0))
+
+brier <- mean((p_te - y_te)^2)
+brier
+```
+
+```{r}
+# Simple 10-bin calibration table
+calibration_table <- function(p, y, bins = 10) {
+  stopifnot(length(p) == length(y))
+  breaks <- seq(0, 1, length.out = bins + 1)
+  bin <- cut(p, breaks = breaks, include.lowest = TRUE)
+  df <- data.frame(p = p, y = y, bin = bin)
+  agg_p <- tapply(df$p, df$bin, mean)
+  agg_y <- tapply(df$y, df$bin, mean)
+  n_bin <- as.integer(table(df$bin))
+  out <- data.frame(
+    bin = names(agg_p),
+    n = n_bin,
+    mean_pred = as.numeric(agg_p),
+    mean_obs  = as.numeric(agg_y)
+  )
+  out
+}
+
+cal0 <- calibration_table(p_te, y_te, bins = 10)
+cal0
+```
+
+```{r}
+# Optional plot (recommended)
+# install.packages("ggplot2") if needed
+library(ggplot2)
+
+ggplot(cal0, aes(x = mean_pred, y = mean_obs, size = n)) +
+  geom_point() +
+  geom_line() +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  coord_equal(xlim = c(0,1), ylim = c(0,1)) +
+  labs(x = "Mean predicted probability (bin)",
+       y = "Observed event rate (bin)",
+       title = "Calibration curve (baseline)")
+```
+
+---
+
+### Regularization comparison (dropout vs L2 vs augmentation)
+
+Train **four** models with the same train/val/test split:
+
+- M0: none (baseline)
+- M1: dropout only (e.g., $\phi=0.2$ so `dropout_rate=0.2`)
+- M2: L2 only (e.g., `l2=1e-4`)
+- M3: augmentation only (`augment=TRUE`)
+
+**Task 1**: Report a small results table with test `acc`, test `auc`, and test Brier score.
+
+
+### Fine-tuning the pretrained CNN  
+
+So far, MobileNetV2 was **frozen** and only the head was trained.
+Now you will **fine-tune** a small number of layers near the end of the pretrained base using a **small learning rate**.
+
+**Task 2** Write a small table to ompare baseline (frozen base) vs fine-tuned (partially unfrozen base) vs Regularized and report
+
+- test accuracy and AUC
+- test Brier score
+- calibration curve shape
+
+Then answer the following questions:
+
+- Did fine-tuning improve test accuracy/AUC? Did it improve or worsen calibration (Brier + calibration curve)?
+- If it got worse, give 2 plausible reasons (overfitting, too many layers unfrozen, learning rate too large, small data, etc.).
+- Report exactly what you fine-tuned: `n_unfreeze`, learning rate, and number of epochs.
+
+
+> **CPU note:** Fine-tuning is slower than head-only training. If it is too slow, set `n_unfreeze = 10` and `epochs = 2`.
+
+
+- Helper code: locate the MobileNetV2 base inside the full model
+
+```{r, eval = F}
+get_mobilenet_base <- function(model) {
+  nm <- sapply(model$layers, function(L) L$name)
+  idx <- which(grepl("mobilenet", nm, ignore.case = TRUE))
+  if (length(idx) == 0) stop("Could not find a MobileNet layer in model$layers.")
+  model$get_layer(nm[idx[1]])
+}
+```
+
+- Helper code: unfreeze last `n_unfreeze` layers (and keep BatchNorm frozen) and fine tune with a smaller learning rate, etc.
+
+```{r, eval = F}
+set_finetune <- function(model, n_unfreeze = 20, freeze_batchnorm = TRUE) {
+  base <- get_mobilenet_base(model)
+  base$trainable <- TRUE
+
+  L <- base$layers
+  nL <- length(L)
+  n_unfreeze <- min(n_unfreeze, nL)
+
+  # Freeze all but the last n_unfreeze layers
+  for (i in seq_len(nL - n_unfreeze)) {
+    L[[i]]$trainable <- FALSE
+  }
+
+  # Recommended on small data: keep BatchNorm frozen
+  if (freeze_batchnorm) {
+    for (i in seq_len(nL)) {
+      if (grepl("batch_normalization", L[[i]]$name, ignore.case = TRUE)) {
+        L[[i]]$trainable <- FALSE
+      }
+    }
+  }
+
+  invisible(model)
+}
+```
+
+- Helper code: Fine-tune and evaluate
+
+```{r, eval = F}
+# Unfreeze last layers
+set_finetune(model0, n_unfreeze = 20, freeze_batchnorm = TRUE)
+
+# After changing trainable flags, re-compile with a smaller learning rate
+model0 |> compile(
+  optimizer = optimizer_adam(learning_rate = 1e-5),
+  loss = loss_binary_crossentropy(from_logits = FALSE),
+  metrics = list(
+    metric_binary_accuracy(name = "acc"),
+    metric_auc(name = "auc", from_logits = FALSE)
+  )
+)
+
+hist_ft <- model0 |> fit(
+  x_tr, y_tr,
+  validation_data = list(x_va, y_va),
+  epochs = 5,
+  batch_size = 32,
+  callbacks = list(callback_early_stopping(patience = 1, restore_best_weights = TRUE)),
+  verbose = 2
+)
+
+eval_ft <- model0 |> evaluate(x_te, y_te, verbose = 0)
+eval_ft
+```
+
+
+
+
