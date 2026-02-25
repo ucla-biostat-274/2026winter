@@ -107,7 +107,7 @@ $$
 </p>
 
 <p align="center">
-![](ISL_fig_10_13b.pdf){width=600px height=80px}
+![](ISL_fig_10_13b.pdf){width=600px height=300px}
 </p>
 
 Depiction of a sequence of 20 words representing a single document: one-hot encoded using a dictionary of 16 words (top panel) and embedded in an $m$-dimensional space with $m = 5$ (bottom panel). Embeddings are pretrained on very large corpora of documents, using methods similar to principal components. `word2vec` and `GloVe` are popular.
