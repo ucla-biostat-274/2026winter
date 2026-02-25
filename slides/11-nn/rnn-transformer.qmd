@@ -119,7 +119,7 @@ Depiction of a sequence of 20 words representing a single document: one-hot enco
 - We then fit a more exotic RNN, an LSTM with long and short term memory. Here $A_\ell$ receives input from $A_{\ell-1}$ (short term memory) as well as from a version that reaches further back in time (long term memory). Now we get 87% accuracy, slightly less than the
 88% achieved by glmnet.
 
-- Leaderboard for IMDb sentiment analysis: <https://paperswithcode.com/sota/sentiment-analysis-on-imdb>.
+- Leaderboard for IMDb sentiment analysis: <https://www.kaggle.com/competitions/sentiment-analysis-on-imdb-movie-reviews/leaderboard>.
 
 ## LSTM
 
@@ -144,14 +144,16 @@ Depiction of a sequence of 20 words representing a single document: one-hot enco
 ![](./colah-lstm2-notation.png){width=500px}
 </p>
 
-    The **cell state** allows information to flow along it unchanged.
-    <p align="center">
-    ![](./colah-lstm3-c-line.png){width=500px}
-    </p>
-    The **gates** give the ability to remove or add information to the cell state.
-    <p align="center">
-    ![](./colah-lstm3-gate.png){width=100px}
-    </p>
+The **cell state** allows information to flow along it unchanged.
+<p align="center">
+![](./colah-lstm3-c-line.png){width=500px}
+</p>
+    
+    
+The **gates** give the ability to remove or add information to the cell state.
+<p align="center">
+![](./colah-lstm3-gate.png){width=100px}
+</p>
     
 
 
@@ -185,7 +187,7 @@ flowchart LR
 
 ![](./weng_figures/fig3_encoder-decoder-example.png){width=48%}
 
-Seq2seq encoder–decoder comparison. The encoder-decoder model, translating the sentence "she is eating a green apple" to Chinese. The visualization of both encoder and decoder is unrolled in time. Source: Lilian Weng (2018), *Attention? Attention!*.
+Seq2seq encoder–decoder comparison. The encoder-decoder model, translating the sentence "she is eating a green apple" to Chinese. The visualization of both encoder and decoder is unrolled in time. Source: Lilian Weng (2018), [*Attention? Attention!*](https://lilianweng.github.io/posts/2018-06-24-attention/).
 
 :::
 
@@ -288,15 +290,6 @@ $$
 $$
   where $d$ is the hidden dimension. The scaling helps keep the softmax from saturating (i.e., avoids extremely small gradients) when $d$ is large.
 
-### Soft vs hard attention; global vs local attention
-
-- **Soft attention:** attends to *all* positions with fractional weights $\alpha_{t,i}$. It is smooth/differentiable, but can be expensive for very large inputs.
-- **Hard attention:** attends to a *single* position (or a small discrete set). It is cheaper but not differentiable, often requiring RL-style tricks.
-- **Global attention (Luong):** compute $\alpha_{t,i}$ over *all* encoder states (similar spirit to soft attention).
-- **Local attention (Luong):** predict an aligned position and attend to a window around it — a differentiable compromise between “hard” and “soft.”
-
-
-![Global vs local attention (Luong-style). Source: Lilian Weng (2018), citing Luong et al. (2015).](./weng_figures/global-vs-local-attention.png){#fig-weng-global-local width=90%}
 
 ### Embeddings and positional information
 
