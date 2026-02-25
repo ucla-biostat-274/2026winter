@@ -180,12 +180,37 @@ flowchart LR
 
 - In early **seq2seq** models, an **encoder** RNN reads the whole source sequence and compresses it into a *single* fixed-length **context vector** (a “thought vector”), and a **decoder** RNN generates the output from that context.
 - A key limitation: for long sequences, a single fixed-length context can become a bottleneck (the encoder may “forget” early information).
-- **Attention** fixes this by letting the decoder build a *new* context vector $c_t$ at each output step $t$, using a learned **soft alignment** over *all* encoder hidden states.
 
-::: {#fig-weng-seq2seq fig-cap="Seq2seq encoder–decoder comparison (left: fixed-length context bottleneck; right: additive attention with a dynamic context vector). Source: Lilian Weng (2018), *Attention? Attention!*."}
+::: {#fig-weng-seq2seq}
+
 ![](./weng_figures/fig3_encoder-decoder-example.png){width=48%}
-![](./weng_figures/fig4_encoder-decoder-attention.png){width=48%}
+
+Seq2seq encoder–decoder comparison. The encoder-decoder model, translating the sentence "she is eating a green apple" to Chinese. The visualization of both encoder and decoder is unrolled in time. Source: Lilian Weng (2018), *Attention? Attention!*.
+
 :::
+
+- **Attention** fixes this by letting the decoder build a *new* context vector $c_t$ at each output step $t$, using a learned **soft alignment** over *all* encoder hidden states. 
+
+
+
+> Rather than building a single context vector out of the encoder’s last hidden state, the secret sauce invented by attention is to create shortcuts between the context vector and the entire source input. The weights of these shortcut connections are customizable for each output element. While the context vector has access to the entire input sequence, we don’t need to worry about forgetting. The alignment between the source and target is learned and controlled by the context vector. 
+
+- Essentially the context vector consumes three pieces of information:
+  + encoder hidden states;
+  + decoder hidden states;
+  + alignment between source and target.
+
+
+:::{#fig-weng-encoder-decoder-attention}
+
+![](./weng_figures/fig4_encoder-decoder-attention.png){width=50%}
+
+The encoder-decoder model with additive attention mechanism in Bahdanau et al., 2015.
+
+:::
+
+
+
 
 ```{mermaid}
 %%| echo: false
@@ -216,7 +241,7 @@ flowchart LR
   end
 ```
 
-### Seq2seq attention formulas (general recipe)
+### Definition
 
 Let the encoder produce hidden states $h_1,\ldots,h_n$ for a source sequence $(x_1,\ldots,x_n)$.
 At target step $t$, the decoder has a hidden state $s_{t-1}$ (from the previous step) and computes **alignment scores**
@@ -263,7 +288,7 @@ $$
 $$
   where $d$ is the hidden dimension. The scaling helps keep the softmax from saturating (i.e., avoids extremely small gradients) when $d$ is large.
 
-### Soft vs hard attention; global vs local attention (useful vocabulary)
+### Soft vs hard attention; global vs local attention
 
 - **Soft attention:** attends to *all* positions with fractional weights $\alpha_{t,i}$. It is smooth/differentiable, but can be expensive for very large inputs.
 - **Hard attention:** attends to a *single* position (or a small discrete set). It is cheaper but not differentiable, often requiring RL-style tricks.
@@ -330,7 +355,7 @@ $$
 ![Example of self-attention: the current word is red; blue shading indicates attention strength to other words. Source: Lilian Weng (2018), citing Cheng et al. (2016).](./weng_figures/fig6_self-attention-example.png){#fig-weng-self-attn-example width=65%}
 
 
-### Multi-head attention (why multiple heads?)
+### Multi-head attention 
 
 - Instead of one attention operation, transformers use multiple “heads.”
 - Intuition: each head can learn a different relation pattern (e.g., local context, long-range dependency, syntax-like cues).
