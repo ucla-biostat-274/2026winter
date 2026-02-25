@@ -242,7 +242,7 @@ model.compile(
 model <- keras_model_sequential() %>%
   layer_dense(units = 16, activation = "relu", input_shape = c(max_features)) %>%
   layer_dense(units = 16, activation = "relu") %>%
-  layer_dense(units = 1, activation = "sigmoid")
+  layer_dense(units = 2, activation = "sigmoid")
 
 model %>% compile(
   loss = "binary_crossentropy",
@@ -334,8 +334,7 @@ print('Test accuracy:', acc)
 
 ```{r}
 scores <- model %>% evaluate(
-  x_test_1h, y_test,
-  batch_size = batch_size
+  x_test_1h, y_test
 )
 ```
 
