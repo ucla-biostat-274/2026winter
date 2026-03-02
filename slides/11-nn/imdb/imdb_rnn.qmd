@@ -166,20 +166,27 @@ model.summary()
 #### R
 
 ```{r}
-model <- keras_model_sequential()
-model %>%
-  layer_embedding(input_dim = max_features, output_dim = 128) %>% 
-  layer_simple_rnn(units = 64) %>% 
-  layer_dense(units = 1, activation = 'sigmoid')
+library(reticulate)
 
-# Try using different optimizers and different optimizer configs
+maxlen       <- 80L
+max_features <- 10000L
+
+model <- keras_model_sequential() %>%
+  layer_embedding(input_dim = max_features, output_dim = 128) %>%
+  layer_simple_rnn(units = 64) %>%
+  layer_dense(units = 1, activation = "sigmoid")
+
+# Use tuple() so NULL is preserved as Python None
+model$build(input_shape = tuple(NULL, maxlen))
+
 model %>% compile(
-  loss = 'binary_crossentropy',
-  optimizer = 'adam',
-  metrics = c('accuracy')
+  loss      = "binary_crossentropy",
+  optimizer = "adam",
+  metrics   = "accuracy"
 )
 
 summary(model)
+
 ```
 
 
