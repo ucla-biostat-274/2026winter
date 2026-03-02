@@ -362,7 +362,7 @@ use_backend("tensorflow")
 set_random_seed(1)
 ```
 
-```{r}
+```{r, eval=F}
 L <- 5L
 feat_cols <- c("log_volume", "DJ_return", "log_volatility")
 target_col <- "log_volume"
@@ -407,7 +407,7 @@ dim(X_train); dim(X_test)
 
 ####  Standardize using training data only
 
-```{r}
+```{r, eval=F}
 scale_3d <- function(X, mu, sig) {
   Xs <- X
   for (j in seq_along(mu)) {
@@ -444,7 +444,7 @@ c(n_train = dim(X_tr)[1], n_val = dim(X_val)[1], n_test = dim(X_test_s)[1])
 
 #### Helper: fit + evaluate (RMSE, $R^2$)
 
-```{r}
+```{r, eval=F}
 library(yardstick)
 
 metrics_reg <- function(truth, pred) {
@@ -515,7 +515,7 @@ We build a small Transformer-style encoder using Keras' `layer_multi_head_attent
 - Pool across time and predict $v_t$
 
 
-```{r}
+```{r, eval=F}
 transformer_encoder_block <- function(x, d_model, num_heads, d_ff, dropout = 0.1) {
   # Self-attention + residual + LayerNorm
   attn <- layer_multi_head_attention(
