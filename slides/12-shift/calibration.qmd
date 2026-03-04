@@ -645,7 +645,7 @@ tibble(
 ```
 
 ::: {.callout-note title="ML connection: temperature scaling"}
-In deep learning, **temperature scaling** (Guo et al., ICML 2017) divides the model's logit output by a scalar $T$ before applying softmax: $	ext{softmax}(z/T)$. This is equivalent to logistic recalibration with $\hat{eta} = 1/T$ and $\hat{lpha} = 0$ — it corrects the *spread* of predictions but not the *mean shift*. If a neural network systematically overestimates risk on a new population (label shift), temperature scaling alone will not fix it — you also need the intercept term.
+In deep learning, **temperature scaling** (Guo et al., ICML 2017) divides the model's logit output by a scalar $T$ before applying softmax: $text{softmax}(z/T)$. This is equivalent to logistic recalibration with $\hat{\eta} = 1/T$ and $\hat{\alpha} = 0$ — it corrects the *spread* of predictions but not the *mean shift*. If a neural network systematically overestimates risk on a new population (label shift), temperature scaling alone will not fix it — you also need the intercept term.
 :::
 
 > **Janssen et al. (2008):** Simple recalibration improved calibration to a similar extent as full model revision. More complex updating should only be attempted with large validation samples.

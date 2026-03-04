@@ -3501,7 +3501,7 @@ Table 2: AUROC is identical across all rows — recalibration cannot change dis
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>In deep learning, <strong>temperature scaling</strong> (Guo et al., ICML 2017) divides the model’s logit output by a scalar <span class="math inline">\(T\)</span> before applying softmax: $ ext{softmax}(z/T)$. This is equivalent to logistic recalibration with <span class="math inline">\(\hat{eta} = 1/T\)</span> and <span class="math inline">\(\hat{lpha} = 0\)</span> — it corrects the <em>spread</em> of predictions but not the <em>mean shift</em>. If a neural network systematically overestimates risk on a new population (label shift), temperature scaling alone will not fix it — you also need the intercept term.</p>
+<p>In deep learning, <strong>temperature scaling</strong> (Guo et al., ICML 2017) divides the model’s logit output by a scalar <span class="math inline">\(T\)</span> before applying softmax: <span class="math inline">\(text{softmax}(z/T)\)</span>. This is equivalent to logistic recalibration with <span class="math inline">\(\hat{\eta} = 1/T\)</span> and <span class="math inline">\(\hat{\alpha} = 0\)</span> — it corrects the <em>spread</em> of predictions but not the <em>mean shift</em>. If a neural network systematically overestimates risk on a new population (label shift), temperature scaling alone will not fix it — you also need the intercept term.</p>
 </div>
 </div>
 <blockquote class="blockquote">
