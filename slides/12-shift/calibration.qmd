@@ -376,6 +376,50 @@ cat(sprintf("ICI — Well-calibrated: %.4f\n", ici_fn(p_well, y_test)))
 cat(sprintf("ICI — Miscalibrated:   %.4f\n", ici_fn(p_misc, y_test)))
 ```
 
+```{r}
+#| label: fig-ici-diagram
+#| fig-cap: "ICI visualized. The Loess curve (blue) is fitted directly to the raw 0/1 outcomes — at each predicted probability it estimates the local event rate. The orange segments are the gaps |p_hat - f(p_hat)| for a sample of patients. ICI is the average length of those segments."
+#| code-fold: true
+
+# ── Fit Loess to raw outcomes ─────────────────────────────────────────────────
+df_ici <- tibble(pred = p_misc, truth = y_test) %>% arrange(pred)
+loess_fit <- loess(truth ~ pred, data = df_ici, span = 0.75)
+df_ici$smooth <- predict(loess_fit, newdata = df_ici)
+
+# ── Sample ~40 evenly-spaced points to draw ICI segments ─────────────────────
+set.seed(7)
+samp <- df_ici %>%
+  mutate(gap = abs(pred - smooth)) %>%
+  slice(round(seq(5, n() - 5, length.out = 40)))
+
+ggplot() +
+  # raw 0/1 outcomes as jittered background points
+  geom_jitter(data = df_ici, aes(x = pred, y = truth),
+              height = 0.02, alpha = 0.08, size = 0.8, color = "gray60") +
+  # perfect calibration diagonal
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed",
+              color = "gray40", linewidth = 0.7) +
+  # Loess smooth curve
+  geom_line(data = df_ici, aes(x = pred, y = smooth),
+            color = "#2196F3", linewidth = 1.2) +
+  # ICI gap segments
+  geom_segment(data = samp,
+               aes(x = pred, xend = pred, y = pred, yend = smooth),
+               color = "#FF9800", linewidth = 0.6, alpha = 0.8) +
+  # annotation
+  annotate("text", x = 0.55, y = 0.72, color = "#2196F3", size = 3.2,
+           label = "Loess smooth = local event rate") +
+  annotate("text", x = 0.30, y = 0.52, color = "#FF9800", size = 3.2,
+           label = "ICI gaps: |p_hat - f(p_hat)|") +
+  annotate("text", x = 0.70, y = 0.62, color = "gray40", size = 3.0,
+           label = "Perfect calibration", angle = 35) +
+  scale_x_continuous(limits = c(0, 0.85), name = "Predicted probability") +
+  scale_y_continuous(limits = c(-0.05, 1.05), name = "Observed outcome / smoothed rate") +
+  labs(title = "How ICI Is Computed",
+       subtitle = "ICI = average length of the orange segments") +
+  theme_bw()
+```
+
 ### All Metrics: Summary Table
 
 ```{r}
@@ -601,7 +645,7 @@ tibble(
 ```
 
 ::: {.callout-note title="ML connection: temperature scaling"}
-In deep learning, **temperature scaling** (Guo et al., ICML 2017) divides the model's logit output by a scalar $T$ before applying softmax: $	ext{softmax}(z/T)$. This is equivalent to logistic recalibration with $\hat{\eta} = 1/T$ and $\hat{\alpha} = 0$ — it corrects the *spread* of predictions but not the *mean shift*. If a neural network systematically overestimates risk on a new population (label shift), temperature scaling alone will not fix it — you also need the intercept term.
+In deep learning, **temperature scaling** (Guo et al., ICML 2017) divides the model's logit output by a scalar $T$ before applying softmax: $	ext{softmax}(z/T)$. This is equivalent to logistic recalibration with $\hat{eta} = 1/T$ and $\hat{lpha} = 0$ — it corrects the *spread* of predictions but not the *mean shift*. If a neural network systematically overestimates risk on a new population (label shift), temperature scaling alone will not fix it — you also need the intercept term.
 :::
 
 > **Janssen et al. (2008):** Simple recalibration improved calibration to a similar extent as full model revision. More complex updating should only be attempted with large validation samples.
@@ -677,7 +721,7 @@ These are the **same operation.** Dividing logits by $T$ is equivalent to $\hat{
 
 ### Decision Guide
 
-```{r, echo=F}
+```{r}
 #| label: tbl-strategy-choice
 #| tbl-cap: "Use calibration diagnostics to choose a strategy before committing to a method."
 
