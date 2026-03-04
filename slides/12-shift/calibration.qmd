@@ -17,18 +17,16 @@ knitr:
   opts_chunk: 
     fig.align: 'center'
     message: FALSE
+    warning: FALSE
     cache: false
 ---
 
-Credit: This note heavily uses material from
+Credit: This note draws from
 
-- Huang et al. (2020). [_A tutorial on calibration measurements and calibration models for clinical prediction models_](https://doi.org/10.1093/jamia/ocz228). *Journal of the American Medical Informatics Association*, 27(4), 621–633.
-
-- Van Calster B, et al. (2016). A calibration hierarchy for risk models was defined: from utopia to empirical data. *J Clin Epidemiol*, 74, 167–176.
-
+- Huang et al. (2020). [_A tutorial on calibration measurements and calibration models for clinical prediction models_](https://doi.org/10.1093/jamia/ocz228). *JAMIA*, 27(4), 621–633.
+- Van Calster et al. (2016). A calibration hierarchy for risk models. *J Clin Epidemiol*, 74, 167–176.
+- Janssen et al. (2008). Updating methods improved the performance of a clinical prediction model. *J Clin Epidemiol*, 61(1), 76–86.
 - Kouw & Loog (2018). [_An Introduction to Domain Adaptation and Transfer Learning_](https://arxiv.org/abs/1812.11806).
-
-- Chip Huyen. [_Data Distribution Shifts and Monitoring_](https://huyenchip.com/2022/02/07/data-distribution-shifts-and-monitoring.html).
 
 ---
 
@@ -36,238 +34,45 @@ Credit: This note heavily uses material from
 
 ### The Core Problem
 
-- Most clinicians can recall seeing a patient who was listed as 50 years old but appeared decades older due to chronic illness — "appearing older than stated age."
+- Models built on one population often fail **silently** when applied to another.
+- "Silently" means AUROC looks fine — but predicted probabilities are wrong.
+- Wrong probabilities lead to wrong clinical decisions.
 
-- Experienced clinicians can **calibrate their mental models** to account for such discrepancies. Predictive models cannot do this without further instruction.
+### Two Clinical Stakes
 
-- When predictive models are built on one population and applied to another, blind application can result in large **residuals** (large differences between model estimates and true outcomes) — even when average performance looks acceptable.
+**Dementia risk prediction:** At a predicted risk of 40%, observed incidence was only 10% — a 4× overestimation. Patients referred for unnecessary workup.
 
-### A Motivating Example: Dementia Risk Prediction
+**Cardiovascular risk / statin prescribing:** ACC/AHA guidelines recommend statins for patients with risk **> 7.5%**. A miscalibrated model assigning 8% to a patient whose true risk is 4% triggers unnecessary treatment — and vice versa.
 
-- One study evaluated calibration of several models for predicting risk of dementia in community-dwelling populations.
+### Discrimination vs. Calibration
 
-- At a **predicted risk of 40%**, the observed incidence was still only **10%** — a 30 percentage point overestimation.
-
-- For an individual patient, this magnitude of error could lead to dramatically different clinical decisions.
-
-### Another Example: Cardiovascular Risk
-
-- The American College of Cardiology / American Heart Association recommend prescribing statins for patients with cardiovascular risk **> 7.5%** and considering treatment for those between **5–7.5%**.
-
-- A miscalibrated model assigning 8% risk to a patient whose true risk is 4% could lead to unnecessary statin prescription — and vice versa.
-
-> **Key insight:** Even when a model's *average* predicted risk equals the observed prevalence, there could be severe miscalibration in specific subgroups. Accurate, well-calibrated estimates are necessary to allocate resources appropriately.
-
-### Discrimination vs. Calibration: The Critical Distinction
-
-- **Discrimination** refers to the ability of a model to *rank* patients according to risk — measured by the AUROC (area under the ROC curve), also known as the concordance index.
-
-- **Calibration** refers to the *agreement* between predicted probabilities and observed outcomes — it captures whether predicted risks are numerically accurate.
-
-- **These are independent properties.** Three models with identical AUROC can have dramatically different calibration. See Figure 1 from Huang et al. (2020):
-
-    - Model A: original estimates — well-calibrated.
-    - Model B: original estimates divided by 10 — perfectly ordered but grossly underestimates.
-    - Model C: recalibrated estimates — improved calibration.
-    - **All three have identical AUROC = 0.785.**
-
-- One systematic review found that while **63% of published models** included a discrimination measure, only **36%** included a calibration measure.
-
-> **Implication:** Reporting only AUROC is insufficient for clinical decision making. A model may rank patients correctly but assign completely wrong absolute risk values.
-
-### The Calibration Hierarchy (Van Calster et al., 2016)
-
-Calibration can be evaluated at multiple levels, from coarse to fine:
-
-1. **Mean calibration (calibration-in-the-large):** Does the average predicted probability equal the observed event rate?
-
-2. **Weak calibration:** Does the calibration slope equal 1 and intercept equal 0?
-
-3. **Moderate calibration:** Within subgroups defined by predicted risk, do predicted and observed rates agree?
-
-4. **Strong calibration:** For every individual, does the predicted probability equal the true probability?
-
-Strong calibration is an ideal that is rarely achievable in practice. Most clinical work focuses on levels 1–3.
-
----
-
-## Types of Calibration Metrics
-
-There is no single best method to measure calibration. Each method has specific strengths and limitations. Below we present the most commonly used metrics.
-
-### Brier Score
-
-The **Brier score** is the mean squared error between predicted probabilities and actual binary outcomes:
-
-$$
-\text{Brier Score} = \frac{1}{N} \sum_{i=1}^{N} (E_i - O_i)^2
-$$
-
-where $E_i$ is the predicted probability for patient $i$ and $O_i \in \{0, 1\}$ is the actual outcome.
-
-- A Brier score of **0** indicates perfect prediction; a score of **0.25** is the score of a model that always predicts 0.5.
-
-- The Brier score is a **combined measure** of discrimination and calibration — a lower score does not necessarily mean better calibration alone.
-
-- It can be **decomposed** into a calibration component and a refinement (discrimination) component — the calibration component can be extracted via the Spiegelhalter z-test.
-
-```r
-library(DescTools)
-BrierScore(predicted_probs, actual_outcomes)
-```
-
-### Spiegelhalter's Z-Test
-
-An extension of the Brier score that isolates calibration. The test statistic is:
-
-$$
-Z(E, O) = \frac{\sum_{i=1}^{N}(O_i - E_i)(1 - 2E_i)}{\sqrt{\sum_{i=1}^{N}(1-2E_i)^2 E_i(1-E_i)}}
-$$
-
-- If $|Z| > z_{1-\alpha/2}$ (e.g., $z_{0.975} = 1.96$), the model is considered miscalibrated at level $\alpha = 0.05$.
-
-- Provides a formal statistical test for calibration — useful as a hypothesis test alongside visualizations.
-
-```r
-library(rms)
-val.prob(predicted_probs, actual_outcomes)  # includes Spiegelhalter z
-```
-
-### Hosmer-Lemeshow (H-L) Test
-
-The most widely used proxy for calibration in biomedical literature (874+ PubMed mentions in the past 5 years).
-
-**Two variants:**
-
-- **H-L C-statistic:** Divide patients into $g$ groups (typically deciles) with **equal numbers of patients** per group. Compare expected vs. observed events within each group.
-
-- **H-L H-statistic:** Divide patients into groups based on **equal-width intervals** of predicted probability (e.g., [0, 0.1), [0.1, 0.2), ...).
-
-The test statistic follows a $\chi^2$ distribution with $g-2$ degrees of freedom:
-
-$$
-\text{H-L} = \sum_{i=1}^{g} \left[ \frac{(O_{s,i} - E_{s,i})^2}{E_{s,i}} + \frac{(O_{f,i} - E_{f,i})^2}{E_{f,i}} \right]
-$$
-
-- $p \geq 0.10$: adequate calibration
-- $0.05 < p < 0.10$: borderline
-- $p < 0.05$: significant miscalibration
-
-```{r, eval = F}
-library(ResourceSelection)
-hoslem.test(actual_outcomes, predicted_probs, g = 10)
-```
-
-**Limitations:**
-
-- Susceptible to increasing power as sample size increases — may reject calibration in large datasets even for trivial deviations.
-- H-L C and H-L H can give contradictory results.
-- Choice of number of bins is arbitrary and can alter the p-value.
-
-### Reliability Diagram (Calibration Curve)
-
-A visualization of calibration that uses the same groupings as the H-L test. For each bin, the **mean predicted probability** is plotted against the **observed event rate**. A perfectly calibrated model produces a 45-degree diagonal line.
-
-- The reliability diagram reveals the **direction** of miscalibration (underestimation, overestimation) and **where** it occurs.
-
-- Deviations above the diagonal indicate underestimation of risk; deviations below indicate overestimation.
-
-```{r, eval = F}
-library(PresenceAbsence)
-calibration.plot(actual_outcomes, predicted_probs, N.bins = 10)
-```
-
-**Limitation:** Not a continuous curve — no information can be derived between the plotted points. Can be hard to read when estimates are clustered in a narrow range.
-
-### Expected Calibration Error (ECE) and Maximum Calibration Error (MCE)
-
-Binning-based scalar summaries of miscalibration, popular in the machine learning literature:
-
-$$
-\text{ECE} = \sum_{k=1}^{K} P(k) \cdot |o_k - e_k|, \quad \text{MCE} = \max_{k=1,\ldots,K} |o_k - e_k|
-$$
-
-where $P(k)$ is the fraction of patients in bin $k$, $o_k$ is the observed event rate, and $e_k$ is the mean predicted probability.
-
-- **ECE** measures the *average* calibration error, weighted by bin size.
-- **MCE** measures the *worst-case* calibration error across bins.
-- Both are intuitive and easy to compute.
-
-**Limitation:** No statistical test to determine if a given ECE/MCE value is "too large" — requires context-dependent thresholds.
-
-### Cox Intercept and Slope
-
-A regression-based approach that avoids binning entirely. The binary outcome is regressed on the log-odds of the predicted probability:
-
-$$
-\text{logit}\{P(O=1)\} = \alpha + \beta \cdot \text{logit}(E)
-$$
-
-- **Slope** $\beta = 1$: perfect calibration.
-- $\beta > 1$: underestimation of high risk, overestimation of low risk (predictions too extreme).
-- $\beta < 1$: overestimation of high risk, underestimation of low risk (predictions too conservative).
-- **Intercept** $\alpha = 0$: good overall calibration.
-- $\alpha > 0$: systematic underestimation (predicted probabilities are too low on average).
-- $\alpha < 0$: systematic overestimation.
-
-```{r, eval = F}
-cal_model <- glm(actual ~ offset(logit_predicted), 
-                 family = binomial, data = df)  # intercept-only recalibration
-
-cal_model2 <- glm(actual ~ logit_predicted, 
-                  family = binomial, data = df)  # slope + intercept
-```
-
-**Limitation:** Cox slope and intercept can both be 1 and 0 respectively while deviations in specific regions still exist — if miscalibrations "cancel out" in the linear regression.
-
-### Integrated Calibration Index (ICI)
-
-The ICI extends Cox's approach by using a **locally weighted regression smoother (Loess)** instead of a linear model:
-
-$$
-\text{ICI} = \frac{1}{N} \sum_{i=1}^{N} |E_i - \hat{p}(E_i)|
-$$
-
-where $\hat{p}(E_i)$ is the Loess-smoothed estimate of the true probability at $E_i$.
-
-- Can detect miscalibration in specific regions that Cox slope/intercept misses (e.g., when overestimation in one range is cancelled by underestimation in another).
-
-- Well-calibrated models have ICI close to 0.
-
-```{r, eval= F}
-library(rms)
-val.prob(predicted_probs, actual_outcomes)  # includes ICI
-```
-
-**Limitation:** Requires choice of Loess bandwidth parameter. Less intuitive than binning methods for clinical audiences.
-
----
-
-## Summary: Pros and Cons of Calibration Metrics
-
-| Metric | Pros | Cons |
+| | What it measures | Metric |
 |:--|:--|:--|
-| **Brier score** | Easy to compute; widely reported | Combines discrimination + calibration; components not easily separable |
-| **Spiegelhalter z-test** | Formal statistical test; isolates calibration from Brier | Not intuitive; less commonly understood |
-| **Hosmer-Lemeshow test** | Most widely used in biomedicine; p-value guides interpretation | Power increases with $n$; bin count is arbitrary; C vs H can disagree |
-| **Reliability diagram** | Visualizes direction and location of miscalibration | Not a continuous curve; hard to read with clustered predictions |
-| **ECE / MCE** | Intuitive scalar summaries; popular in ML | No formal statistical test; threshold is arbitrary |
-| **Cox slope & intercept** | No binning needed; interprets direction of miscalibration | Misses regional miscalibration that cancels out linearly |
-| **ICI** | Captures regional miscalibration missed by Cox | Requires Loess bandwidth choice; less intuitive |
+| **Discrimination** | Can the model *rank* patients by risk? | AUROC |
+| **Calibration** | Are the predicted probabilities *numerically correct*? | Reliability diagram, ECE, ICI |
 
-> **Practical recommendation:** Use at least one visual (reliability diagram) and one scalar with a statistical test (Spiegelhalter z or H-L). Report Cox intercept and slope to characterize direction of any miscalibration. Use ICI for a more sensitive check.
+- These are **independent.** A model can discriminate perfectly and be grossly miscalibrated.
+- 63% of published clinical prediction models report discrimination. Only **36% report calibration** (Van Calster et al., 2019).
+
+### The Calibration Hierarchy
+
+| Level | Question |
+|:--|:--|
+| **Mean calibration** | Does average predicted probability = observed event rate? |
+| **Weak calibration** | Is calibration slope = 1 and intercept = 0? |
+| **Moderate calibration** | Within risk subgroups, do predicted and observed rates agree? |
+| **Strong calibration** | For every individual, does predicted probability = true probability? |
+
+Most clinical work focuses on levels 1–3. Strong calibration is rarely achievable.
 
 ---
 
-## Figure 1 Reproduction: Same AUROC, Different Calibration
+## Simulated Data Setup
 
-This reproduces the core insight of Huang et al. (2020) Figure 1: **three models can have identical AUROC but dramatically different calibration.**
-
-We simulate data following the paper's setup (5,000 samples, 15% event rate, logistic regression and a miscalibrated SVM-like model).
+All examples use the same dataset. **Run this chunk first** — all subsequent sections depend on these objects.
 
 ```{r}
-#| label: fig-auroc-vs-calibration
-#| fig-cap: "Illustration that AUROC is insensitive to calibration. Three models (original, divided-by-10, recalibrated) have identical AUROC = 0.785 but very different predicted probability distributions."
+#| label: setup-data
 #| code-fold: true
 
 library(tidyverse)
@@ -278,72 +83,101 @@ library(patchwork)
 set.seed(274)
 
 # ── Simulate data (mirroring Huang et al. 2020) ──────────────────────────────
-n       <- 2000
-x1      <- rnorm(n); x2 <- rnorm(n); x3 <- rbinom(n, 1, 0.4)
-log_odds <- -2 + 0.8*x1 + 0.6*x2 + 0.5*x3
+n         <- 2000
+x1        <- rnorm(n); x2 <- rnorm(n); x3 <- rbinom(n, 1, 0.4)
+log_odds  <- -2 + 0.8*x1 + 0.6*x2 + 0.5*x3
 true_prob <- plogis(log_odds)
 y         <- rbinom(n, 1, true_prob)
 
-# Split: 60% train, 20% calibration, 20% test
+# 60% train / 20% calibration / 20% test
 idx       <- sample(1:n)
 train_idx <- idx[1:1200]
-cal_idx   <- idx[1201:1600]
 test_idx  <- idx[1601:2000]
 
 df       <- tibble(y, x1, x2, x3)
 df_train <- df[train_idx, ]
-df_cal   <- df[cal_idx, ]
 df_test  <- df[test_idx, ]
+y_test   <- df_test$y
 
-# ── Fit logistic regression (well-calibrated) ────────────────────────────────
-lr_fit   <- glm(y ~ x1 + x2 + x3, data = df_train, family = binomial)
-p_lr     <- predict(lr_fit, newdata = df_test, type = "response")
+# ── Fit logistic regression on training set ───────────────────────────────────
+lr_fit <- glm(y ~ x1 + x2 + x3, data = df_train, family = binomial)
+p_lr   <- predict(lr_fit, newdata = df_test, type = "response")
 
-# ── Model A: original LR predictions ────────────────────────────────────────
-p_A <- p_lr
+# ── Three models for discrimination vs. calibration demo ─────────────────────
+p_A <- p_lr                          # Model A: original LR — well calibrated
+p_B <- p_lr / 10                     # Model B: divided by 10 — grossly miscalibrated
+p_C <- plogis(qlogis(p_lr) * 1.5)   # Model C: rescaled toward extremes
 
-# ── Model B: predictions divided by 10 (grossly miscalibrated) ──────────────
-p_B <- p_lr / 10
+# ── Well-calibrated vs. miscalibrated (SVM-like) ─────────────────────────────
+p_well <- p_A
+p_misc <- plogis(qlogis(p_A) * 0.3 - 1.5)  # compressed + shifted (mimics SVM)
 
-# ── Model C: "recalibrated" (push toward 0/1 extremes using logit scaling) ──
-p_C <- plogis(qlogis(p_lr) * 1.5)
-
-# ── AUROC for all three ──────────────────────────────────────────────────────
-y_test <- df_test$y
-
+# ── Helper functions ──────────────────────────────────────────────────────────
 auroc <- function(pred, truth) {
   roc_auc(tibble(truth = factor(truth, levels = c("1","0")), prob = pred),
           truth, prob)$.estimate
 }
 
-cat(sprintf("AUROC Model A (original):     %.3f\n", auroc(p_A, y_test)))
-cat(sprintf("AUROC Model B (divided by 10):%.3f\n", auroc(p_B, y_test)))
-cat(sprintf("AUROC Model C (rescaled):     %.3f\n", auroc(p_C, y_test)))
-
-# ── ROC curves ───────────────────────────────────────────────────────────────
-roc_df <- bind_rows(
-  roc_curve(tibble(truth=factor(y_test,levels=c("1","0")),prob=p_A), truth, prob) %>% mutate(model="A: Original"),
-  roc_curve(tibble(truth=factor(y_test,levels=c("1","0")),prob=p_B), truth, prob) %>% mutate(model="B: Divided by 10"),
-  roc_curve(tibble(truth=factor(y_test,levels=c("1","0")),prob=p_C), truth, prob) %>% mutate(model="C: Rescaled")
-)
-
-p_roc <- ggplot(roc_df, aes(x = 1-specificity, y = sensitivity, color = model, linetype = model)) +
-  geom_line(linewidth = 0.9) +
-  geom_abline(linetype = "dotted", color = "gray60") +
-  scale_color_manual(values = c("#2196F3","#F44336","#4CAF50")) +
-  labs(title = "ROC Curves: All three models overlap",
-       subtitle = sprintf("All AUROCs ≈ %.3f", auroc(p_A, y_test)),
-       x = "1 - Specificity", y = "Sensitivity", color = NULL, linetype = NULL) +
-  theme_bw() + theme(legend.position = "bottom")
-
-# ── Calibration curves ───────────────────────────────────────────────────────
 make_cal_df <- function(pred, truth, label) {
   tibble(pred = pred, truth = truth) %>%
     mutate(bin = cut(pred, breaks = seq(0, 1, 0.1), include.lowest = TRUE)) %>%
     group_by(bin) %>%
-    summarise(mean_pred = mean(pred), mean_obs = mean(truth), n = n(), .groups = "drop") %>%
+    summarise(mean_pred = mean(pred), mean_obs = mean(truth),
+              n = n(), .groups = "drop") %>%
     mutate(model = label)
 }
+
+cx_int <- function(p, y) {
+  lp <- qlogis(pmin(pmax(p, 1e-6), 1-1e-6))
+  coef(glm(y ~ offset(lp), family = binomial))[["(Intercept)"]]
+}
+
+cx_slp <- function(p, y) {
+  lp <- qlogis(pmin(pmax(p, 1e-6), 1-1e-6))
+  coef(glm(y ~ lp, family = binomial))[["lp"]]
+}
+
+ici_fn <- function(pred, truth) {
+  df <- tibble(pred, truth) %>% arrange(pred)
+  mean(abs(df$pred - predict(loess(truth ~ pred, data = df, span = 0.75), newdata = df)))
+}
+
+cat("Event rate in test set:         ", round(mean(y_test), 3), "\n")
+cat("Mean predicted (well-calibrated):", round(mean(p_well), 3), "\n")
+cat("Mean predicted (miscalibrated):  ", round(mean(p_misc), 3), "\n")
+```
+
+---
+
+## Discrimination vs. Calibration: Demo
+
+Three models with **identical AUROC** but dramatically different calibration — reproducing Figure 1 from Huang et al. (2020).
+
+```{r}
+#| label: fig-auroc-vs-calibration
+#| fig-cap: "All three models have the same AUROC. ROC curves overlap. Calibration curves diverge completely."
+#| code-fold: true
+
+cat(sprintf("AUROC  A (original):      %.3f\n", auroc(p_A, y_test)))
+cat(sprintf("AUROC  B (divided by 10): %.3f\n", auroc(p_B, y_test)))
+cat(sprintf("AUROC  C (rescaled):      %.3f\n", auroc(p_C, y_test)))
+
+roc_df <- bind_rows(
+  roc_curve(tibble(truth=factor(y_test,levels=c("1","0")), prob=p_A), truth, prob) %>%
+    mutate(model="A: Original"),
+  roc_curve(tibble(truth=factor(y_test,levels=c("1","0")), prob=p_B), truth, prob) %>%
+    mutate(model="B: Divided by 10"),
+  roc_curve(tibble(truth=factor(y_test,levels=c("1","0")), prob=p_C), truth, prob) %>%
+    mutate(model="C: Rescaled")
+)
+
+p_roc <- ggplot(roc_df, aes(x=1-specificity, y=sensitivity, color=model, linetype=model)) +
+  geom_line(linewidth=0.9) +
+  geom_abline(linetype="dotted", color="gray60") +
+  scale_color_manual(values=c("#2196F3","#F44336","#4CAF50")) +
+  labs(title="ROC Curves: All three overlap",
+       x="1 - Specificity", y="Sensitivity", color=NULL, linetype=NULL) +
+  theme_bw() + theme(legend.position="bottom")
 
 cal_all <- bind_rows(
   make_cal_df(p_A, y_test, "A: Original"),
@@ -351,53 +185,33 @@ cal_all <- bind_rows(
   make_cal_df(p_C, y_test, "C: Rescaled")
 )
 
-p_cal <- ggplot(cal_all, aes(x = mean_pred, y = mean_obs, color = model)) +
-  geom_line(linewidth = 0.9) +
-  geom_point(aes(size = n)) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray40") +
-  scale_color_manual(values = c("#2196F3","#F44336","#4CAF50")) +
-  scale_x_continuous(limits = c(0, 1)) +
-  scale_y_continuous(limits = c(0, 1)) +
-  labs(title = "Calibration Curves: Dramatically different",
-       subtitle = "Diagonal = perfect calibration",
-       x = "Mean Predicted Probability", y = "Observed Event Rate",
-       color = NULL, size = "N in bin") +
-  theme_bw() + theme(legend.position = "bottom")
+p_cal <- ggplot(cal_all, aes(x=mean_pred, y=mean_obs, color=model)) +
+  geom_line(linewidth=0.9) + geom_point(aes(size=n)) +
+  geom_abline(slope=1, intercept=0, linetype="dashed", color="gray40") +
+  scale_color_manual(values=c("#2196F3","#F44336","#4CAF50")) +
+  scale_x_continuous(limits=c(0,1)) + scale_y_continuous(limits=c(0,1)) +
+  labs(title="Calibration Curves: Dramatically different",
+       subtitle="Diagonal = perfect calibration",
+       x="Mean Predicted Probability", y="Observed Event Rate", color=NULL, size="N") +
+  theme_bw() + theme(legend.position="bottom")
 
 p_roc + p_cal
 ```
 
-**Key takeaway:** Model B (divided by 10) stacks perfectly on top of Model A in the ROC plot, but its calibration curve is completely flat near zero — it never assigns probabilities above 0.05 regardless of how high the true risk is.
+> **Key point:** Model B stacks perfectly on Model A in the ROC plot — but it never predicts above 0.05, regardless of how sick the patient is.
 
 ---
 
-## Figure 2: All Calibration Metrics on Simulated Data
+## Calibration Metrics
 
-This demonstrates all seven calibration metrics on a well-calibrated model (LR) versus a miscalibrated model.
+### Brier Score
 
-### Setup: Well-calibrated vs. Miscalibrated Models
+Mean squared error between predicted probabilities and binary outcomes:
 
-```{r}
-#| label: setup-models
-#| code-fold: true
+$$\text{Brier} = \frac{1}{N}\sum_{i=1}^{N}(\hat{p}_i - y_i)^2$$
 
-# ── Well-calibrated: LR ──────────────────────────────────────────────────────
-p_well <- p_A   # original LR predictions — well calibrated
-
-# ── Miscalibrated: compress predictions toward 0 (like an SVM) ──────────────
-# This mimics the SVM behavior in the paper: underestimates high risks
-p_misc <- plogis(qlogis(p_A) * 0.3 - 1.5)  # compressed + shifted down
-
-cat("=== Well-calibrated model ===\n")
-cat(sprintf("  Mean predicted: %.3f  |  Observed rate: %.3f\n",
-            mean(p_well), mean(y_test)))
-
-cat("\n=== Miscalibrated model ===\n")
-cat(sprintf("  Mean predicted: %.3f  |  Observed rate: %.3f\n",
-            mean(p_misc), mean(y_test)))
-```
-
-### Metric 1: Brier Score
+- Range: 0 (perfect) to 1. Null model (always predict mean) ≈ 0.25 at 50% prevalence.
+- **Combined measure** — mixes calibration and discrimination.
 
 ```{r}
 #| label: brier-score
@@ -405,210 +219,481 @@ cat(sprintf("  Mean predicted: %.3f  |  Observed rate: %.3f\n",
 brier_well <- mean((p_well - y_test)^2)
 brier_misc <- mean((p_misc - y_test)^2)
 
-cat(sprintf("Brier score — Well-calibrated: %.4f\n", brier_well))
-cat(sprintf("Brier score — Miscalibrated:   %.4f\n", brier_misc))
-cat(sprintf("Null model (always predict mean): %.4f\n",
-            mean((mean(y_test) - y_test)^2)))
+cat(sprintf("Brier — Well-calibrated: %.4f\n", brier_well))
+cat(sprintf("Brier — Miscalibrated:   %.4f\n", brier_misc))
+cat(sprintf("Null model:              %.4f\n", mean((mean(y_test) - y_test)^2)))
 ```
 
-### Metric 2: Hosmer-Lemeshow Test
+### Spiegelhalter Z-Test
+
+Isolates the calibration component of the Brier score:
+
+$$Z = \frac{\sum(y_i - \hat{p}_i)(1 - 2\hat{p}_i)}{\sqrt{\sum(1-2\hat{p}_i)^2 \hat{p}_i(1-\hat{p}_i)}}$$
+
+- $|Z| > 1.96$: significant miscalibration at $\alpha = 0.05$.
+- More targeted than Brier — tests calibration specifically.
+
+```{r}
+#| label: spiegelhalter
+
+spieg_z <- function(pred, truth) {
+  num   <- sum((truth - pred) * (1 - 2*pred))
+  denom <- sqrt(sum((1 - 2*pred)^2 * pred * (1 - pred)))
+  z     <- num / denom
+  p     <- 2 * pnorm(-abs(z))
+  cat(sprintf("  Z = %.3f  |  p = %.4f  |  %s\n", z, p,
+              ifelse(abs(z) > 1.96, "MISCALIBRATED", "OK")))
+}
+
+cat("Well-calibrated:\n"); spieg_z(p_well, y_test)
+cat("Miscalibrated:\n");   spieg_z(p_misc, y_test)
+```
+
+### Hosmer-Lemeshow Test
+
+Group patients into $g$ bins (typically deciles), compare expected vs. observed events per bin:
+
+$$\text{HL} = \sum_{k=1}^{g}\left[\frac{(O_{k,1}-E_{k,1})^2}{E_{k,1}} + \frac{(O_{k,0}-E_{k,0})^2}{E_{k,0}}\right] \sim \chi^2_{g-2}$$
+
+- $p < 0.05$: significant miscalibration
+- **Limitation:** Overpowered in large samples — may reject for trivial deviations.
 
 ```{r}
 #| label: hl-test
 
-library(ResourceSelection)
-
 hl_well <- hoslem.test(y_test, p_well, g = 10)
 hl_misc <- hoslem.test(y_test, p_misc, g = 10)
 
-cat("=== Hosmer-Lemeshow Test ===\n")
-cat(sprintf("Well-calibrated: X² = %.2f, p = %.4f  %s\n",
+cat(sprintf("Well-calibrated: X2 = %.2f, p = %.4f  %s\n",
             hl_well$statistic, hl_well$p.value,
-            ifelse(hl_well$p.value < 0.05, "⚠ MISCALIBRATED", "✓ OK")))
-cat(sprintf("Miscalibrated:   X² = %.2f, p = %.4f  %s\n",
+            ifelse(hl_well$p.value < 0.05, "MISCALIBRATED", "OK")))
+cat(sprintf("Miscalibrated:   X2 = %.2f, p = %.4f  %s\n",
             hl_misc$statistic, hl_misc$p.value,
-            ifelse(hl_misc$p.value < 0.05, "⚠ MISCALIBRATED", "✓ OK")))
+            ifelse(hl_misc$p.value < 0.05, "MISCALIBRATED", "OK")))
 ```
 
-### Metric 3: Cox Intercept and Slope
+### Reliability Diagram (Calibration Curve)
 
-```{r}
-#| label: cox-intercept-slope
+Plot mean predicted probability vs. observed event rate per bin. Perfect calibration = 45° diagonal.
 
-cox_stats <- function(pred, truth, label) {
-  df_cox    <- tibble(y = truth, logit_p = qlogis(pmin(pmax(pred, 1e-6), 1-1e-6)))
-  
-  # intercept only (fix slope = 1) → calibration-in-the-large
-  m_int  <- glm(y ~ offset(logit_p), data = df_cox, family = binomial)
-  
-  # slope + intercept → weak calibration
-  m_both <- glm(y ~ logit_p, data = df_cox, family = binomial)
-  
-  cat(sprintf("\n--- %s ---\n", label))
-  cat(sprintf("  Intercept (α): %.3f  [ideal = 0]\n",
-              coef(m_int)[["(Intercept)"]] ))
-  cat(sprintf("  Slope     (β): %.3f  [ideal = 1]\n",
-              coef(m_both)[["logit_p"]]))
-  cat(sprintf("  Interpretation: %s\n",
-              case_when(
-                coef(m_both)[["logit_p"]] > 1.1 ~ "Underestimates high risk, overestimates low risk",
-                coef(m_both)[["logit_p"]] < 0.9 ~ "Overestimates high risk, underestimates low risk",
-                TRUE ~ "Slope near 1 — good weak calibration"
-              )))
-}
-
-cox_stats(p_well, y_test, "Well-calibrated model")
-cox_stats(p_misc, y_test, "Miscalibrated model")
-```
-
-### Metric 4: Reliability Diagram (Calibration Curve)
-
-::: {#fig-reliability}
+- Above diagonal → model **underestimates** risk
+- Below diagonal → model **overestimates** risk
 
 ```{r}
 #| label: fig-reliability-diagram
-#| fig-cap: "Reliability diagrams for well-calibrated (blue) and miscalibrated (red) models. The miscalibrated model systematically underestimates risk — its curve lies above the diagonal, consistent with Figure 3 in Huang et al. (2020)."
+#| fig-cap: "Miscalibrated model (red) lies above the diagonal — it systematically underestimates risk."
 
-cal_well <- make_cal_df(p_well, y_test, "Well-calibrated (LR)")
-cal_misc <- make_cal_df(p_misc, y_test, "Miscalibrated")
-cal_both <- bind_rows(cal_well, cal_misc)
-
-ggplot(cal_both, aes(x = mean_pred, y = mean_obs, color = model)) +
-  geom_line(linewidth = 1.0) +
-  geom_point(aes(size = n)) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray40", linewidth = 0.8) +
-  annotate("text", x = 0.7, y = 0.65, label = "Perfect calibration",
-           color = "gray40", size = 3.2, angle = 35) +
-  scale_color_manual(values = c("#2196F3", "#F44336")) +
-  scale_x_continuous(limits = c(0, 0.8)) +
-  scale_y_continuous(limits = c(0, 0.8)) +
-  labs(title = "Reliability Diagram",
-       subtitle = "Miscalibrated model: curve lies above diagonal → underestimates risk",
-       x = "Mean Predicted Probability", y = "Observed Event Rate",
-       color = NULL, size = "N in bin") +
-  theme_bw() +
-  theme(legend.position = "bottom")
+ggplot(bind_rows(make_cal_df(p_well, y_test, "Well-calibrated (LR)"),
+                 make_cal_df(p_misc, y_test, "Miscalibrated")),
+       aes(x=mean_pred, y=mean_obs, color=model)) +
+  geom_line(linewidth=1.0) + geom_point(aes(size=n)) +
+  geom_abline(slope=1, intercept=0, linetype="dashed", color="gray40") +
+  annotate("text", x=0.65, y=0.60, label="Perfect calibration",
+           color="gray40", size=3.2, angle=35) +
+  scale_color_manual(values=c("#2196F3","#F44336")) +
+  scale_x_continuous(limits=c(0,0.8)) + scale_y_continuous(limits=c(0,0.8)) +
+  labs(x="Mean Predicted Probability", y="Observed Event Rate", color=NULL, size="N") +
+  theme_bw() + theme(legend.position="bottom")
 ```
 
-:::
+### ECE and MCE
 
-### Metric 5: ECE and MCE
+Scalar summaries of miscalibration — popular in machine learning:
+
+$$\text{ECE} = \sum_k P(k)|o_k - e_k| \qquad \text{MCE} = \max_k |o_k - e_k|$$
+
+- ECE = weighted average error across bins; MCE = worst-case bin error.
+- No formal test — threshold is context-dependent.
+
+::: {.callout-note title="ML connection: ECE and MCE"}
+ECE and MCE come from the ML literature (Guo et al., ICML 2017) and appear constantly in deep learning papers. They are the scalar version of the reliability diagram — same bins, same logic, just summarized as a single number instead of a plot. If you read a paper reporting ECE on a neural network, it is measuring exactly what you learned here.
+:::
 
 ```{r}
 #| label: ece-mce
 
-compute_ece_mce <- function(pred, truth, K = 10) {
-  bins <- cut(pred, breaks = seq(0, 1, length.out = K+1), include.lowest = TRUE)
-  df   <- tibble(pred, truth, bins) %>%
+ece_mce <- function(pred, truth, K = 10) {
+  bins <- cut(pred, breaks=seq(0,1,length.out=K+1), include.lowest=TRUE)
+  tibble(pred, truth, bins) %>%
     group_by(bins) %>%
-    summarise(mean_pred = mean(pred), mean_obs = mean(truth),
-              n = n(), .groups = "drop") %>%
-    mutate(w = n / sum(n), err = abs(mean_pred - mean_obs))
-  
-  list(ECE = sum(df$w * df$err, na.rm = TRUE),
-       MCE = max(df$err, na.rm = TRUE))
+    summarise(ep=mean(pred), eo=mean(truth), n=n(), .groups="drop") %>%
+    summarise(ECE=sum(n/sum(n)*abs(ep-eo), na.rm=TRUE),
+              MCE=max(abs(ep-eo), na.rm=TRUE))
 }
 
-ece_well <- compute_ece_mce(p_well, y_test)
-ece_misc <- compute_ece_mce(p_misc, y_test)
+ece_well <- ece_mce(p_well, y_test)
+ece_misc <- ece_mce(p_misc, y_test)
 
-cat("=== ECE and MCE ===\n")
-cat(sprintf("Well-calibrated: ECE = %.4f | MCE = %.4f\n",
-            ece_well$ECE, ece_well$MCE))
-cat(sprintf("Miscalibrated:   ECE = %.4f | MCE = %.4f\n",
-            ece_misc$ECE, ece_misc$MCE))
+cat(sprintf("Well-calibrated: ECE = %.4f | MCE = %.4f\n", ece_well$ECE, ece_well$MCE))
+cat(sprintf("Miscalibrated:   ECE = %.4f | MCE = %.4f\n", ece_misc$ECE, ece_misc$MCE))
 ```
 
-### All Metrics Summary Table
+### Calibration Intercept and Slope
+
+Regress the binary outcome on the log-odds of the predicted probability:
+
+$$\text{logit}\{P(Y=1)\} = \alpha + \beta \cdot \text{logit}(\hat{p})$$
+
+| Parameter | Ideal | If off |
+|:--|:--:|:--|
+| Intercept $\alpha$ | 0 | $< 0$: overestimation; $> 0$: underestimation |
+| Slope $\beta$ | 1 | $< 1$: predictions too extreme; $> 1$: too conservative |
+
+::: {.callout-note title="ML connection: Platt scaling"}
+In machine learning, this two-parameter logistic fit is called **Platt scaling** (Platt, 1999). Same equation, different name. When you see "Platt scaling" in an sklearn or PyTorch tutorial, it is fitting exactly this model — `glm(y ~ logit_p, family = binomial)` — on a held-out calibration set.
+:::
+
+```{r}
+#| label: cal-intercept-slope
+
+cal_stats <- function(pred, truth, label) {
+  lp    <- qlogis(pmin(pmax(pred, 1e-6), 1-1e-6))
+  m_int <- glm(truth ~ offset(lp), family=binomial)
+  m_slp <- glm(truth ~ lp, family=binomial)
+  cat(sprintf("\n%s\n  Intercept alpha = %.3f  [ideal 0]\n  Slope     beta  = %.3f  [ideal 1]\n",
+              label, coef(m_int)[["(Intercept)"]], coef(m_slp)[["lp"]]))
+}
+
+cal_stats(p_well, y_test, "Well-calibrated model")
+cal_stats(p_misc, y_test, "Miscalibrated model")
+```
+
+### Integrated Calibration Index (ICI)
+
+Loess-smoothed version of the calibration curve, summarized as a scalar:
+
+$$\text{ICI} = \frac{1}{N}\sum_{i=1}^{N}|\hat{p}_i - \hat{f}(\hat{p}_i)|$$
+
+where $\hat{f}$ is a Loess smoother fitted to $(\hat{p}_i, y_i)$.
+
+- Detects regional miscalibration that slope/intercept miss.
+- ICI near 0 = well calibrated.
+
+```{r}
+#| label: ici
+
+cat(sprintf("ICI — Well-calibrated: %.4f\n", ici_fn(p_well, y_test)))
+cat(sprintf("ICI — Miscalibrated:   %.4f\n", ici_fn(p_misc, y_test)))
+```
+
+### All Metrics: Summary Table
 
 ```{r}
 #| label: tbl-all-metrics
-#| tbl-cap: "Summary of all calibration metrics for well-calibrated and miscalibrated models. Consistent with Table 2 in Huang et al. (2020)."
-
-# AUROC
-auc_well <- auroc(p_well, y_test)
-auc_misc <- auroc(p_misc, y_test)
-
-# ICI via Loess
-ici <- function(pred, truth) {
-  df    <- tibble(pred, truth) %>% arrange(pred)
-  loess_fit <- loess(truth ~ pred, data = df, span = 0.75)
-  mean(abs(df$pred - predict(loess_fit, newdata = df)))
-}
-
-# Cox slope
-cox_slope <- function(pred, truth) {
-  df  <- tibble(y = truth, lp = qlogis(pmin(pmax(pred,1e-6),1-1e-6)))
-  coef(glm(y ~ lp, data=df, family=binomial))[["lp"]]
-}
-cox_int <- function(pred, truth) {
-  df  <- tibble(y = truth, lp = qlogis(pmin(pmax(pred,1e-6),1-1e-6)))
-  coef(glm(y ~ offset(lp), data=df, family=binomial))[["(Intercept)"]]
-}
+#| tbl-cap: "Mirrors Table 2 in Huang et al. (2020). AUROC is nearly identical — it misses the miscalibration entirely."
 
 tibble(
-  Metric              = c("AUROC", "Brier Score", "H-L p-value",
-                           "Cox Intercept (α)", "Cox Slope (β)",
-                           "ECE", "MCE", "ICI"),
-  `Well-calibrated`   = c(
-    round(auc_well,  3),
-    round(brier_well, 4),
-    round(hl_well$p.value, 4),
-    round(cox_int(p_well, y_test), 3),
-    round(cox_slope(p_well, y_test), 3),
-    round(ece_well$ECE, 4),
-    round(ece_well$MCE, 4),
-    round(ici(p_well, y_test), 4)
-  ),
-  `Miscalibrated`     = c(
-    round(auc_misc,  3),
-    round(brier_misc, 4),
-    round(hl_misc$p.value, 4),
-    round(cox_int(p_misc, y_test), 3),
-    round(cox_slope(p_misc, y_test), 3),
-    round(ece_misc$ECE, 4),
-    round(ece_misc$MCE, 4),
-    round(ici(p_misc, y_test), 4)
-  ),
-  `Ideal value`       = c("Higher is better", "0", "> 0.05",
-                           "0", "1", "0", "0", "0")
-) %>%
-  knitr::kable(align = c("l","r","r","c"))
+  Metric      = c("AUROC", "Brier Score", "H-L p-value",
+                  "Cal. Intercept (alpha)", "Cal. Slope (beta)",
+                  "ECE", "MCE", "ICI"),
+  `Well-cal.` = c(auroc(p_well, y_test), brier_well, hl_well$p.value,
+                  cx_int(p_well, y_test), cx_slp(p_well, y_test),
+                  ece_well$ECE, ece_well$MCE, ici_fn(p_well, y_test)) %>% round(4),
+  `Miscal.`   = c(auroc(p_misc, y_test), brier_misc, hl_misc$p.value,
+                  cx_int(p_misc, y_test), cx_slp(p_misc, y_test),
+                  ece_misc$ECE, ece_misc$MCE, ici_fn(p_misc, y_test)) %>% round(4),
+  `Ideal`     = c("higher", "0", "> 0.05", "0", "1", "0", "0", "0")
+) %>% knitr::kable(align=c("l","r","r","c"))
 ```
 
-**Key observations from the table:**
+### Metric Comparison
 
-- AUROC is nearly identical for both models — it completely misses the miscalibration.
-- H-L p-value, Cox intercept, ECE, MCE, and ICI all correctly flag the miscalibrated model.
-- Cox slope < 1 confirms the miscalibrated model overestimates high-risk patients and underestimates low-risk patients.
+| Metric | Strength | Weakness |
+|:--|:--|:--|
+| Brier score | Easy to compute | Mixes discrimination + calibration |
+| Spiegelhalter Z | Formal test, isolates calibration | Less intuitive |
+| Hosmer-Lemeshow | Most widely cited | Overpowered at large $n$; bin choice arbitrary |
+| Reliability diagram | Shows *where* miscalibration occurs | Not continuous between points |
+| ECE / MCE | Intuitive, ML-friendly | No formal test |
+| Cal. intercept + slope | No binning; quantifies direction | Misses cancelling regional errors |
+| ICI | Catches regional errors | Needs Loess bandwidth choice |
 
----
-
-
-## Connection to Final Project (Hospital Readmission)
-
-In the hospital readmission project, you will:
-
-1. **Train on source domain** (`insurer == "Private"`) — model is calibrated for this population.
-
-2. **Apply to target domain** (`insurer == "Medicare"`) — calibration may degrade due to:
-    - Different baseline readmission rates (label shift).
-    - Different patient mix and feature distributions (covariate shift).
-    - Different relationships between predictors and readmission (concept shift).
-
-3. **Measure degradation** using the full suite of metrics above on `target_test`.
-
-4. **Recalibrate** using `target_cal` and re-evaluate on `target_test`.
-
-The question your analysis will answer: *Which calibration metrics best detected the degradation, and which recalibration method most effectively corrected it?*
+> **Practical recommendation:** Reliability diagram + Spiegelhalter Z or H-L + ICI. Report intercept and slope to characterize direction.
 
 ---
 
-## What Comes Next
+## Domain Shift: When Recalibration Is Needed
 
-In the following sections we will cover:
+Measuring miscalibration tells you *that* something is wrong. Understanding **why** tells you which fix to apply.
 
-- **Types of domain shift**: covariate shift, label shift, concept shift, and how to detect them.
-- **Recalibration methods**: intercept-only recalibration, logistic recalibration (Platt scaling), isotonic regression.
-- **Uncertainty quantification**: bootstrap confidence intervals for AUROC and Brier score.
-- **Case study**: full before-vs-after analysis using the readmission dataset.
+### Taxonomy of Distribution Shift
+
+| Shift type | What changes | What stays the same |
+|:--|:--|:--|
+| **Covariate shift** | $P(X)$ — patient mix | $P(Y \mid X)$ — disease process |
+| **Label shift** | $P(Y)$ — event rate | $P(X \mid Y)$ — features given outcome |
+| **Concept shift** | $P(Y \mid X)$ — the relationship itself | — |
+
+**Covariate shift** — *same disease process, different patients.*
+Sepsis model from academic center applied to community hospital with younger, less comorbid patients.
+
+**Label shift** — *same patients, different baseline rate.*
+Readmission model trained at 25% baseline applied post-intervention when rate dropped to 15%. Model will systematically overestimate.
+
+**Concept shift** — *the feature–outcome relationship has changed.*
+COVID-19 severity model trained on original strain applied to a new variant. No recalibration fixes this.
+
+```{r}
+#| label: fig-shift-taxonomy
+#| fig-cap: "All three shift types produce miscalibration, but through different mechanisms requiring different fixes."
+#| code-fold: true
+
+set.seed(274)
+n_shift <- 800
+
+x_s  <- rnorm(n_shift)
+y_s  <- rbinom(n_shift, 1, plogis(-1 + 1.2*x_s))
+
+lr_source <- glm(y_s ~ x_s, family=binomial, data=tibble(y_s, x_s))
+
+make_cal_shift <- function(x_new, y_new, label) {
+  p_hat <- predict(lr_source, newdata=tibble(x_s=x_new), type="response")
+  tibble(pred=p_hat, obs=y_new) %>%
+    mutate(bin=cut(pred, breaks=seq(0,1,0.1), include.lowest=TRUE)) %>%
+    group_by(bin) %>%
+    summarise(mean_pred=mean(pred), mean_obs=mean(obs), n=n(), .groups="drop") %>%
+    mutate(domain=label)
+}
+
+x_cov <- rnorm(n_shift, mean=1.5, sd=0.7)
+y_cov <- rbinom(n_shift, 1, plogis(-1 + 1.2*x_cov))
+
+x_lab <- rnorm(n_shift)
+y_lab <- rbinom(n_shift, 1, plogis(-2.2 + 1.2*x_lab))
+
+x_con <- rnorm(n_shift)
+y_con <- rbinom(n_shift, 1, plogis(-1 + 0.3*x_con))
+
+bind_rows(
+  make_cal_shift(x_s,   y_s,   "Source (train)"),
+  make_cal_shift(x_cov, y_cov, "Covariate shift"),
+  make_cal_shift(x_lab, y_lab, "Label shift"),
+  make_cal_shift(x_con, y_con, "Concept shift")
+) %>%
+  ggplot(aes(x=mean_pred, y=mean_obs, color=domain)) +
+  geom_line(linewidth=1.0) + geom_point(aes(size=n)) +
+  geom_abline(slope=1, intercept=0, linetype="dashed", color="gray40") +
+  scale_color_manual(values=c("Source (train)"="#2196F3", "Covariate shift"="#FF9800",
+                               "Label shift"="#F44336", "Concept shift"="#9C27B0")) +
+  scale_x_continuous(limits=c(0,0.85)) + scale_y_continuous(limits=c(0,0.85)) +
+  labs(x="Mean Predicted Probability", y="Observed Event Rate", color=NULL, size="N") +
+  theme_bw() + theme(legend.position="bottom")
+```
+
+### Diagnosing Shift from Metrics
+
+| Cal. intercept $\alpha$ | Cal. slope $\beta$ | Most likely cause | Fix |
+|:--:|:--:|:--|:--|
+| Nonzero | Near 1 | Label shift | Intercept-only recalibration |
+| Drifted | Drifted | Covariate shift | Logistic recalibration |
+| Still off after correction | — | Concept shift | Model revision or retraining |
+
+### Connection to Readmission Project
+
+Applying the Private-trained model to Medicare patients is primarily a **label shift** problem (higher baseline readmission rate) with some **covariate shift** (different patient mix).
+
+- Expect: $\alpha < 0$ on Medicare test set — systematic overestimation
+- Expect: $\beta$ near but not equal to 1
+- These diagnostics guide which recalibration level to apply
+
+---
+
+## Recalibration Methods
+
+The general recalibration equation:
+
+$$\text{logit}(\hat{y}_{\text{recal}}) = \hat{\alpha} + \hat{\beta} \cdot \text{logit}(\hat{y}_{\text{source}})$$
+
+$\hat{\alpha}$ and $\hat{\beta}$ are estimated on a **labeled calibration set from the target domain**.
+
+The `glm` code from the metrics section is already the recalibration engine — you just need to use the fitted values to generate corrected probabilities.
+
+| Level | What you fix | Code |
+|:--|:--|:--|
+| **1. Intercept-only** | Mean shift only ($\beta = 1$ fixed) | `glm(y ~ offset(logit_p))` |
+| **2. Logistic recalibration** | Mean + spread (= Platt scaling in ML) | `glm(y ~ logit_p)` |
+| **3. Isotonic regression** | Any monotone miscalibration | `isoreg()` |
+
+Start with Level 1. Only go deeper if diagnostics say you need to.
+
+### Full Recalibration Demo
+
+```{r}
+#| label: recalibration-demo
+#| code-fold: true
+
+# ── Simulate a target calibration set (label shift: lower intercept) ──────────
+set.seed(42)
+n_cal  <- 400
+x1_cal <- rnorm(n_cal); x2_cal <- rnorm(n_cal); x3_cal <- rbinom(n_cal,1,0.4)
+y_cal  <- rbinom(n_cal, 1, plogis(-2.5 + 0.8*x1_cal + 0.6*x2_cal + 0.5*x3_cal))
+
+# Source model predictions on calibration set
+p_misc_cal   <- plogis(qlogis(
+  predict(lr_fit, newdata=tibble(x1=x1_cal,x2=x2_cal,x3=x3_cal), type="response")
+) * 0.3 - 1.5)
+
+logit_p_cal  <- qlogis(pmin(pmax(p_misc_cal, 1e-6), 1-1e-6))
+logit_p_test <- qlogis(pmin(pmax(p_misc,     1e-6), 1-1e-6))
+
+# ── Level 1: Intercept-only ───────────────────────────────────────────────────
+m_int    <- glm(y_cal ~ offset(logit_p_cal), family=binomial)
+p_recal1 <- plogis(coef(m_int)[["(Intercept)"]] + logit_p_test)
+
+# ── Level 2: Logistic recalibration (Platt scaling) ──────────────────────────
+m_lr     <- glm(y_cal ~ logit_p_cal, family=binomial)
+p_recal2 <- plogis(coef(m_lr)[["(Intercept)"]] +
+                   coef(m_lr)[["logit_p_cal"]] * logit_p_test)
+
+cat(sprintf("Level 1 — Intercept-only:  alpha = %.3f  (beta fixed = 1)\n",
+            coef(m_int)[["(Intercept)"]]))
+cat(sprintf("Level 2 — Logistic recal:  alpha = %.3f, beta = %.3f\n",
+            coef(m_lr)[["(Intercept)"]], coef(m_lr)[["logit_p_cal"]]))
+
+# ── Level 3: Isotonic regression ─────────────────────────────────────────────
+iso_fit  <- isoreg(p_misc_cal, y_cal)
+ord      <- order(p_misc_cal)
+p_recal3 <- approx(p_misc_cal[ord], iso_fit$yf[ord], xout=p_misc,
+                   method="constant", rule=2, ties=mean)$y
+```
+
+### Before vs. After: Reliability Diagrams
+
+```{r}
+#| label: fig-recalibration-curves
+#| fig-cap: "All three methods improve calibration. AUROC is unchanged across all rows."
+
+bind_rows(
+  make_cal_df(p_misc,   y_test, "Before"),
+  make_cal_df(p_recal1, y_test, "Intercept-only (L1)"),
+  make_cal_df(p_recal2, y_test, "Logistic / Platt (L2)"),
+  make_cal_df(p_recal3, y_test, "Isotonic (L3)")
+) %>%
+  ggplot(aes(x=mean_pred, y=mean_obs, color=model)) +
+  geom_line(linewidth=1.0) + geom_point(aes(size=n)) +
+  geom_abline(slope=1, intercept=0, linetype="dashed", color="gray40") +
+  scale_color_manual(values=c("Before"="#F44336","Intercept-only (L1)"="#FF9800",
+                               "Logistic / Platt (L2)"="#2196F3","Isotonic (L3)"="#4CAF50")) +
+  scale_x_continuous(limits=c(0,0.8)) + scale_y_continuous(limits=c(0,0.8)) +
+  labs(x="Mean Predicted Probability", y="Observed Event Rate", color=NULL, size="N") +
+  theme_bw() + theme(legend.position="bottom")
+```
+
+### Before vs. After: Metrics
+
+```{r}
+#| label: tbl-recalibration-metrics
+#| tbl-cap: "AUROC is identical across all rows — recalibration cannot change discrimination."
+
+brier_fn <- function(p, y) mean((p-y)^2)
+
+models <- list("Before"=p_misc, "Intercept-only"=p_recal1,
+               "Logistic / Platt"=p_recal2, "Isotonic"=p_recal3)
+
+tibble(
+  Method        = names(models),
+  AUROC         = sapply(models, function(p) auroc(p,    y_test)) %>% round(3),
+  `Brier Score` = sapply(models, function(p) brier_fn(p, y_test)) %>% round(4),
+  `Cal. alpha`  = sapply(models, function(p) cx_int(p,   y_test)) %>% round(3),
+  `Cal. beta`   = sapply(models, function(p) cx_slp(p,   y_test)) %>% round(3),
+  ICI           = sapply(models, function(p) ici_fn(p,   y_test)) %>% round(4)
+) %>% knitr::kable(align=c("l","r","r","r","r","r"))
+```
+
+::: {.callout-note title="ML connection: temperature scaling"}
+In deep learning, **temperature scaling** (Guo et al., ICML 2017) divides the model's logit output by a scalar $T$ before applying softmax: $	ext{softmax}(z/T)$. This is equivalent to logistic recalibration with $\hat{\eta} = 1/T$ and $\hat{\alpha} = 0$ — it corrects the *spread* of predictions but not the *mean shift*. If a neural network systematically overestimates risk on a new population (label shift), temperature scaling alone will not fix it — you also need the intercept term.
+:::
+
+> **Janssen et al. (2008):** Simple recalibration improved calibration to a similar extent as full model revision. More complex updating should only be attempted with large validation samples.
+
+---
+
+## Transfer Learning
+
+Recalibration is transfer learning's simplest special case. Both answer the same question: *how much of the source model can be trusted in the target domain?*
+
+### The Spectrum
+
+```{r}
+#| label: fig-transfer-spectrum
+#| fig-cap: "Moving up requires more target data but allows deeper corrections. Recalibration sits at the bottom."
+#| code-fold: true
+#| fig-height: 4.5
+
+tibble(
+  level      = rep(5:1, 2),
+  discipline = rep(c("Statistical epidemiology","Machine learning"), each=5),
+  method     = c(
+    "Full redevelopment", "Model extension\n(add predictors)",
+    "Model revision\n(refit coefficients)", "Logistic recalibration\n(slope + intercept)",
+    "Intercept-only\n(mean shift only)",
+    "Pretrain from scratch", "Fine-tune deep layers",
+    "Fine-tune last layer", "Platt scaling /\nvector scaling",
+    "Temperature scaling"
+  )
+) %>%
+  mutate(x_pos = ifelse(discipline=="Statistical epidemiology", 1, 2)) %>%
+  ggplot(aes(x=x_pos, y=level)) +
+  geom_tile(aes(fill=factor(level)), width=0.85, height=0.8, alpha=0.25, color="gray70") +
+  geom_text(aes(label=method), size=3.0, lineheight=0.9) +
+  geom_text(data=tibble(x_pos=c(1,2), y=5.7,
+                         label=c("Statistical epidemiology","Machine learning")),
+            aes(x=x_pos, y=y, label=label), fontface="bold", size=3.5, inherit.aes=FALSE) +
+  annotate("text", x=2.65, y=5.0, label="Small target\ndata needed", size=2.8, color="gray30") +
+  annotate("text", x=2.65, y=3.0, label="arrow", size=3.5, color="gray40") +
+  annotate("text", x=2.65, y=1.0, label="Large target\ndata needed", size=2.8, color="gray30") +
+  scale_fill_brewer(palette="Blues") +
+  scale_x_continuous(limits=c(0.4, 3.1)) + scale_y_continuous(limits=c(0.5, 6.0)) +
+  labs(title="The Transfer Learning Spectrum", subtitle="Same problem, two vocabularies") +
+  theme_void() +
+  theme(legend.position="none",
+        plot.title=element_text(face="bold", size=13, hjust=0.5),
+        plot.subtitle=element_text(size=10, hjust=0.5, color="gray40"))
+```
+
+### One Equation, Two Fields
+
+**Statistical recalibration:**
+$$\text{logit}(\hat{y}_{\text{recal}}) = \hat{\alpha} + \hat{\beta} \cdot \text{logit}(\hat{y}_{\text{source}})$$
+
+**ML temperature scaling** (Guo et al., ICML 2017):
+$$P(y \mid x)_{\text{recal}} = \text{softmax}(z / T)$$
+
+These are the **same operation.** Dividing logits by $T$ is equivalent to $\hat{\beta} = 1/T$. Temperature scaling is intercept-free logistic recalibration — it corrects spread but not mean shift.
+
+### Fine-Tuning as Deep Recalibration
+
+| Strategy | What you update | ML analog | Statistical analog |
+|:--|:--|:--|:--|
+| Freeze backbone, retrain head | Output layer only | Fine-tune last layer | Logistic recalibration |
+| Unfreeze deeper layers | Internal representations | Fine-tune deep layers | Model revision |
+| Train from scratch | Everything | Pretrain from scratch | Full redevelopment |
+
+### A Cautionary Note: Negative Transfer
+
+- More complex transfer is **not always better.**
+- Guo et al. (2022): sophisticated domain generalization methods **failed to beat simple intercept-only recalibration** in temporal shift settings.
+- Always start simple. Let diagnostics ($\alpha$, $\beta$, ICI, AUROC) tell you whether to go deeper.
+
+### Decision Guide
+
+```{r, echo=F}
+#| label: tbl-strategy-choice
+#| tbl-cap: "Use calibration diagnostics to choose a strategy before committing to a method."
+
+tibble(
+  `Diagnostic result` = c("alpha != 0, beta ~ 1", "alpha != 0, beta != 1",
+                           "alpha, beta OK but ICI still high",
+                           "AUROC also degraded", "Concept shift"),
+  `Shift type`        = c("Label shift", "Covariate shift",
+                           "Non-linear miscalibration",
+                           "Feature distribution change", "Concept shift"),
+  `Strategy`          = c("Intercept-only", "Logistic recalibration",
+                           "Isotonic regression",
+                           "Fine-tune output layer", "Revise or retrain"),
+  `Target N needed`   = c("~100-300", "~300-500", ">1,000",
+                           ">1,000 labeled", "Large labeled set")
+) %>% knitr::kable(align=c("l","l","l","r"))
+```
+
+> **Bottom line:** Recalibration handles the easy cases cheaply. Transfer learning handles the hard cases at greater cost. Your diagnostics tell you which case you are in.
