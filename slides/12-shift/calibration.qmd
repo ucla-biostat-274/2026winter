@@ -684,7 +684,9 @@ tibble(
                          label=c("Statistical epidemiology","Machine learning")),
             aes(x=x_pos, y=y, label=label), fontface="bold", size=3.5, inherit.aes=FALSE) +
   annotate("text", x=2.65, y=5.0, label="Small target\ndata needed", size=2.8, color="gray30") +
-  annotate("text", x=2.65, y=3.0, label="arrow", size=3.5, color="gray40") +
+  annotate("segment", x=2.72, xend=2.72, y=4.6, yend=1.4,
+           arrow=arrow(ends="both", length=unit(0.15,"cm"), type="closed"),
+           color="gray50", linewidth=0.5) +
   annotate("text", x=2.65, y=1.0, label="Large target\ndata needed", size=2.8, color="gray30") +
   scale_fill_brewer(palette="Blues") +
   scale_x_continuous(limits=c(0.4, 3.1)) + scale_y_continuous(limits=c(0.5, 6.0)) +
