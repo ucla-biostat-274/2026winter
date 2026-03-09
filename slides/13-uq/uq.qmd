@@ -391,11 +391,11 @@ pred_sets <- lapply(p_test, make_pred_set, q_hat = q_hat)
 cat(sprintf("\nStep 3: Example prediction sets (first 10):\n"))
 for (i in 1:10) {
   set_str <- if (length(pred_sets[[i]]) == 0) "empty" else paste(pred_sets[[i]], collapse = ", ")
-{% raw %}
-cat(sprintf("  Patient %d: p(Yes) = %.3f -> C(x) = {%s}  (true: %s) %s\n",
+
+cat(sprintf("  Patient %d: p(Yes) = %.3f -> C(x) = { %s }  (true: %s) %s\n",
               i, p_test[i], set_str, y_test[i],
               ifelse(as.character(y_test[i]) %in% pred_sets[[i]], "ok", "miss")))
-{% endraw %}
+
 }
 ```
 
