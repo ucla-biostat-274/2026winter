@@ -1,0 +1,856 @@
+---
+title: "Uncertainty Quantification via Conformal Prediction"
+subtitle: "Biostat 274"
+author: "Dr. Jin Zhou @ UCLA"
+date: today
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    number-sections: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    code-fold: true
+engine: knitr
+knitr:
+  opts_chunk: 
+    fig.align: 'center'
+    message: FALSE
+    warning: FALSE
+    cache: false
+---
+
+Credit: This note draws from
+
+- Angelopoulos & Bates (2023). [_A Gentle Introduction to Conformal Prediction and Distribution-Free Uncertainty Quantification_](https://arxiv.org/abs/2107.07511). *Foundations and Trends in Machine Learning*, 16(4), 494–591.
+- Tibshirani (2024). [_Conformal Prediction_](https://www.stat.berkeley.edu/~ryantibs/statlearn-s24/lectures/conformal.pdf). Lecture notes, Advanced Topics in Statistical Learning, UC Berkeley.
+- Tibshirani, Barber, Candès, Ramdas (2019). [_Conformal Prediction Under Covariate Shift_](https://www.stat.cmu.edu/~ryantibs/papers/weightedcp.pdf). *NeurIPS 2019*.
+
+---
+
+## Motivation: From Calibration to Per-Prediction Uncertainty
+
+### Recap: What Calibration Tells Us
+
+In the previous lecture, we studied **calibration**: does a predicted probability $\hat{p}$ match the observed event rate?
+
+We learned to measure this (Brier score, calibration slope/intercept, ICI), diagnose the type of shift (label, covariate, concept), and fix it via recalibration (intercept-only, Platt scaling, isotonic regression).
+
+Calibration answers: **"Among all patients with $\hat{p} \approx 0.3$, is the event rate roughly 30%?"**
+
+This is an **aggregate** property — it says nothing about **any individual patient**.
+
+### What Calibration Cannot Tell Us
+
+Consider two patients from our readmission project:
+
+- Patient A: Medicare, age 72, $\hat{p} = 0.22$
+- Patient B: Medicare, age 68, $\hat{p} = 0.36$
+
+A clinician asks: *"For Patient A specifically, how confident are you in this 22% estimate?"*
+
+Calibration cannot answer this. Even a perfectly calibrated model gives no individual-level reliability guarantee.
+
+### The Question This Lecture Answers
+
+> **Conformal prediction asks:** Can we construct a **set** of plausible outcomes such that, for a new observation drawn from the same population, the true outcome falls in the set with probability $\geq 1 - \alpha$?
+
+| Already taught | This lecture |
+|:--|:--|
+| Calibration: $P(Y{=}1 \mid \hat{p} \approx 0.3) \approx 0.3$ | Conformal: $P(Y_{\text{new}} \in C(X_{\text{new}})) \geq 1 - \alpha$ |
+| Fixes **aggregate** probabilities | Gives **prediction sets** with marginal coverage guarantee |
+| Calibration diagnostics are nonparametric; some recalibration methods assume a logistic link | **Distribution-free**, model-agnostic |
+| Recalibration: asymptotic justification | **Finite-sample** guarantee |
+
+Calibration and conformal prediction are **complementary**, not competing. Calibration makes predicted probabilities trustworthy; conformal prediction wraps any prediction in a set with a formal coverage guarantee. They answer different questions.
+
+---
+
+## The Key Idea: Ranks and Exchangeability
+
+### Intuition Without Features
+
+Before diving into the full algorithm, let's build intuition with a toy example that has **no features** — just a sequence of numbers.
+
+Suppose we observe $Y_1, Y_2, \ldots, Y_n$ drawn i.i.d. from some unknown distribution $P$. We want to find a value $\hat{q}$ such that
+
+$$P(Y_{n+1} \leq \hat{q}) \geq 1 - \alpha.$$
+
+**Naive approach:** set $\hat{q}$ to the $(1-\alpha)$ sample quantile of $Y_1, \ldots, Y_n$. This works approximately, but only as $n \to \infty$.
+
+**Conformal insight:** Because $Y_{n+1}$ is exchangeable with $Y_1, \ldots, Y_n$, the rank of $Y_{n+1}$ among all $n+1$ values is **uniformly distributed**. Therefore:
+
+$$P\Big(Y_{n+1} \leq \text{the } \lceil(1-\alpha)(n+1)\rceil\text{-th smallest of } Y_1, \ldots, Y_n\Big) \geq 1 - \alpha.$$
+
+This is **exact** — no asymptotics, no distributional assumptions. The only requirement is **exchangeability**.
+
+### Exchangeability
+
+::: {.callout-note title="What is exchangeability?"}
+Random variables $Z_1, \ldots, Z_{n+1}$ are **exchangeable** if their joint distribution is invariant under permutations:
+$$(Z_1, \ldots, Z_{n+1}) \overset{d}{=} (Z_{\sigma(1)}, \ldots, Z_{\sigma(n+1)}) \quad \text{for all permutations } \sigma.$$
+i.i.d. data are exchangeable, but exchangeability is **weaker** — it does not require independence.
+:::
+
+```{r}
+#| label: fig-rank-intuition
+#| fig-cap: "The rank of Y_{n+1} is uniform among n+1 values. Setting the quantile at the ⌈(1-α)(n+1)⌉-th order statistic guarantees at least 1-α coverage."
+
+library(tidyverse)
+library(patchwork)
+
+set.seed(274)
+n <- 20
+alpha <- 0.10
+
+Y <- rnorm(n + 1, mean = 3, sd = 1.5)
+Y_cal <- Y[1:n]
+Y_new <- Y[n + 1]
+
+k <- ceiling((1 - alpha) * (n + 1))
+q_hat <- sort(Y_cal)[min(k, n)]
+
+tibble(value = Y_cal, idx = seq_len(n)) %>%
+  ggplot(aes(x = value, y = 0)) +
+  geom_point(size = 3, color = "#2196F3", alpha = 0.7) +
+  geom_point(aes(x = Y_new), color = "#F44336", size = 4, shape = 17) +
+  geom_vline(xintercept = q_hat, linetype = "dashed", color = "#4CAF50", linewidth = 1) +
+  annotate("text", x = q_hat + 0.15, y = 0.02,
+           label = paste0("q_hat (k=", k, ")"), color = "#4CAF50", hjust = 0, size = 3.5) +
+  annotate("text", x = Y_new + 0.15, y = -0.015,
+           label = "Y_{n+1} (new)", color = "#F44336", hjust = 0, size = 3.5) +
+  scale_y_continuous(limits = c(-0.04, 0.04)) +
+  labs(x = "Value", y = NULL,
+       title = "Rank-based prediction: the conformal quantile",
+       subtitle = sprintf("n = %d calibration points, alpha = %.2f, k = %d", n, alpha, k)) +
+  theme_bw() +
+  theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+```
+
+### The Finite-Sample Coverage Bound
+
+With the conformal quantile $\hat{q}$ defined above:
+
+$$1 - \alpha \;\leq\; P(Y_{n+1} \leq \hat{q}) \;\leq\; 1 - \alpha + \frac{1}{n+1}$$
+
+- The **lower bound** always holds (the guarantee).
+- The **upper bound** holds when ties are almost surely absent.
+- As $n \to \infty$, coverage converges to exactly $1 - \alpha$.
+
+> **Key insight:** The only requirement is that the calibration data and the test point are **exchangeable**. No assumptions about the distribution, no model correctness, no asymptotics.
+
+---
+
+## Split Conformal Prediction for Regression
+
+### The Overfitting Problem
+
+Why can't we simply compute residuals on the **training set** and use them to build prediction intervals?
+
+Because the model $\hat{f}$ was **trained on** $(X_i, Y_i)$ for $i$ in the training set. The training residuals $|Y_i - \hat{f}(X_i)|$ are systematically **too small** — the model has already seen these points. A new test residual $|Y_{n+1} - \hat{f}(X_{n+1})|$ will typically be **larger**, so prediction intervals based on training residuals will **undercover**.
+
+**Solution:** hold out a separate **calibration set** that the model never saw.
+
+### The Algorithm: Split Conformal Prediction
+
+**Data splitting:**
+
+1. **Proper training set** $D_1$: fit the model $\hat{f}$.
+2. **Calibration set** $D_2 = \{(X_i, Y_i)\}_{i=1}^{n_2}$: compute scores (model never saw these).
+3. **Test point** $(X_{n+1}, Y_{n+1})$: construct prediction set.
+
+**Three steps:**
+
+1. Compute **nonconformity scores** (residuals) on $D_2$:
+   $$R_i = |Y_i - \hat{f}(X_i)|, \quad i \in D_2$$
+
+2. Compute the **conformal quantile** (the $k$-th order statistic, where $k = \min(\lceil(1-\alpha)(n_2+1)\rceil, n_2)$):
+   $$\hat{q} = R_{(k)}$$
+
+3. Form the **prediction interval** for a new test point:
+   $$C(X_{n+1}) = \Big[\hat{f}(X_{n+1}) - \hat{q},\;\; \hat{f}(X_{n+1}) + \hat{q}\Big]$$
+
+::: {.callout-warning title="Implementation detail: use order statistics, not interpolated quantiles"}
+The conformal quantile must be the $k$-th smallest score. In R, use `sort(scores)[k]`, **not** `quantile(scores, ...)`. The base R `quantile()` function uses interpolation by default (Type 7), which can violate the exact finite-sample guarantee.
+:::
+
+### Coverage Guarantee
+
+::: {.callout-note title="Theorem (Vovk et al., 2005; Lei et al., 2018)"}
+If $(X_i, Y_i)_{i \in D_2}$ and $(X_{n+1}, Y_{n+1})$ are exchangeable (conditional on the proper training set $D_1$), then
+$$P\Big(Y_{n+1} \in C(X_{n+1}) \;\Big|\; D_1\Big) \;\in\; \Big[1 - \alpha,\;\; 1 - \alpha + \frac{1}{n_2 + 1}\Big).$$
+This holds for **any** model $\hat{f}$, **any** distribution $P$, and **any** finite sample size $n_2$.
+:::
+
+### Demo: Conformal Intervals for Regression
+
+```{r}
+#| label: setup-regression
+
+set.seed(274)
+
+n_total <- 600
+x_all   <- runif(n_total, 0, 5)
+y_all   <- sin(2 * x_all) + 0.5 * x_all + rnorm(n_total, sd = 0.3 + 0.2 * x_all)
+
+idx       <- sample(n_total)
+train_idx <- idx[1:300]
+cal_idx   <- idx[301:450]
+test_idx  <- idx[451:600]
+
+x_train <- x_all[train_idx]; y_train <- y_all[train_idx]
+x_cal   <- x_all[cal_idx];   y_cal   <- y_all[cal_idx]
+x_test  <- x_all[test_idx];  y_test  <- y_all[test_idx]
+
+library(randomForest)
+rf_fit <- randomForest(y_train ~ ., data = data.frame(x = x_train, y_train = y_train))
+```
+
+```{r}
+#| label: fig-conformal-regression
+#| fig-cap: "Split conformal prediction intervals (blue band) around a random forest fit. The interval has constant width -- it does not adapt to local uncertainty."
+
+# Step 1: Nonconformity scores on calibration set
+yhat_cal   <- predict(rf_fit, newdata = data.frame(x = x_cal))
+scores_reg <- abs(y_cal - yhat_cal)
+
+# Step 2: Conformal quantile (order statistic, NOT interpolated)
+alpha <- 0.10
+n_cal <- length(scores_reg)
+k     <- min(ceiling((1 - alpha) * (n_cal + 1)), n_cal)
+q_hat <- sort(scores_reg)[k]
+
+cat(sprintf("Calibration set size: n2 = %d\n", n_cal))
+cat(sprintf("k = min(ceil((1-%.2f)*(%d+1)), %d) = %d\n", alpha, n_cal, n_cal, k))
+cat(sprintf("Conformal quantile q_hat = %.3f  (k-th order statistic)\n", q_hat))
+
+# Step 3: Prediction intervals on test set
+yhat_test <- predict(rf_fit, newdata = data.frame(x = x_test))
+lower     <- yhat_test - q_hat
+upper     <- yhat_test + q_hat
+
+coverage <- mean(y_test >= lower & y_test <= upper)
+cat(sprintf("Empirical coverage on test set: %.3f  (target: >= %.2f)\n", coverage, 1 - alpha))
+
+ord <- order(x_test)
+tibble(x = x_test[ord], y = y_test[ord],
+       yhat = yhat_test[ord], lo = lower[ord], hi = upper[ord]) %>%
+  ggplot(aes(x = x)) +
+  geom_ribbon(aes(ymin = lo, ymax = hi), fill = "#2196F3", alpha = 0.25) +
+  geom_point(aes(y = y), size = 1.2, alpha = 0.5) +
+  geom_line(aes(y = yhat), color = "#2196F3", linewidth = 1) +
+  labs(x = "x", y = "y",
+       title = "Split Conformal Prediction Intervals",
+       subtitle = sprintf("Coverage = %.1f%%  |  Constant width = 2q_hat = %.2f  |  alpha = %.2f",
+                          100 * coverage, 2 * q_hat, alpha)) +
+  theme_bw()
+```
+
+### Adaptive-Width Intervals
+
+The basic split conformal interval has **constant width** $2\hat{q}$ everywhere. This is wasteful: in easy regions the interval is too wide, and in hard regions it may be too narrow **locally** (even though marginal coverage is maintained).
+
+**Fix: Normalized (studentized) residuals.** Fit a second model $\hat{\sigma}(x)$ to predict the spread of $|Y - \hat{f}(X)|$, then use the score $R_i = |Y_i - \hat{f}(X_i)| / \hat{\sigma}(X_i)$.
+
+This gives **adaptive-width** intervals: $C(x) = [\hat{f}(x) - \hat{q}\hat{\sigma}(x),\;\hat{f}(x) + \hat{q}\hat{\sigma}(x)]$. The coverage guarantee still holds — only the score function changed.
+
+```{r}
+#| label: fig-adaptive-intervals
+#| fig-cap: "Constant-width (left) vs. adaptive-width (right) conformal intervals. The adaptive version widens where uncertainty is higher (larger x)."
+
+res_train <- abs(y_train - predict(rf_fit, newdata = data.frame(x = x_train)))
+sigma_fit <- randomForest(res_train ~ ., data = data.frame(x = x_train, res_train = res_train))
+
+sigma_cal  <- pmax(predict(sigma_fit, newdata = data.frame(x = x_cal)), 0.01)
+sigma_test <- pmax(predict(sigma_fit, newdata = data.frame(x = x_test)), 0.01)
+
+scores_norm <- abs(y_cal - yhat_cal) / sigma_cal
+q_hat_norm  <- sort(scores_norm)[k]
+
+lower_norm <- yhat_test - q_hat_norm * sigma_test
+upper_norm <- yhat_test + q_hat_norm * sigma_test
+cov_norm   <- mean(y_test >= lower_norm & y_test <= upper_norm)
+cat(sprintf("Adaptive coverage: %.3f\n", cov_norm))
+
+ord <- order(x_test)
+p1 <- tibble(x = x_test[ord], y = y_test[ord], lo = lower[ord], hi = upper[ord]) %>%
+  ggplot(aes(x = x)) +
+  geom_ribbon(aes(ymin = lo, ymax = hi), fill = "#2196F3", alpha = 0.25) +
+  geom_point(aes(y = y), size = 0.8, alpha = 0.4) +
+  labs(title = sprintf("Constant width (coverage=%.1f%%)", 100 * coverage), y = "y") +
+  theme_bw() + theme(plot.title = element_text(size = 10))
+
+p2 <- tibble(x = x_test[ord], y = y_test[ord], lo = lower_norm[ord], hi = upper_norm[ord]) %>%
+  ggplot(aes(x = x)) +
+  geom_ribbon(aes(ymin = lo, ymax = hi), fill = "#4CAF50", alpha = 0.25) +
+  geom_point(aes(y = y), size = 0.8, alpha = 0.4) +
+  labs(title = sprintf("Adaptive width (coverage=%.1f%%)", 100 * cov_norm), y = "y") +
+  theme_bw() + theme(plot.title = element_text(size = 10))
+
+p1 + p2
+```
+
+---
+
+## Split Conformal Prediction for Classification
+
+Classification is where conformal prediction connects most directly to the final project. The idea is the same — we just change the **score function**.
+
+### Score Function for Classification
+
+Given a classifier $\hat{f}(x)$ that outputs estimated class probabilities $\hat{f}(x)_y$ for each class $y$, the simplest nonconformity score is:
+
+$$s_i = 1 - \hat{f}(X_i)_{Y_i}$$
+
+This is **one minus the predicted probability of the true class**. The score is high when the model assigns low probability to the correct answer.
+
+### The Algorithm
+
+1. **Compute scores** on calibration set: $s_i = 1 - \hat{f}(X_i)_{Y_i}$ for $i = 1, \ldots, n_2$
+
+2. **Conformal quantile**: $k = \min\big(\lceil(1-\alpha)(n_2+1)\rceil,\; n_2\big)$, then $\hat{q} = s_{(k)}$
+
+3. **Prediction set** for a new $X_{n+1}$:
+   $$C(X_{n+1}) = \big\{y : \hat{f}(X_{n+1})_y \geq 1 - \hat{q}\big\}$$
+
+   Include every class whose predicted probability exceeds the threshold $1 - \hat{q}$.
+
+### Interpretation for Binary Classification
+
+For a binary outcome (e.g., readmitted: Yes/No), the prediction set $C(x)$ can take several forms:
+
+| Set | Meaning | Clinical interpretation |
+|:--|:--|:--|
+| $C(x) = \{\text{Yes}\}$ or $\{\text{No}\}$ | One class is plausible | Model is **confident** about this patient |
+| $C(x) = \{\text{Yes}, \text{No}\}$ | Both classes are plausible | Model is **uncertain** — consider flagging for review |
+| $C(x) = \emptyset$ | Neither class passes threshold | **Abstention**: insufficient confidence at this $\alpha$ |
+
+::: {.callout-note title="Empty sets and non-singleton sets in binary classification"}
+Whether you observe empty sets ($|C|=0$) or two-element sets ($|C|=2$) depends on the threshold $1-\hat{q}$ relative to 0.5. If $1-\hat{q} > 0.5$, then for some patients neither class passes the threshold and the set is empty (abstention). If $1-\hat{q} \leq 0.5$, at least one class always passes, and uncertain cases show as $|C|=2$. Both are valid — they represent different regimes of the same guarantee.
+:::
+
+### Demo: Conformal Prediction Sets for Classification
+
+```{r}
+#| label: setup-classification
+
+set.seed(274)
+
+n_total <- 2000
+x1 <- rnorm(n_total); x2 <- rnorm(n_total); x3 <- rbinom(n_total, 1, 0.4)
+log_odds <- -1.5 + 0.7 * x1 + 0.5 * x2 + 0.4 * x3
+true_prob <- plogis(log_odds)
+y <- factor(rbinom(n_total, 1, true_prob), levels = c(0, 1), labels = c("No", "Yes"))
+
+df <- tibble(y, x1, x2, x3)
+
+idx <- sample(n_total)
+df_train <- df[idx[1:1000], ]
+df_cal   <- df[idx[1001:1400], ]
+df_test  <- df[idx[1401:2000], ]
+
+lr_fit <- glm(y ~ x1 + x2 + x3, data = df_train, family = binomial)
+
+p_cal  <- predict(lr_fit, newdata = df_cal,  type = "response")
+p_test <- predict(lr_fit, newdata = df_test, type = "response")
+y_cal  <- df_cal$y
+y_test <- df_test$y
+```
+
+```{r}
+#| label: conformal-classification-demo
+
+# Step 1: Nonconformity scores
+s_cal <- ifelse(y_cal == "Yes", 1 - p_cal, p_cal)
+
+cat("Step 1: Nonconformity scores (first 10):\n")
+cat(sprintf("  Patient %d: true = %s, p(Yes) = %.3f, score = %.3f\n",
+            1:10, y_cal[1:10], p_cal[1:10], s_cal[1:10]))
+
+# Step 2: Conformal quantile (order statistic)
+alpha <- 0.10
+n_cal <- length(s_cal)
+k     <- min(ceiling((1 - alpha) * (n_cal + 1)), n_cal)
+q_hat <- sort(s_cal)[k]
+
+cat(sprintf("\nStep 2: k = %d, q_hat = s_(%d) = %.4f\n", k, k, q_hat))
+cat(sprintf("  Threshold for inclusion: 1 - q_hat = %.4f\n", 1 - q_hat))
+
+# Step 3: Prediction sets
+make_pred_set <- function(p, q_hat) {
+  S <- c()
+  if (p >= 1 - q_hat) S <- c(S, "Yes")
+  if ((1 - p) >= 1 - q_hat) S <- c(S, "No")
+  S
+}
+
+pred_sets <- lapply(p_test, make_pred_set, q_hat = q_hat)
+
+cat(sprintf("\nStep 3: Example prediction sets (first 10):\n"))
+for (i in 1:10) {
+  set_str <- if (length(pred_sets[[i]]) == 0) "empty" else paste(pred_sets[[i]], collapse = ", ")
+  cat(sprintf("  Patient %d: p(Yes) = %.3f -> C(x) = {%s}  (true: %s) %s\n",
+              i, p_test[i], set_str, y_test[i],
+              ifelse(as.character(y_test[i]) %in% pred_sets[[i]], "ok", "miss")))
+}
+```
+
+```{r}
+#| label: fig-conformal-classification-results
+#| fig-cap: "Left: Distribution of prediction set sizes. Right: Patients with non-singleton sets cluster near p_hat near 0.5."
+
+coverage  <- mean(mapply(function(S, y) as.character(y) %in% S, pred_sets, y_test))
+set_sizes <- sapply(pred_sets, length)
+
+cat(sprintf("Empirical coverage: %.3f  (target: >= %.2f)\n", coverage, 1 - alpha))
+cat(sprintf("Set sizes: |C|=0: %d  |C|=1: %d  |C|=2: %d\n",
+            sum(set_sizes == 0), sum(set_sizes == 1), sum(set_sizes == 2)))
+cat(sprintf("Average set size: %.3f\n", mean(set_sizes)))
+
+p1 <- tibble(set_size = factor(set_sizes, levels = 0:2)) %>%
+  count(set_size, .drop = FALSE) %>%
+  ggplot(aes(x = set_size, y = n, fill = set_size)) +
+  geom_col(width = 0.6) +
+  geom_text(aes(label = n), vjust = -0.5, size = 3.5) +
+  scale_fill_manual(values = c("0" = "#F44336", "1" = "#4CAF50", "2" = "#FF9800")) +
+  labs(x = "Prediction set size |C(x)|", y = "Count",
+       title = "Distribution of set sizes") +
+  theme_bw() + theme(legend.position = "none")
+
+p2 <- tibble(p_hat = p_test, set_size = factor(set_sizes)) %>%
+  ggplot(aes(x = p_hat, fill = set_size)) +
+  geom_histogram(bins = 40, alpha = 0.7, position = "stack") +
+  scale_fill_manual(values = c("1" = "#4CAF50", "2" = "#FF9800"),
+                    labels = c("|C|=1", "|C|=2")) +
+  geom_vline(xintercept = 0.5, linetype = "dashed", color = "gray40") +
+  labs(x = "Predicted P(Yes)", y = "Count", fill = "Set size",
+       title = "Where is the model uncertain?") +
+  theme_bw() + theme(legend.position = "bottom")
+
+p1 + p2
+```
+
+> **Key observation:** Patients with non-singleton prediction sets cluster near $\hat{p} \approx 0.5$ — exactly where the model has the least discriminative power. Conformal prediction automatically identifies these hard cases.
+
+---
+
+## Why Does This Work? The Proof
+
+We give the proof for split conformal prediction, following Tibshirani (2024). It is surprisingly short.
+
+**Setting:** We have fitted $\hat{f}$ on $D_1$ (proper training set). Conditional on $D_1$, the calibration scores $R_i = V(X_i, Y_i)$ for $i \in D_2$ and the test score $R_{n+1} = V(X_{n+1}, Y_{n+1})$ are **exchangeable** (and i.i.d. if the original data are i.i.d.), because $\hat{f}$ is fixed and the calibration and test data are drawn from the same distribution.
+
+**Proof.** Since $R_1, \ldots, R_{n_2}, R_{n+1}$ are exchangeable, the rank of $R_{n+1}$ among all $n_2 + 1$ values is uniform over $\{1, \ldots, n_2 + 1\}$. Therefore:
+
+$$P\Big(R_{n+1} \leq \hat{q}\Big) = P\Big(\text{rank of } R_{n+1} \leq \lceil(1-\alpha)(n_2+1)\rceil\Big) = \frac{\lceil(1-\alpha)(n_2+1)\rceil}{n_2+1} \geq 1 - \alpha. \quad \blacksquare$$
+
+The entire proof rests on one fact: **the rank of an exchangeable random variable among its peers is uniform**.
+
+::: {.callout-note title="The guarantee depends on the data, not the model"}
+The coverage guarantee holds for **any** model — good or bad, calibrated or not. A bad model produces large, spread-out scores, so $\hat{q}$ is large, so more outcomes are included — valid but uninformative coverage. A good model produces concentrated scores, so $\hat{q}$ is smaller and prediction sets are tighter. The guarantee breaks only when the **data** violate exchangeability (e.g., distribution shift between calibration and test), not when the model is poor.
+:::
+
+### What the Guarantee Does and Does Not Say
+
+| It guarantees | It does not guarantee |
+|:--|:--|
+| **Marginal** coverage: $P(Y_{\text{new}} \in C(X_{\text{new}})) \geq 1-\alpha$, averaged over the randomness in both the calibration set and the new test point | **Conditional** coverage: $P(Y \in C(X) \mid X = x) \geq 1-\alpha$ for every fixed $x$ (impossible distribution-free) |
+| **Finite-sample** validity: works for any $n_2$ | Small or informative sets — a bad model gives large, uninformative sets |
+| **Distribution-free**: no assumptions on $P(X, Y)$ | Validity under **non-exchangeable** data (e.g., distribution shift) |
+
+::: {.callout-note title="Marginal vs. conditional coverage"}
+Conformal prediction guarantees **marginal** coverage — averaged over all possible test points. It does **not** guarantee that every subgroup has $1-\alpha$ coverage. In clinical terms: among all patients drawn from the same population, 90% will have the true label in their prediction set, but this might not hold separately for every age group or diagnosis category. Extensions like **group-balanced conformal prediction** address this, but require larger calibration sets per group.
+:::
+
+---
+
+## Effect of Calibration Set Size
+
+The coverage guarantee holds for **any** $n_2$, but the **tightness** depends on $n_2$:
+
+- Coverage is between $1-\alpha$ and $1 - \alpha + \frac{1}{n_2+1}$
+- With $n_2 = 100$: coverage is between $0.900$ and $0.910$
+- With $n_2 = 1000$: coverage is between $0.900$ and $0.901$
+
+```{r}
+#| label: fig-calibration-set-size
+#| fig-cap: "Left: With more calibration data, empirical coverage hugs the target more tightly. Right: Average set size stabilizes as the calibration set grows."
+
+set.seed(274)
+cal_sizes <- c(30, 50, 100, 200, 400)
+n_rep <- 200
+alpha <- 0.10
+
+results <- expand_grid(n_cal = cal_sizes, rep = 1:n_rep) %>%
+  rowwise() %>%
+  mutate(
+    sim = list({
+      pool <- sample(nrow(df_test) + nrow(df_cal))
+      idx_c <- pool[1:n_cal]
+      idx_t <- pool[(n_cal+1):min(n_cal+200, length(pool))]
+      
+      p_all <- c(p_cal, p_test)
+      y_all <- c(as.character(y_cal), as.character(y_test))
+      
+      sc <- ifelse(y_all[idx_c] == "Yes", 1 - p_all[idx_c], p_all[idx_c])
+      kk <- min(ceiling((1 - alpha) * (length(sc) + 1)), length(sc))
+      qh <- sort(sc)[kk]
+      
+      ps <- lapply(p_all[idx_t], function(p) {
+        S <- c()
+        if (p >= 1 - qh) S <- c(S, "Yes")
+        if ((1 - p) >= 1 - qh) S <- c(S, "No")
+        S
+      })
+      
+      cov <- mean(mapply(function(S, y) y %in% S, ps, y_all[idx_t]))
+      sz  <- mean(sapply(ps, length))
+      list(cov = cov, sz = sz)
+    })
+  ) %>%
+  unnest_wider(sim)
+
+p1 <- results %>%
+  ggplot(aes(x = factor(n_cal), y = cov)) +
+  geom_boxplot(fill = "#2196F3", alpha = 0.3, outlier.size = 0.8) +
+  geom_hline(yintercept = 1 - alpha, linetype = "dashed", color = "#F44336") +
+  annotate("text", x = 0.6, y = 1 - alpha - 0.015, label = "1 - alpha = 0.90",
+           color = "#F44336", hjust = 0, size = 3) +
+  labs(x = "Calibration set size", y = "Empirical coverage",
+       title = "Coverage stability") +
+  theme_bw()
+
+p2 <- results %>%
+  ggplot(aes(x = factor(n_cal), y = sz)) +
+  geom_boxplot(fill = "#4CAF50", alpha = 0.3, outlier.size = 0.8) +
+  labs(x = "Calibration set size", y = "Average set size",
+       title = "Set size efficiency") +
+  theme_bw()
+
+p1 + p2
+```
+
+> **Practical guideline:** 100 is a bare minimum; several hundred is better; around 1000 gives much more stable realized coverage near the nominal level.
+
+---
+
+## Conformal Prediction Under Covariate Shift (Advanced)
+
+### When Exchangeability Breaks
+
+In the previous lecture, we learned that models trained on one domain often fail on another due to **distribution shift**. The diagnostic table was:
+
+| Cal. intercept $\alpha$ | Cal. slope $\beta$ | Most likely cause |
+|:--:|:--:|:--|
+| Nonzero | Near 1 | Label shift |
+| Drifted | Drifted | **Covariate shift** |
+| Still off after correction | — | Concept shift |
+
+**Covariate shift** means $P(X)$ changes but $P(Y \mid X)$ stays the same.
+
+**The problem for conformal prediction:** If calibration data come from the source domain and test data from the target domain, they are **not exchangeable** — the coverage guarantee breaks down.
+
+### Weighted Conformal Prediction (Theoretical Result)
+
+Tibshirani et al. (2019) showed that under the covariate shift model, if the **true** likelihood ratio $w(x) = d\tilde{P}_X(x) / dP_X(x)$ is known, a weighted version of conformal prediction restores the coverage guarantee.
+
+The key idea: instead of the uniform empirical distribution over nonconformity scores, use a **weighted** empirical distribution where each calibration score gets weight proportional to $w(X_i)$, and an additional point mass at $\infty$ accounts for the test point. Specifically, define
+
+$$p_i^w(x) = \frac{w(X_i)}{\sum_{j=1}^{n} w(X_j) + w(x)}, \quad i = 1, \ldots, n, \qquad p_{n+1}^w(x) = \frac{w(x)}{\sum_{j=1}^{n} w(X_j) + w(x)}.$$
+
+Then the weighted conformal prediction set at test point $x$ is
+
+$$C_n(x) = \Big\{y : V_{n+1}^{(x,y)} \leq \text{Quantile}\Big(1-\alpha;\;\sum_{i=1}^n p_i^w(x)\,\delta_{V_i^{(x,y)}} + p_{n+1}^w(x)\,\delta_\infty\Big)\Big\}.$$
+
+::: {.callout-note title="Corollary 1 (Tibshirani et al., 2019)"}
+Under the covariate shift model with known $w = d\tilde{P}_X / dP_X$, the weighted conformal band satisfies $P(Y_{n+1} \in C_n(X_{n+1})) \geq 1 - \alpha$.
+:::
+
+Two features distinguish this from ordinary conformal:
+
+- The **point mass at** $\infty$ with weight $p_{n+1}^w(x)$: this inflates the quantile relative to the unweighted case, ensuring the test point is "represented" in the score distribution.
+- The **weights depend on the test point** $x$: the prediction set must be recomputed for each new $x$, since $w(x)$ appears in the denominator of every weight.
+
+### Practical Approximation
+
+In practice, we rarely know $w(x)$ exactly. Tibshirani et al. (2019, §2.2) propose estimating it via probabilistic classification:
+
+1. Pool **source covariates** $X_1, \ldots, X_n$ (label $C_i = 0$) and **target covariates** $X_{n+1}, \ldots, X_{n+m}$ (label $C_i = 1$). No outcome labels $Y$ are needed from the target.
+2. Fit a classifier (logistic regression, random forest) to predict $P(C=1 \mid X=x)$.
+3. The estimated likelihood ratio is:
+
+$$\hat{w}(x) = \frac{\hat{P}(C=1 \mid X=x)}{1 - \hat{P}(C=1 \mid X=x)}$$
+
+This works because $P(C=1|X=x)/P(C=0|X=x) \propto d\tilde{P}_X(x)/dP_X(x)$, and conformal only needs $w$ up to a proportionality constant.
+
+::: {.callout-warning title="Theoretical caveats: demo vs. theorem"}
+The demo below makes three simplifications relative to Corollary 1:
+
+1. **Estimated weights** instead of the true $w$: the guarantee holds for the true likelihood ratio; with estimated $\hat{w}$, coverage is approximate.
+2. **Single global weighted quantile** instead of recomputing per test point: Corollary 1 requires weights that depend on each specific $x_{n+1}$.
+3. **No point mass at** $\infty$: the demo omits the $p_{n+1}^w(x)\,\delta_\infty$ term, which inflates the quantile in the exact construction.
+
+These simplifications work well empirically (the paper shows good coverage with estimated weights on the airfoil dataset), but they do not carry the exact finite-sample guarantee. See Tibshirani et al. (2019, §2.2) for the full implementation.
+:::
+
+### Demo: Naive vs. Weighted vs. Target-Calibrated
+
+We use a regression example with heteroscedastic noise — the noise grows with $x$, so source-calibrated intervals (from the low-$x$ region) are too narrow for the high-$x$ target.
+
+```{r}
+#| label: fig-covariate-shift
+#| fig-cap: "Naive source-calibrated intervals (left) undercover. Heuristic weighted conformal (middle) approximately restores coverage. Target-calibrated (right) is the gold standard."
+#| fig-width: 12
+#| fig-height: 4
+
+set.seed(274)
+
+f_true  <- function(x) sin(x) + 0.3 * x
+sigma_x <- function(x) 0.2 + 0.25 * abs(x)
+
+# Source: x ~ N(0, 1), low noise
+n_src <- 800
+x_src <- rnorm(n_src, mean = 0, sd = 1)
+y_src <- f_true(x_src) + rnorm(n_src, sd = sigma_x(x_src))
+src_train <- 1:500; src_cal <- 501:800
+
+# Target: x ~ N(3, 0.8), higher noise
+n_tgt <- 400
+x_tgt <- rnorm(n_tgt, mean = 3, sd = 0.8)
+y_tgt <- f_true(x_tgt) + rnorm(n_tgt, sd = sigma_x(x_tgt))
+tgt_cal <- 1:150; tgt_test <- 151:n_tgt
+
+library(randomForest)
+rf_shift <- randomForest(y ~ x,
+                         data = data.frame(x = x_src[src_train], y = y_src[src_train]))
+alpha <- 0.10
+
+# (1) Naive: unweighted source scores
+yhat_src_cal <- predict(rf_shift, newdata = data.frame(x = x_src[src_cal]))
+R_src   <- abs(y_src[src_cal] - yhat_src_cal)
+n_s     <- length(R_src)
+k_src   <- min(ceiling((1 - alpha) * (n_s + 1)), n_s)
+q_naive <- sort(R_src)[k_src]
+
+# (2) Heuristic weighted
+x_pool <- c(x_src[src_cal], x_tgt[tgt_test])
+d_pool <- c(rep(0, n_s), rep(1, length(tgt_test)))
+wt_fit <- glm(d_pool ~ x_pool, family = binomial)
+e_src  <- predict(wt_fit, newdata = data.frame(x_pool = x_src[src_cal]), type = "response")
+w_src  <- pmin(e_src / (1 - e_src), quantile(e_src / (1 - e_src), 0.98))
+
+weighted_quantile <- function(scores, weights, level) {
+  ord <- order(scores)
+  s_sorted <- scores[ord]; w_sorted <- weights[ord]
+  w_cum <- cumsum(w_sorted) / sum(w_sorted)
+  s_sorted[which(w_cum >= level)[1]]
+}
+q_weighted <- weighted_quantile(R_src, w_src, 1 - alpha)
+
+# (3) Target-calibrated (gold standard)
+yhat_tgt_cal <- predict(rf_shift, newdata = data.frame(x = x_tgt[tgt_cal]))
+R_tgt   <- abs(y_tgt[tgt_cal] - yhat_tgt_cal)
+n_t     <- length(R_tgt)
+k_tgt   <- min(ceiling((1 - alpha) * (n_t + 1)), n_t)
+q_tgt   <- sort(R_tgt)[k_tgt]
+
+# Evaluate
+yhat_test <- predict(rf_shift, newdata = data.frame(x = x_tgt[tgt_test]))
+y_test_s  <- y_tgt[tgt_test]; x_test_s <- x_tgt[tgt_test]
+eval_cov <- function(qh) mean(y_test_s >= yhat_test - qh & y_test_s <= yhat_test + qh)
+
+cat(sprintf("Naive:    q_hat = %.3f  coverage = %.3f\n", q_naive, eval_cov(q_naive)))
+cat(sprintf("Weighted: q_hat = %.3f  coverage = %.3f  (heuristic)\n", q_weighted, eval_cov(q_weighted)))
+cat(sprintf("Target:   q_hat = %.3f  coverage = %.3f\n", q_tgt, eval_cov(q_tgt)))
+
+ord <- order(x_test_s)
+df_plot <- tibble(x = x_test_s[ord], y = y_test_s[ord], yhat = yhat_test[ord])
+
+make_panel <- function(qh, color, title) {
+  ggplot(df_plot, aes(x = x)) +
+    geom_ribbon(aes(ymin = yhat - qh, ymax = yhat + qh), fill = color, alpha = 0.3) +
+    geom_point(aes(y = y), size = 0.8, alpha = 0.5) +
+    geom_line(aes(y = yhat), color = color, linewidth = 0.8) +
+    labs(title = title, y = "y") +
+    theme_bw() + theme(plot.title = element_text(size = 9))
+}
+
+make_panel(q_naive,    "#FF9800", sprintf("Naive (cov=%.0f%%)", 100*eval_cov(q_naive))) +
+make_panel(q_weighted, "#2196F3", sprintf("Weighted (cov=%.0f%%)", 100*eval_cov(q_weighted))) +
+make_panel(q_tgt,      "#4CAF50", sprintf("Target cal (cov=%.0f%%)", 100*eval_cov(q_tgt))) +
+plot_layout(ncol = 3)
+```
+
+> **Takeaway for the project:** In the final project, `target_cal` and `target_test` are both from Medicare — they are exchangeable, so standard conformal prediction works directly. The Private-to-Medicare shift involves both label shift and covariate shift (as discussed in the calibration lecture), so weighted conformal with estimated weights would be a heuristic approximation if no labeled target data were available.
+
+---
+
+## Bootstrap Confidence Intervals for Performance Metrics
+
+### Why Bootstrap?
+
+Conformal prediction gives **predictive uncertainty** — prediction sets for individual outcomes. But we also need **metric uncertainty**: how reliable are our estimates of AUROC and Brier score on the target test set?
+
+This is the **required** uncertainty deliverable for Section 2.5 of the final project: bootstrap confidence intervals for AUROC and Brier on `target_test`.
+
+### The Bootstrap Procedure
+
+1. Let `target_test` have $n$ observations with predicted probabilities $\hat{p}_1, \ldots, \hat{p}_n$ and true labels $y_1, \ldots, y_n$.
+2. For $b = 1, \ldots, B$ (e.g., $B = 2000$):
+   - Resample $n$ observations **with replacement** from `target_test`.
+   - Compute AUROC$^{(b)}$ and Brier$^{(b)}$ on the bootstrap sample.
+3. The 95% bootstrap percentile CI for AUROC is $[\text{AUROC}^{(0.025)},\; \text{AUROC}^{(0.975)}]$.
+
+```{r}
+#| label: bootstrap-demo
+#| fig-cap: "Bootstrap distributions of AUROC and Brier score. Dashed red lines show the 95% percentile confidence interval."
+
+library(yardstick)
+set.seed(274)
+
+B <- 2000
+n_test <- length(p_test)
+boot_auroc <- boot_brier <- numeric(B)
+
+for (b in seq_len(B)) {
+  idx_b <- sample(n_test, replace = TRUE)
+  p_b   <- p_test[idx_b]
+  y_b   <- y_test[idx_b]
+  
+  boot_auroc[b] <- tryCatch(
+    roc_auc_vec(y_b, p_b, event_level = "second"),
+    error = function(e) NA_real_)
+  boot_brier[b] <- mean((p_b - as.numeric(y_b == "Yes"))^2)
+}
+
+boot_auroc <- boot_auroc[!is.na(boot_auroc)]
+
+auroc_point <- roc_auc_vec(y_test, p_test, event_level = "second")
+brier_point <- mean((p_test - as.numeric(y_test == "Yes"))^2)
+
+ci_auroc <- quantile(boot_auroc, c(0.025, 0.975))
+ci_brier <- quantile(boot_brier, c(0.025, 0.975))
+
+cat(sprintf("AUROC: %.3f  [95%% CI: %.3f, %.3f]\n", auroc_point, ci_auroc[1], ci_auroc[2]))
+cat(sprintf("Brier: %.4f  [95%% CI: %.4f, %.4f]\n", brier_point, ci_brier[1], ci_brier[2]))
+
+p1 <- tibble(x = boot_auroc) %>%
+  ggplot(aes(x = x)) +
+  geom_histogram(bins = 50, fill = "#2196F3", alpha = 0.6) +
+  geom_vline(xintercept = ci_auroc, linetype = "dashed", color = "#F44336") +
+  geom_vline(xintercept = auroc_point, linewidth = 1) +
+  labs(x = "AUROC", y = "Count",
+       title = sprintf("AUROC = %.3f [%.3f, %.3f]", auroc_point, ci_auroc[1], ci_auroc[2])) +
+  theme_bw() + theme(plot.title = element_text(size = 10))
+
+p2 <- tibble(x = boot_brier) %>%
+  ggplot(aes(x = x)) +
+  geom_histogram(bins = 50, fill = "#4CAF50", alpha = 0.6) +
+  geom_vline(xintercept = ci_brier, linetype = "dashed", color = "#F44336") +
+  geom_vline(xintercept = brier_point, linewidth = 1) +
+  labs(x = "Brier Score", y = "Count",
+       title = sprintf("Brier = %.4f [%.4f, %.4f]", brier_point, ci_brier[1], ci_brier[2])) +
+  theme_bw() + theme(plot.title = element_text(size = 10))
+
+p1 + p2
+```
+
+::: {.callout-note title="Paired bootstrap for comparing models"}
+When comparing raw vs. recalibrated predictions on the **same** `target_test`, use a **paired bootstrap**: resample the same indices for both models in each iteration. This preserves the correlation and gives a valid CI for the **difference** in metrics (e.g., $\Delta$AUROC = AUROC$_{\text{recal}}$ - AUROC$_{\text{raw}}$).
+:::
+
+---
+
+## Summary
+
+### Uncertainty Quantification: A Taxonomy
+
+| Approach | Question it answers | Assumptions | Guarantee |
+|:--|:--|:--|:--|
+| Calibration diagnostics | Are probabilities correct on average? | Nonparametric (binning, Loess) | Descriptive |
+| Recalibration | Can we fix probabilities for a new domain? | Model structure (logistic link, isotonic) | Asymptotic |
+| **Bootstrap CI** | **How variable is AUROC / Brier?** | **i.i.d. resampling** | **Asymptotic** |
+| **Conformal prediction** | **What outcomes are plausible for a new observation?** | **Exchangeability** | **Finite-sample, marginal** |
+
+### Three Takeaways
+
+1. **Simple:** Split conformal prediction is 3 steps — compute scores, take the $k$-th order statistic, form sets. About 15 lines of code.
+
+2. **Rigorous:** The marginal coverage guarantee holds for any model, any distribution, any finite sample size. The only assumption is exchangeability of calibration and test data.
+
+3. **Two kinds of uncertainty for the project:** Bootstrap CIs quantify how reliable your AUROC/Brier estimates are (metric uncertainty — **required**). Conformal prediction sets quantify how reliable individual predictions are (predictive uncertainty — **optional extension**).
+
+---
+
+## Application to Final Project (Readmission)
+
+### Connecting to Section 2.5: Uncertainty (10 pts)
+
+**Required:** Bootstrap confidence intervals for AUROC and Brier score on `target_test`.
+
+**Optional extension:** Conformal prediction sets for individual patient-level predictive uncertainty.
+
+### Required: Bootstrap CIs
+
+```r
+B <- 2000; n_test <- nrow(target_test)
+boot_auroc <- boot_brier <- numeric(B)
+
+for (b in seq_len(B)) {
+  idx <- sample(n_test, replace = TRUE)
+  p_b <- p_test[idx]; y_b <- y_test[idx]
+  boot_auroc[b] <- roc_auc_vec(y_b, p_b, event_level = "second")
+  boot_brier[b] <- mean((p_b - as.numeric(y_b == "Yes"))^2)
+}
+
+quantile(boot_auroc, c(0.025, 0.975))  # 95% CI for AUROC
+quantile(boot_brier, c(0.025, 0.975))  # 95% CI for Brier
+```
+
+### What to Report
+
+| Model | AUROC [95% CI] | Brier [95% CI] |
+|:--|:--:|:--:|
+| Logistic (raw) | | |
+| Logistic (recalibrated) | | |
+| XGBoost (raw) | | |
+| XGBoost (recalibrated) | | |
+
+### Optional: Conformal Prediction Sets
+
+```r
+s_cal <- ifelse(y_cal == "Yes", 1 - p_cal, p_cal)
+k     <- min(ceiling((1 - alpha) * (length(s_cal) + 1)), length(s_cal))
+q_hat <- sort(s_cal)[k]
+
+pred_sets <- lapply(p_test, function(p) {
+  S <- c()
+  if (p >= 1 - q_hat) S <- c(S, "Yes")
+  if ((1 - p) >= 1 - q_hat) S <- c(S, "No")
+  S
+})
+```
+
+---
+
+## Further Reading
+
+### Primary
+
+1. Angelopoulos & Bates (2023). [_A Gentle Introduction to Conformal Prediction_](https://arxiv.org/abs/2107.07511). Sections 1-3. Free PDF + [Python notebooks](https://github.com/aangelopoulos/conformal-prediction).
+
+2. Tibshirani (2024). [_Conformal Prediction_](https://www.stat.berkeley.edu/~ryantibs/statlearn-s24/lectures/conformal.pdf). Lecture notes, UC Berkeley.
+
+### Supplementary
+
+3. Tibshirani et al. (2019). [_Conformal Prediction Under Covariate Shift_](https://www.stat.cmu.edu/~ryantibs/papers/weightedcp.pdf). NeurIPS 2019.
+
+4. Kota et al. (2023). [_Safe and reliable transport of prediction models to new healthcare settings_](https://pmc.ncbi.nlm.nih.gov/articles/PMC10760294/). *Nature Communications*.
+
+5. Kaiser & Herzog (2025). [_A Tutorial on Distribution-Free UQ Using Conformal Prediction_](https://journals.sagepub.com/doi/10.1177/25152459251380452). R-focused tutorial with [code supplement](https://osf.io/d9w8n/).
+
+### Video
+
+- [Angelopoulos & Bates ICML 2021 Tutorial](https://www.youtube.com/watch?v=nql000Lu_iE) (~30 min)
+- [Candes: "How to increase certainty in predictive modeling"](https://www.youtube.com/watch?v=fQQP84yxCRs) (Stanford, 2021)
