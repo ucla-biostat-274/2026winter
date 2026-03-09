@@ -5,7 +5,7 @@ title: Biostat 274
 
 ## Course Schedule
 
-BIOSTAT 274 tentative schedule and handouts (expect frequent updates)
+BIOSTAT 274 schedule and handouts 
 
 BruinLearn: <https://bruinlearn.ucla.edu/courses/220564>
 
