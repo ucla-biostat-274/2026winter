@@ -4,3 +4,6 @@ url: https://ucla-biostat-274.github.io/2026winter
 
 liquid:
   error_mode: warn
+  
+optional_front_matter:
+  enabled: false
