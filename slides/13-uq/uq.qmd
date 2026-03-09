@@ -19,6 +19,7 @@ knitr:
     message: FALSE
     warning: FALSE
     cache: false
+render_with_liquid: false
 ---
 
 Credit: This note draws from
@@ -421,13 +422,9 @@ p1 <- tibble(set_size = factor(set_sizes, levels = 0:2)) %>%
 p2 <- tibble(p_hat = p_test, set_size = factor(set_sizes)) %>%
   ggplot(aes(x = p_hat, fill = set_size)) +
   geom_histogram(bins = 40, alpha = 0.7, position = "stack") +
-<<<<<<< HEAD
-  scale_fill_manual(values = c("0" = "#F44336", "1" = "#4CAF50", "2" = "#FF9800"),
-                    labels = c("empty (abstain)", "|C|=1", "|C|=2")) +
-=======
+
   scale_fill_manual(values = c("1" = "#4CAF50", "2" = "#FF9800"),
                     labels = c("|C|=1", "|C|=2")) +
->>>>>>> 2f6e76c9d151a02de07931399265032a3a0fd242
   geom_vline(xintercept = 0.5, linetype = "dashed", color = "gray40") +
   labs(x = "Predicted P(Yes)", y = "Count", fill = "Set size",
        title = "Where is the model uncertain?") +
