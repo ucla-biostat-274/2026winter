@@ -2978,22 +2978,24 @@ Step 3: Example prediction sets (first 10):</code></pre>
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>) {</span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  set_str <span class="ot">&lt;-</span> <span class="cf">if</span> (<span class="fu">length</span>(pred_sets[[i]]) <span class="sc">==</span> <span class="dv">0</span>) <span class="st">&quot;empty&quot;</span> <span class="cf">else</span> <span class="fu">paste</span>(pred_sets[[i]], <span class="at">collapse =</span> <span class="st">&quot;, &quot;</span>)</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;  Patient %d: p(Yes) = %.3f -&gt; C(x) = {%s}  (true: %s) %s</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>              i, p_test[i], set_str, y_test[i],</span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>              <span class="fu">ifelse</span>(<span class="fu">as.character</span>(y_test[i]) <span class="sc">%in%</span> pred_sets[[i]], <span class="st">&quot;ok&quot;</span>, <span class="st">&quot;miss&quot;</span>)))</span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;  Patient %d: p(Yes) = %.3f -&gt; C(x) = { %s }  (true: %s) %s</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>              i, p_test[i], set_str, y_test[i],</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>              <span class="fu">ifelse</span>(<span class="fu">as.character</span>(y_test[i]) <span class="sc">%in%</span> pred_sets[[i]], <span class="st">&quot;ok&quot;</span>, <span class="st">&quot;miss&quot;</span>)))</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>  Patient 1: p(Yes) = 0.035 -&gt; C(x) = {No}  (true: Yes) miss
-  Patient 2: p(Yes) = 0.394 -&gt; C(x) = {Yes, No}  (true: No) ok
-  Patient 3: p(Yes) = 0.161 -&gt; C(x) = {No}  (true: Yes) miss
-  Patient 4: p(Yes) = 0.250 -&gt; C(x) = {No}  (true: No) ok
-  Patient 5: p(Yes) = 0.338 -&gt; C(x) = {Yes, No}  (true: No) ok
-  Patient 6: p(Yes) = 0.326 -&gt; C(x) = {Yes, No}  (true: No) ok
-  Patient 7: p(Yes) = 0.196 -&gt; C(x) = {No}  (true: No) ok
-  Patient 8: p(Yes) = 0.057 -&gt; C(x) = {No}  (true: No) ok
-  Patient 9: p(Yes) = 0.103 -&gt; C(x) = {No}  (true: No) ok
-  Patient 10: p(Yes) = 0.205 -&gt; C(x) = {No}  (true: No) ok</code></pre>
+<pre><code>  Patient 1: p(Yes) = 0.035 -&gt; C(x) = { No }  (true: Yes) miss
+  Patient 2: p(Yes) = 0.394 -&gt; C(x) = { Yes, No }  (true: No) ok
+  Patient 3: p(Yes) = 0.161 -&gt; C(x) = { No }  (true: Yes) miss
+  Patient 4: p(Yes) = 0.250 -&gt; C(x) = { No }  (true: No) ok
+  Patient 5: p(Yes) = 0.338 -&gt; C(x) = { Yes, No }  (true: No) ok
+  Patient 6: p(Yes) = 0.326 -&gt; C(x) = { Yes, No }  (true: No) ok
+  Patient 7: p(Yes) = 0.196 -&gt; C(x) = { No }  (true: No) ok
+  Patient 8: p(Yes) = 0.057 -&gt; C(x) = { No }  (true: No) ok
+  Patient 9: p(Yes) = 0.103 -&gt; C(x) = { No }  (true: No) ok
+  Patient 10: p(Yes) = 0.205 -&gt; C(x) = { No }  (true: No) ok</code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
