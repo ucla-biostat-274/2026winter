@@ -2,7 +2,7 @@
 title: "Uncertainty Quantification via Conformal Prediction"
 subtitle: "Biostat 274"
 author: "Dr. Jin Zhou @ UCLA"
-date: today
+date: 2026-03-09
 format:
   html:
     theme: cosmo
@@ -11,7 +11,7 @@ format:
     toc: true
     toc-depth: 4
     toc-location: left
-    code-fold: true
+    code-fold: false
 engine: knitr
 knitr:
   opts_chunk: 

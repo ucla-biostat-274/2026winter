@@ -2542,8 +2542,6 @@ window.Quarto = {
 </div>
 </div>
 <div class="cell" data-layout-align="center">
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -2573,7 +2571,6 @@ window.Quarto = {
 <span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="fu">sprintf</span>(<span class="st">&quot;n = %d calibration points, alpha = %.2f, k = %d&quot;</span>, n, alpha, k)) <span class="sc">+</span></span>
 <span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>() <span class="sc">+</span></span>
 <span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.y =</span> <span class="fu">element_blank</span>(), <span class="at">axis.ticks.y =</span> <span class="fu">element_blank</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output-display">
 <div id="fig-rank-intuition" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-align="center">
 <figure class="quarto-float quarto-float-fig figure">
@@ -2658,8 +2655,6 @@ Figure 1: The rank of Y_{n+1} is uniform among n+1 values. Setting the quantile
 <section id="demo-conformal-intervals-for-regression" class="level3" data-number="3.4">
 <h3 data-number="3.4" class="anchored" data-anchor-id="demo-conformal-intervals-for-regression"><span class="header-section-number">3.4</span> Demo: Conformal Intervals for Regression</h3>
 <div class="cell" data-layout-align="center">
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">274</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>n_total <span class="ot">&lt;-</span> <span class="dv">600</span></span>
@@ -2677,11 +2672,8 @@ Figure 1: The rank of Y_{n+1} is uniform among n+1 values. Setting the quantile
 <span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(randomForest)</span>
 <span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>rf_fit <span class="ot">&lt;-</span> <span class="fu">randomForest</span>(y_train <span class="sc">~</span> ., <span class="at">data =</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x_train, <span class="at">y_train =</span> y_train))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 </div>
 <div class="cell" data-layout-align="center">
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 1: Nonconformity scores on calibration set</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>yhat_cal   <span class="ot">&lt;-</span> <span class="fu">predict</span>(rf_fit, <span class="at">newdata =</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x_cal))</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>scores_reg <span class="ot">&lt;-</span> <span class="fu">abs</span>(y_cal <span class="sc">-</span> yhat_cal)</span>
@@ -2693,26 +2685,17 @@ Figure 1: The rank of Y_{n+1} is uniform among n+1 values. Setting the quantile
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>q_hat <span class="ot">&lt;-</span> <span class="fu">sort</span>(scores_reg)[k]</span>
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Calibration set size: n2 = %d</span><span class="sc">\n</span><span class="st">&quot;</span>, n_cal))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Calibration set size: n2 = 150</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;k = min(ceil((1-%.2f)*(%d+1)), %d) = %d</span><span class="sc">\n</span><span class="st">&quot;</span>, alpha, n_cal, n_cal, k))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>k = min(ceil((1-0.10)*(150+1)), 150) = 136</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Conformal quantile q_hat = %.3f  (k-th order statistic)</span><span class="sc">\n</span><span class="st">&quot;</span>, q_hat))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Conformal quantile q_hat = 1.725  (k-th order statistic)</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 3: Prediction intervals on test set</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>yhat_test <span class="ot">&lt;-</span> <span class="fu">predict</span>(rf_fit, <span class="at">newdata =</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x_test))</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>lower     <span class="ot">&lt;-</span> yhat_test <span class="sc">-</span> q_hat</span>
@@ -2720,12 +2703,9 @@ Figure 1: The rank of Y_{n+1} is uniform among n+1 values. Setting the quantile
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>coverage <span class="ot">&lt;-</span> <span class="fu">mean</span>(y_test <span class="sc">&gt;=</span> lower <span class="sc">&amp;</span> y_test <span class="sc">&lt;=</span> upper)</span>
 <span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Empirical coverage on test set: %.3f  (target: &gt;= %.2f)</span><span class="sc">\n</span><span class="st">&quot;</span>, coverage, <span class="dv">1</span> <span class="sc">-</span> alpha))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Empirical coverage on test set: 0.947  (target: &gt;= 0.90)</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>ord <span class="ot">&lt;-</span> <span class="fu">order</span>(x_test)</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tibble</span>(<span class="at">x =</span> x_test[ord], <span class="at">y =</span> y_test[ord],</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">yhat =</span> yhat_test[ord], <span class="at">lo =</span> lower[ord], <span class="at">hi =</span> upper[ord]) <span class="sc">%&gt;%</span></span>
@@ -2738,7 +2718,6 @@ Figure 1: The rank of Y_{n+1} is uniform among n+1 values. Setting the quantile
 <span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="fu">sprintf</span>(<span class="st">&quot;Coverage = %.1f%%  |  Constant width = 2q_hat = %.2f  |  alpha = %.2f&quot;</span>,</span>
 <span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>                          <span class="dv">100</span> <span class="sc">*</span> coverage, <span class="dv">2</span> <span class="sc">*</span> q_hat, alpha)) <span class="sc">+</span></span>
 <span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output-display">
 <div id="fig-conformal-regression" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-align="center">
 <figure class="quarto-float quarto-float-fig figure">
@@ -2759,8 +2738,6 @@ Figure 2: Split conformal prediction intervals (blue band) around a random fore
 <p><strong>Fix: Normalized (studentized) residuals.</strong> Fit a second model <span class="math inline">\(\hat{\sigma}(x)\)</span> to predict the spread of <span class="math inline">\(|Y - \hat{f}(X)|\)</span>, then use the score <span class="math inline">\(R_i = |Y_i - \hat{f}(X_i)| / \hat{\sigma}(X_i)\)</span>.</p>
 <p>This gives <strong>adaptive-width</strong> intervals: <span class="math inline">\(C(x) = [\hat{f}(x) - \hat{q}\hat{\sigma}(x),\;\hat{f}(x) + \hat{q}\hat{\sigma}(x)]\)</span>. The coverage guarantee still holds — only the score function changed.</p>
 <div class="cell" data-layout-align="center">
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>res_train <span class="ot">&lt;-</span> <span class="fu">abs</span>(y_train <span class="sc">-</span> <span class="fu">predict</span>(rf_fit, <span class="at">newdata =</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x_train)))</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>sigma_fit <span class="ot">&lt;-</span> <span class="fu">randomForest</span>(res_train <span class="sc">~</span> ., <span class="at">data =</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x_train, <span class="at">res_train =</span> res_train))</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -2774,12 +2751,9 @@ Figure 2: Split conformal prediction intervals (blue band) around a random fore
 <span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>upper_norm <span class="ot">&lt;-</span> yhat_test <span class="sc">+</span> q_hat_norm <span class="sc">*</span> sigma_test</span>
 <span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>cov_norm   <span class="ot">&lt;-</span> <span class="fu">mean</span>(y_test <span class="sc">&gt;=</span> lower_norm <span class="sc">&amp;</span> y_test <span class="sc">&lt;=</span> upper_norm)</span>
 <span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Adaptive coverage: %.3f</span><span class="sc">\n</span><span class="st">&quot;</span>, cov_norm))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Adaptive coverage: 0.893</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>ord <span class="ot">&lt;-</span> <span class="fu">order</span>(x_test)</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">x =</span> x_test[ord], <span class="at">y =</span> y_test[ord], <span class="at">lo =</span> lower[ord], <span class="at">hi =</span> upper[ord]) <span class="sc">%&gt;%</span></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> x)) <span class="sc">+</span></span>
@@ -2796,7 +2770,6 @@ Figure 2: Split conformal prediction intervals (blue band) around a random fore
 <span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>() <span class="sc">+</span> <span class="fu">theme</span>(<span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">10</span>))</span>
 <span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>p1 <span class="sc">+</span> p2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output-display">
 <div id="fig-adaptive-intervals" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-align="center">
 <figure class="quarto-float quarto-float-fig figure">
@@ -2882,8 +2855,6 @@ Figure 3: Constant-width (left) vs. adaptive-width (right) conformal intervals
 <section id="demo-conformal-prediction-sets-for-classification" class="level3" data-number="4.4">
 <h3 data-number="4.4" class="anchored" data-anchor-id="demo-conformal-prediction-sets-for-classification"><span class="header-section-number">4.4</span> Demo: Conformal Prediction Sets for Classification</h3>
 <div class="cell" data-layout-align="center">
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">274</span>)</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>n_total <span class="ot">&lt;-</span> <span class="dv">2000</span></span>
@@ -2905,24 +2876,17 @@ Figure 3: Constant-width (left) vs. adaptive-width (right) conformal intervals
 <span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>p_test <span class="ot">&lt;-</span> <span class="fu">predict</span>(lr_fit, <span class="at">newdata =</span> df_test, <span class="at">type =</span> <span class="st">&quot;response&quot;</span>)</span>
 <span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>y_cal  <span class="ot">&lt;-</span> df_cal<span class="sc">$</span>y</span>
 <span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>y_test <span class="ot">&lt;-</span> df_test<span class="sc">$</span>y</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 </div>
 <div class="cell" data-layout-align="center">
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 1: Nonconformity scores</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>s_cal <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(y_cal <span class="sc">==</span> <span class="st">&quot;Yes&quot;</span>, <span class="dv">1</span> <span class="sc">-</span> p_cal, p_cal)</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Step 1: Nonconformity scores (first 10):</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Step 1: Nonconformity scores (first 10):</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;  Patient %d: true = %s, p(Yes) = %.3f, score = %.3f</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>            <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, y_cal[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>], p_cal[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>], s_cal[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>  Patient 1: true = No, p(Yes) = 0.247, score = 0.247
    Patient 2: true = No, p(Yes) = 0.095, score = 0.095
@@ -2935,8 +2899,6 @@ Figure 3: Constant-width (left) vs. adaptive-width (right) conformal intervals
    Patient 9: true = No, p(Yes) = 0.246, score = 0.246
    Patient 10: true = No, p(Yes) = 0.371, score = 0.371</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2: Conformal quantile (order statistic)</span></span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> <span class="fl">0.10</span></span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>n_cal <span class="ot">&lt;-</span> <span class="fu">length</span>(s_cal)</span>
@@ -2944,20 +2906,14 @@ Figure 3: Constant-width (left) vs. adaptive-width (right) conformal intervals
 <span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>q_hat <span class="ot">&lt;-</span> <span class="fu">sort</span>(s_cal)[k]</span>
 <span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">Step 2: k = %d, q_hat = s_(%d) = %.4f</span><span class="sc">\n</span><span class="st">&quot;</span>, k, k, q_hat))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Step 2: k = 361, q_hat = s_(361) = 0.7295</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;  Threshold for inclusion: 1 - q_hat = %.4f</span><span class="sc">\n</span><span class="st">&quot;</span>, <span class="dv">1</span> <span class="sc">-</span> q_hat))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>  Threshold for inclusion: 1 - q_hat = 0.2705</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 3: Prediction sets</span></span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>make_pred_set <span class="ot">&lt;-</span> <span class="cf">function</span>(p, q_hat) {</span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  S <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
@@ -2969,20 +2925,16 @@ Step 2: k = 361, q_hat = s_(361) = 0.7295</code></pre>
 <span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>pred_sets <span class="ot">&lt;-</span> <span class="fu">lapply</span>(p_test, make_pred_set, <span class="at">q_hat =</span> q_hat)</span>
 <span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">Step 3: Example prediction sets (first 10):</span><span class="sc">\n</span><span class="st">&quot;</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Step 3: Example prediction sets (first 10):</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>) {</span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  set_str <span class="ot">&lt;-</span> <span class="cf">if</span> (<span class="fu">length</span>(pred_sets[[i]]) <span class="sc">==</span> <span class="dv">0</span>) <span class="st">&quot;empty&quot;</span> <span class="cf">else</span> <span class="fu">paste</span>(pred_sets[[i]], <span class="at">collapse =</span> <span class="st">&quot;, &quot;</span>)</span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;  Patient %d: p(Yes) = %.3f -&gt; C(x) = {%s}  (true: %s) %s</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
 <span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>              i, p_test[i], set_str, y_test[i],</span>
 <span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>              <span class="fu">ifelse</span>(<span class="fu">as.character</span>(y_test[i]) <span class="sc">%in%</span> pred_sets[[i]], <span class="st">&quot;ok&quot;</span>, <span class="st">&quot;miss&quot;</span>)))</span>
 <span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>  Patient 1: p(Yes) = 0.035 -&gt; C(x) = {No}  (true: Yes) miss
   Patient 2: p(Yes) = 0.394 -&gt; C(x) = {Yes, No}  (true: No) ok
@@ -2997,33 +2949,22 @@ Step 3: Example prediction sets (first 10):</code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>coverage  <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">mapply</span>(<span class="cf">function</span>(S, y) <span class="fu">as.character</span>(y) <span class="sc">%in%</span> S, pred_sets, y_test))</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>set_sizes <span class="ot">&lt;-</span> <span class="fu">sapply</span>(pred_sets, length)</span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Empirical coverage: %.3f  (target: &gt;= %.2f)</span><span class="sc">\n</span><span class="st">&quot;</span>, coverage, <span class="dv">1</span> <span class="sc">-</span> alpha))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Empirical coverage: 0.885  (target: &gt;= 0.90)</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Set sizes: |C|=0: %d  |C|=1: %d  |C|=2: %d</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>            <span class="fu">sum</span>(set_sizes <span class="sc">==</span> <span class="dv">0</span>), <span class="fu">sum</span>(set_sizes <span class="sc">==</span> <span class="dv">1</span>), <span class="fu">sum</span>(set_sizes <span class="sc">==</span> <span class="dv">2</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Set sizes: |C|=0: 0  |C|=1: 399  |C|=2: 201</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Average set size: %.3f</span><span class="sc">\n</span><span class="st">&quot;</span>, <span class="fu">mean</span>(set_sizes)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Average set size: 1.335</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">set_size =</span> <span class="fu">factor</span>(set_sizes, <span class="at">levels =</span> <span class="dv">0</span><span class="sc">:</span><span class="dv">2</span>)) <span class="sc">%&gt;%</span></span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(set_size, <span class="at">.drop =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> set_size, <span class="at">y =</span> n, <span class="at">fill =</span> set_size)) <span class="sc">+</span></span>
@@ -3045,7 +2986,6 @@ Step 3: Example prediction sets (first 10):</code></pre>
 <span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>() <span class="sc">+</span> <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)</span>
 <span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a>p1 <span class="sc">+</span> p2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output-display">
 <div id="fig-conformal-classification-results" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-align="center">
 <figure class="quarto-float quarto-float-fig figure">
@@ -3138,8 +3078,6 @@ Figure 4: Left: Distribution of prediction set sizes. Right: Patients with non-
 <li>With <span class="math inline">\(n_2 = 1000\)</span>: coverage is between <span class="math inline">\(0.900\)</span> and <span class="math inline">\(0.901\)</span></li>
 </ul>
 <div class="cell" data-layout-align="center">
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">274</span>)</span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>cal_sizes <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">30</span>, <span class="dv">50</span>, <span class="dv">100</span>, <span class="dv">200</span>, <span class="dv">400</span>)</span>
 <span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>n_rep <span class="ot">&lt;-</span> <span class="dv">200</span></span>
@@ -3192,7 +3130,6 @@ Figure 4: Left: Distribution of prediction set sizes. Right: Patients with non-
 <span id="cb35-50"><a href="#cb35-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span>
 <span id="cb35-51"><a href="#cb35-51" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb35-52"><a href="#cb35-52" aria-hidden="true" tabindex="-1"></a>p1 <span class="sc">+</span> p2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output-display">
 <div id="fig-calibration-set-size" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-align="center">
 <figure class="quarto-float quarto-float-fig figure">
@@ -3305,8 +3242,6 @@ Figure 5: Left: With more calibration data, empirical coverage hugs the target 
 <h3 data-number="7.4" class="anchored" data-anchor-id="demo-naive-vs.-weighted-vs.-target-calibrated"><span class="header-section-number">7.4</span> Demo: Naive vs. Weighted vs. Target-Calibrated</h3>
 <p>We use a regression example with heteroscedastic noise — the noise grows with <span class="math inline">\(x\)</span>, so source-calibrated intervals (from the low-<span class="math inline">\(x\)</span> region) are too narrow for the high-<span class="math inline">\(x\)</span> target.</p>
 <div class="cell" data-layout-align="center">
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">274</span>)</span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>f_true  <span class="ot">&lt;-</span> <span class="cf">function</span>(x) <span class="fu">sin</span>(x) <span class="sc">+</span> <span class="fl">0.3</span> <span class="sc">*</span> x</span>
@@ -3364,26 +3299,17 @@ Figure 5: Left: With more calibration data, empirical coverage hugs the target 
 <span id="cb36-55"><a href="#cb36-55" aria-hidden="true" tabindex="-1"></a>eval_cov <span class="ot">&lt;-</span> <span class="cf">function</span>(qh) <span class="fu">mean</span>(y_test_s <span class="sc">&gt;=</span> yhat_test <span class="sc">-</span> qh <span class="sc">&amp;</span> y_test_s <span class="sc">&lt;=</span> yhat_test <span class="sc">+</span> qh)</span>
 <span id="cb36-56"><a href="#cb36-56" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb36-57"><a href="#cb36-57" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Naive:    q_hat = %.3f  coverage = %.3f</span><span class="sc">\n</span><span class="st">&quot;</span>, q_naive, <span class="fu">eval_cov</span>(q_naive)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Naive:    q_hat = 0.873  coverage = 0.560</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Weighted: q_hat = %.3f  coverage = %.3f  (heuristic)</span><span class="sc">\n</span><span class="st">&quot;</span>, q_weighted, <span class="fu">eval_cov</span>(q_weighted)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Weighted: q_hat = 1.244  coverage = 0.744  (heuristic)</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Target:   q_hat = %.3f  coverage = %.3f</span><span class="sc">\n</span><span class="st">&quot;</span>, q_tgt, <span class="fu">eval_cov</span>(q_tgt)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Target:   q_hat = 1.900  coverage = 0.896</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>ord <span class="ot">&lt;-</span> <span class="fu">order</span>(x_test_s)</span>
 <span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>df_plot <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">x =</span> x_test_s[ord], <span class="at">y =</span> y_test_s[ord], <span class="at">yhat =</span> yhat_test[ord])</span>
 <span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -3400,7 +3326,6 @@ Figure 5: Left: With more calibration data, empirical coverage hugs the target 
 <span id="cb42-14"><a href="#cb42-14" aria-hidden="true" tabindex="-1"></a><span class="fu">make_panel</span>(q_weighted, <span class="st">&quot;#2196F3&quot;</span>, <span class="fu">sprintf</span>(<span class="st">&quot;Weighted (cov=%.0f%%)&quot;</span>, <span class="dv">100</span><span class="sc">*</span><span class="fu">eval_cov</span>(q_weighted))) <span class="sc">+</span></span>
 <span id="cb42-15"><a href="#cb42-15" aria-hidden="true" tabindex="-1"></a><span class="fu">make_panel</span>(q_tgt,      <span class="st">&quot;#4CAF50&quot;</span>, <span class="fu">sprintf</span>(<span class="st">&quot;Target cal (cov=%.0f%%)&quot;</span>, <span class="dv">100</span><span class="sc">*</span><span class="fu">eval_cov</span>(q_tgt))) <span class="sc">+</span></span>
 <span id="cb42-16"><a href="#cb42-16" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_layout</span>(<span class="at">ncol =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output-display">
 <div id="fig-covariate-shift" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-align="center">
 <figure class="quarto-float quarto-float-fig figure">
@@ -3439,8 +3364,6 @@ Figure 6: Naive source-calibrated intervals (left) undercover. Heuristic weight
 <li>The 95% bootstrap percentile CI for AUROC is <span class="math inline">\([\text{AUROC}^{(0.025)},\; \text{AUROC}^{(0.975)}]\)</span>.</li>
 </ol>
 <div class="cell" data-layout-align="center">
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(yardstick)</span>
 <span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">274</span>)</span>
 <span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -3468,19 +3391,13 @@ Figure 6: Naive source-calibrated intervals (left) undercover. Heuristic weight
 <span id="cb43-25"><a href="#cb43-25" aria-hidden="true" tabindex="-1"></a>ci_brier <span class="ot">&lt;-</span> <span class="fu">quantile</span>(boot_brier, <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</span>
 <span id="cb43-26"><a href="#cb43-26" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb43-27"><a href="#cb43-27" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;AUROC: %.3f  [95%% CI: %.3f, %.3f]</span><span class="sc">\n</span><span class="st">&quot;</span>, auroc_point, ci_auroc[<span class="dv">1</span>], ci_auroc[<span class="dv">2</span>]))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>AUROC: 0.697  [95% CI: 0.650, 0.744]</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Brier: %.4f  [95%% CI: %.4f, %.4f]</span><span class="sc">\n</span><span class="st">&quot;</span>, brier_point, ci_brier[<span class="dv">1</span>], ci_brier[<span class="dv">2</span>]))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Brier: 0.1654  [95% CI: 0.1475, 0.1831]</code></pre>
 </div>
-<details class="code-fold">
-<summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">x =</span> boot_auroc) <span class="sc">%&gt;%</span></span>
 <span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> x)) <span class="sc">+</span></span>
 <span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">50</span>, <span class="at">fill =</span> <span class="st">&quot;#2196F3&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
@@ -3500,7 +3417,6 @@ Figure 6: Naive source-calibrated intervals (left) undercover. Heuristic weight
 <span id="cb47-17"><a href="#cb47-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>() <span class="sc">+</span> <span class="fu">theme</span>(<span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">10</span>))</span>
 <span id="cb47-18"><a href="#cb47-18" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb47-19"><a href="#cb47-19" aria-hidden="true" tabindex="-1"></a>p1 <span class="sc">+</span> p2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
